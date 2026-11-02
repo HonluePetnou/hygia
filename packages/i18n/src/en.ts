@@ -1,0 +1,62 @@
+import type { MessageKey } from './fr.js';
+
+/** Dictionnaire anglais : toute clé manquante ou en trop est une erreur de compilation. */
+export const en: Record<MessageKey, string> = {
+  'nav.home': 'Home',
+  'nav.patients': 'Patients',
+  'nav.copilot': 'AI Copilot',
+  'nav.import': 'Import a document',
+  'nav.alerts': 'AI Alerts',
+  'nav.audit': 'Audit log',
+
+  'login.title': 'Sign in',
+  'login.email': 'Email address',
+  'login.password': 'Password',
+  'login.submit': 'Sign in',
+  'login.error': 'Invalid credentials',
+  'mfa.title': 'Two-factor authentication',
+  'mfa.instructions': 'Enter the 6-digit code sent to {destination}.',
+  'mfa.code': 'Verification code',
+  'mfa.submit': 'Verify',
+  'mfa.error': 'Incorrect or expired code',
+
+  'dashboard.title': 'Dashboard',
+  'dashboard.welcome': 'Hello {nom}',
+  'dashboard.patientsToday': "Today's patients",
+  'dashboard.pendingAlerts': 'Pending alerts',
+  'dashboard.documentsImported': 'Imported documents',
+
+  'patient.tab.summary': 'Summary',
+  'patient.tab.timeline': 'Timeline',
+  'patient.tab.documents': 'Documents',
+  'patient.tab.alerts': 'Alerts',
+  'patient.timeline.title': 'Record timeline',
+  'patient.timeline.empty': 'No events in the timeline',
+  'patient.preConsultation.title': 'Pre-consultation summary',
+  'patient.preConsultation.generatedByAi': 'AI-generated, to be validated by a clinician',
+  'patient.preConsultation.validate': 'Validate summary',
+
+  'copilot.title': 'AI Copilot',
+  'copilot.placeholder': 'Ask a question about the record',
+  'copilot.send': 'Send',
+  'copilot.sources': 'Sources',
+  'copilot.noSource': 'No source allows an answer',
+
+  'import.title': 'Import a document',
+  'import.step.reception': 'Reception',
+  'import.step.ocr': 'OCR',
+  'import.step.normalization': 'Normalization',
+  'import.step.aiExtraction': 'AI extraction',
+  'import.step.identifierDetection': 'Identifier detection',
+
+  'status.pending': 'Pending',
+  'status.inProgress': 'In progress',
+  'status.done': 'Done',
+  'status.failed': 'Failed',
+  'status.validated': 'Validated',
+
+  'role.doctor': 'Doctor',
+  'role.nurse': 'Nurse',
+  'role.admin': 'Administrator',
+  'role.auditor': 'Auditor',
+};

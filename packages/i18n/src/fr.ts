@@ -1,0 +1,63 @@
+/** Dictionnaire français : il définit l'ensemble des clés de référence. */
+export const fr = {
+  'nav.home': 'Accueil',
+  'nav.patients': 'Patients',
+  'nav.copilot': 'Copilote IA',
+  'nav.import': 'Importer un document',
+  'nav.alerts': 'Alertes IA',
+  'nav.audit': "Journal d'audit",
+
+  'login.title': 'Connexion',
+  'login.email': 'Adresse e-mail',
+  'login.password': 'Mot de passe',
+  'login.submit': 'Se connecter',
+  'login.error': 'Identifiants invalides',
+  'mfa.title': 'Double authentification',
+  'mfa.instructions': 'Saisissez le code à 6 chiffres envoyé à {destination}.',
+  'mfa.code': 'Code de vérification',
+  'mfa.submit': 'Valider',
+  'mfa.error': 'Code incorrect ou expiré',
+
+  'dashboard.title': 'Tableau de bord',
+  'dashboard.welcome': 'Bonjour {nom}',
+  'dashboard.patientsToday': 'Patients du jour',
+  'dashboard.pendingAlerts': 'Alertes en attente',
+  'dashboard.documentsImported': 'Documents importés',
+
+  'patient.tab.summary': 'Résumé',
+  'patient.tab.timeline': 'Chronologie',
+  'patient.tab.documents': 'Documents',
+  'patient.tab.alerts': 'Alertes',
+  'patient.timeline.title': 'Chronologie du dossier',
+  'patient.timeline.empty': 'Aucun événement dans la chronologie',
+  'patient.preConsultation.title': 'Résumé pré-consultation',
+  'patient.preConsultation.generatedByAi': 'Généré par IA, à valider par un soignant',
+  'patient.preConsultation.validate': 'Valider le résumé',
+
+  'copilot.title': 'Copilote IA',
+  'copilot.placeholder': 'Posez une question sur le dossier',
+  'copilot.send': 'Envoyer',
+  'copilot.sources': 'Sources',
+  'copilot.noSource': 'Aucune source ne permet de répondre',
+
+  'import.title': 'Importer un document',
+  'import.step.reception': 'Réception',
+  'import.step.ocr': 'OCR',
+  'import.step.normalization': 'Normalisation',
+  'import.step.aiExtraction': 'Extraction IA',
+  'import.step.identifierDetection': 'Détection des identifiants',
+
+  'status.pending': 'En attente',
+  'status.inProgress': 'En cours',
+  'status.done': 'Terminé',
+  'status.failed': 'Échec',
+  'status.validated': 'Validé',
+
+  'role.doctor': 'Médecin',
+  'role.nurse': 'Infirmier',
+  'role.admin': 'Administrateur',
+  'role.auditor': 'Auditeur',
+} as const;
+
+/** Clé de libellé valide, dérivée du dictionnaire français. */
+export type MessageKey = keyof typeof fr;
