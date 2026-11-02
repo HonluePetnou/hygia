@@ -3,6 +3,8 @@
 **Phase** : 2 — Services
 **Dépend de** : 001, 003
 
+Tâche destinée au Lead (démo du jeudi 5 novembre : pas d'essai par les juniors).
+
 ## Contexte
 
 Section 6.2 : le service Dossiers expose l'API des patients, dossiers et observations, avec

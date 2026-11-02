@@ -3,6 +3,8 @@
 **Phase** : 3 — Clients
 **Dépend de** : 001, 002
 
+Tâche destinée au Lead (démo du jeudi 5 novembre : pas d'essai par les juniors).
+
 ## Contexte
 
 Section 6.5 : le web et le mobile partagent les mêmes vues-modèles MobX ; la vue ne contient

@@ -3,6 +3,8 @@
 **Phase** : 1 — Fondations
 **Dépend de** : aucune
 
+Tâche destinée au Lead (démo du jeudi 5 novembre : pas d'essai par les juniors).
+
 ## Contexte
 
 RF28 : toute la plateforme existe en français et en anglais ; les vues n'ont pas à connaître

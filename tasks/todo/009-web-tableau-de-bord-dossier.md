@@ -3,6 +3,8 @@
 **Phase** : 3 — Clients
 **Dépend de** : 004, 006, 008
 
+Tâche destinée au Lead (démo du jeudi 5 novembre : pas d'essai par les juniors).
+
 ## Contexte
 
 Maquettes Figma « 02 · Accueil — tableau de bord médecin » et « 04 · Dossier patient —

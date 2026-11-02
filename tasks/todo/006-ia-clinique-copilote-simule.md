@@ -3,6 +3,8 @@
 **Phase** : 2 — Services
 **Dépend de** : 001, 003
 
+Tâche destinée au Lead (démo du jeudi 5 novembre : pas d'essai par les juniors).
+
 ## Contexte
 
 Section 8.3 (RF7, RF8) : le copilote ne répond qu'à partir des passages retrouvés dans le

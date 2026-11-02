@@ -3,6 +3,8 @@
 **Phase** : 3 — Clients
 **Dépend de** : 002, 007
 
+Tâche destinée au Lead (démo du jeudi 5 novembre : pas d'essai par les juniors).
+
 ## Contexte
 
 Maquettes Figma : https://www.figma.com/design/AOCqWU93igGqWj6e1C66Ix (page « Web —

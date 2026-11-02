@@ -3,6 +3,8 @@
 **Phase** : 1 — Fondations
 **Dépend de** : aucune
 
+Tâche destinée au Lead (démo du jeudi 5 novembre : pas d'essai par les juniors).
+
 ## Contexte
 
 Le modèle de données suit HL7 FHIR R4 (cahier des charges, section 10). Toutes les briques

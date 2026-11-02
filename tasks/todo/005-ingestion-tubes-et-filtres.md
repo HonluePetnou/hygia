@@ -3,6 +3,8 @@
 **Phase** : 2 — Services
 **Dépend de** : 001
 
+Tâche destinée au Lead (démo du jeudi 5 novembre : pas d'essai par les juniors).
+
 ## Contexte
 
 Section 8.2 : chaque document traverse des filtres indépendants reliés par des tubes :

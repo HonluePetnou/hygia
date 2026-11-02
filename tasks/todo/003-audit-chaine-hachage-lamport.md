@@ -3,6 +3,8 @@
 **Phase** : 2 — Services
 **Dépend de** : 001
 
+Tâche destinée au Lead (démo du jeudi 5 novembre : pas d'essai par les juniors).
+
 ## Contexte
 
 RF24 et section 11.1 : chaque lecture et modification de dossier est journalisée dans un

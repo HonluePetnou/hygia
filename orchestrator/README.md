@@ -27,6 +27,10 @@ pnpm install
 Le dépôt est privé : le VPS doit pouvoir pousser sur GitHub (clé SSH de déploiement avec
 droit d'écriture, ou jeton limité au dépôt `hygia`).
 
+Les tâches 001 à 011 (démo du jeudi 5 novembre) et 031 sont marquées « destinée au Lead » :
+elles vont directement à Claude Code, sans essai des juniors, pour tenir l'échéance. Les
+autres passent d'abord par DeepSeek puis GLM.
+
 Optionnel, si les juniors échouent trop souvent (constaté sur HaulGo) :
 
 ```bash

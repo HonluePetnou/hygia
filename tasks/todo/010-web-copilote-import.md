@@ -3,6 +3,8 @@
 **Phase** : 3 — Clients
 **Dépend de** : 005, 006, 009
 
+Tâche destinée au Lead (démo du jeudi 5 novembre : pas d'essai par les juniors).
+
 ## Contexte
 
 Maquettes Figma « 05 · Copilote clinique — réponses sourcées » et « 06 · Importer un
