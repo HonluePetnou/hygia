@@ -7,9 +7,15 @@ Avant de coder, lis `AGENTS.md`, `README.md` et `docs/adr/`. Le cahier des charg
 Stack (ne pas en changer) :
 
 - pnpm workspaces + Turborepo, TypeScript strict partout (`tsconfig.base.json`).
-- Services : NestJS (`services/dossiers`, `services/ia-clinique`) ; bibliothèques TypeScript
-  pures pour `services/audit` et `services/ingestion`.
-- Web : Next.js app router (`apps/web`). Vues-modèles MobX dans `packages/view-models`.
+- Services : NestJS (`services/broker`, `services/dossiers`, `services/ia-clinique`,
+  `services/identite`, `services/synchronisation`, `services/notification`) ; bibliothèques
+  TypeScript pures pour `services/audit` et `services/ingestion` ; Python (bibliothèque
+  standard pour les tests) pour `services/agents`.
+- Clients : Next.js app router (`apps/web`) et Expo + Expo Router (`apps/mobile`, SQLite).
+  Vues-modèles MobX partagées dans `packages/view-models`.
+- Maquettes : https://www.figma.com/design/AOCqWU93igGqWj6e1C66Ix (18 écrans). Si tu ne peux
+  pas ouvrir Figma, la description de la tâche fait foi.
+- Les clients ne parlent qu'au broker (`services/broker`), jamais directement aux services.
 - Données : Prisma + PostgreSQL/pgvector au runtime, LocalStack pour S3/SQS (docker compose).
 
 Règles :

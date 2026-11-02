@@ -118,8 +118,11 @@ Vérifier LocalStack : `curl http://localhost:4566/_localstack/health`.
 
 - [x] Cahier des charges v1.0 (31 octobre 2026)
 - [x] Structure du monorepo, environnement local (Docker Compose + LocalStack)
-- [ ] Tranche 1 : service Dossiers + audit, chaîne d'ingestion, copilote simulé, client web
-- [ ] Démo MVP (fin S9) : toutes les exigences Must
+- [x] Maquettes des 18 écrans : [Figma](https://www.figma.com/design/AOCqWU93igGqWj6e1C66Ix)
+- [ ] Tranche de démonstration (tâches 001 à 011) : service Dossiers + audit, chaîne d'ingestion, copilote simulé, client web
+- [ ] Architecture et fonctionnalités complètes (tâches 012 à 031) : broker, identité, agents IA, veille épidémiologique, portail patient, WhatsApp, mobile hors ligne, scribe, supervision, CDK
+
+Le plan de développement détaillé est dans [`tasks/todo/`](tasks/todo/), exécuté par l'orchestrateur ([`orchestrator/`](orchestrator/README.md)).
 
 ## Équipe G2
 
