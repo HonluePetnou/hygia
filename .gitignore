@@ -13,3 +13,10 @@ __pycache__/
 .venv/
 *.pyc
 .DS_Store
+
+# Orchestrateur (VPS)
+orchestrator/.env
+orchestrator/state.json
+orchestrator/logs/
+orchestrator/LEAD_ONLY
+worktrees/
