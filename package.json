@@ -18,8 +18,10 @@
     "infra:down": "docker compose down"
   },
   "devDependencies": {
+    "eslint": "^10.14.0",
     "prettier": "^3.3.3",
     "turbo": "^2.3.3",
-    "typescript": "^5.7.2"
+    "typescript": "^5.7.2",
+    "typescript-eslint": "^8.72.1"
   }
 }
