@@ -2,6 +2,7 @@
 
 **Phase** : 3 — Clients
 **Dépend de** : 004, 006, 008
+**Maquettes** : `docs/maquettes/02-tableau-de-bord-medecin.png`, `docs/maquettes/04-dossier-patient.png`, `docs/maquettes/12-bris-de-glace.png` — ouvre ces images avant de coder pour la mise en page ; en cas de doute, le texte de la tâche fait foi.
 
 Tâche destinée au Lead (démo du jeudi 5 novembre : pas d'essai par les juniors).
 

@@ -2,6 +2,7 @@
 
 **Phase** : 6 — Fonctionnalités Must
 **Dépend de** : 017, 013
+**Maquettes** : `docs/maquettes/07-alertes-ia.png` — ouvre ces images avant de coder pour la mise en page ; en cas de doute, le texte de la tâche fait foi.
 
 ## Contexte
 

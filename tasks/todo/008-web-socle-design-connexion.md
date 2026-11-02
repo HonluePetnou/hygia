@@ -2,6 +2,7 @@
 
 **Phase** : 3 — Clients
 **Dépend de** : 002, 007
+**Maquettes** : `docs/maquettes/01-connexion-2fa.png` — ouvre ces images avant de coder pour la mise en page ; en cas de doute, le texte de la tâche fait foi.
 
 Tâche destinée au Lead (démo du jeudi 5 novembre : pas d'essai par les juniors).
 

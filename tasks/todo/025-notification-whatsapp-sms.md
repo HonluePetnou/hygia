@@ -2,6 +2,7 @@
 
 **Phase** : 7 — Fonctionnalités Should
 **Dépend de** : 005, 018
+**Maquettes** : `docs/maquettes/14-whatsapp.png` — ouvre ces images avant de coder pour la mise en page ; en cas de doute, le texte de la tâche fait foi.
 
 ## Contexte
 

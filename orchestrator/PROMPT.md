@@ -13,8 +13,9 @@ Stack (ne pas en changer) :
   standard pour les tests) pour `services/agents`.
 - Clients : Next.js app router (`apps/web`) et Expo + Expo Router (`apps/mobile`, SQLite).
   Vues-modèles MobX partagées dans `packages/view-models`.
-- Maquettes : https://www.figma.com/design/AOCqWU93igGqWj6e1C66Ix (18 écrans). Si tu ne peux
-  pas ouvrir Figma, la description de la tâche fait foi.
+- Maquettes : les 18 écrans sont exportés en PNG dans `docs/maquettes/` (source :
+  https://www.figma.com/design/AOCqWU93igGqWj6e1C66Ix). Ouvre l'image citée par la tâche si
+  tu peux lire les images ; sinon, la description de la tâche fait foi.
 - Les clients ne parlent qu'au broker (`services/broker`), jamais directement aux services.
 - Données : Prisma + PostgreSQL/pgvector au runtime, LocalStack pour S3/SQS (docker compose).
 

@@ -2,6 +2,7 @@
 
 **Phase** : 7 — Fonctionnalités Should
 **Dépend de** : 027, 007
+**Maquettes** : `docs/maquettes/15-mobile-patients-hors-ligne.png`, `docs/maquettes/16-mobile-saisie-constantes.png`, `docs/maquettes/17-mobile-synchronisation-conflit.png` — ouvre ces images avant de coder pour la mise en page ; en cas de doute, le texte de la tâche fait foi.
 
 ## Contexte
 

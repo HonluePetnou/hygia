@@ -2,6 +2,7 @@
 
 **Phase** : 3 — Clients
 **Dépend de** : 005, 006, 009
+**Maquettes** : `docs/maquettes/05-copilote.png`, `docs/maquettes/06-import-document.png` — ouvre ces images avant de coder pour la mise en page ; en cas de doute, le texte de la tâche fait foi.
 
 Tâche destinée au Lead (démo du jeudi 5 novembre : pas d'essai par les juniors).
 

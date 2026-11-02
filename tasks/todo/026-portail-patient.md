@@ -2,6 +2,7 @@
 
 **Phase** : 7 — Fonctionnalités Should
 **Dépend de** : 021, 024
+**Maquettes** : `docs/maquettes/13-portail-patient.png` — ouvre ces images avant de coder pour la mise en page ; en cas de doute, le texte de la tâche fait foi.
 
 ## Contexte
 

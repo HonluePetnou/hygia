@@ -2,6 +2,7 @@
 
 **Phase** : 6 — Fonctionnalités Must
 **Dépend de** : 009
+**Maquettes** : `docs/maquettes/04-dossier-patient.png` — ouvre ces images avant de coder pour la mise en page ; en cas de doute, le texte de la tâche fait foi.
 
 ## Contexte
 

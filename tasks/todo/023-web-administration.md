@@ -2,6 +2,7 @@
 
 **Phase** : 6 — Fonctionnalités Must
 **Dépend de** : 013, 008
+**Maquettes** : `docs/maquettes/11-administration.png` — ouvre ces images avant de coder pour la mise en page ; en cas de doute, le texte de la tâche fait foi.
 
 ## Contexte
 
