@@ -14,16 +14,19 @@ export const AppShell = observer(function AppShell({ children }: { children: Rea
   const pathname = usePathname();
   // L'analyste n'a accès qu'aux agrégats pseudonymisés : tout autre écran le ramène à la veille.
   const analystElsewhere = session.role === 'analyste' && !pathname.startsWith('/epidemiologie');
+  // L'auditeur n'a que la section Conformité : tout autre écran le ramène au journal.
+  const auditorElsewhere = session.role === 'auditeur' && !pathname.startsWith('/audit');
+  const redirectTo = analystElsewhere ? '/epidemiologie' : auditorElsewhere ? '/audit' : null;
 
   useEffect(() => {
     if (!session.isAuthenticated) router.replace('/connexion');
   }, [session.isAuthenticated, router]);
 
   useEffect(() => {
-    if (session.isAuthenticated && analystElsewhere) router.replace('/epidemiologie');
-  }, [session.isAuthenticated, analystElsewhere, router]);
+    if (session.isAuthenticated && redirectTo !== null) router.replace(redirectTo);
+  }, [session.isAuthenticated, redirectTo, router]);
 
-  if (!session.isAuthenticated || analystElsewhere) return null;
+  if (!session.isAuthenticated || redirectTo !== null) return null;
   return (
     <div className="shell">
       <Sidebar />

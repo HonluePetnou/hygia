@@ -2,12 +2,14 @@
 
 import { createContext, useContext, useState, type ReactNode } from 'react';
 import type {
+  AuditGateway,
   CopiloteGateway,
   EpidemiologyGateway,
   IngestionGateway,
   PatientsGateway,
 } from '@hygia/view-models';
 import {
+  createAuditGateway,
   createCopiloteGateway,
   createEpidemiologyGateway,
   createPatientsGateway,
@@ -21,6 +23,7 @@ interface Gateways {
   copilote: CopiloteGateway;
   ingestion: IngestionGateway;
   epidemiology: EpidemiologyGateway;
+  audit: AuditGateway;
 }
 
 const GatewayContext = createContext<Gateways | null>(null);
@@ -35,6 +38,8 @@ export interface GatewayProviderProps {
   ingestion?: IngestionGateway;
   /** Veille épidémiologique fournie de l'extérieur (tests). */
   epidemiology?: EpidemiologyGateway;
+  /** Journal d'audit fourni de l'extérieur (tests). */
+  audit?: AuditGateway;
 }
 
 /** Fournit les dépôts (patients, copilote, ingestion) à tout l'arbre authentifié. */
@@ -44,6 +49,7 @@ export function GatewayProvider({
   copilote,
   ingestion,
   epidemiology,
+  audit,
 }: GatewayProviderProps) {
   const session = useSession();
   const [value] = useState<Gateways>(() => {
@@ -57,6 +63,7 @@ export function GatewayProvider({
       copilote: copilote ?? createCopiloteGateway(env, identity),
       ingestion: ingestion ?? new ApiIngestionGateway(),
       epidemiology: epidemiology ?? createEpidemiologyGateway(env, identity),
+      audit: audit ?? createAuditGateway(env, identity),
     };
   });
   return <GatewayContext.Provider value={value}>{children}</GatewayContext.Provider>;
@@ -86,4 +93,9 @@ export function useEpidemiologyGateway(): EpidemiologyGateway {
 /** Ingestion courante ; échoue hors d'un `GatewayProvider`. */
 export function useIngestionGateway(): IngestionGateway {
   return useGateways().ingestion;
+}
+
+/** Journal d'audit courant ; échoue hors d'un `GatewayProvider`. */
+export function useAuditGateway(): AuditGateway {
+  return useGateways().audit;
 }

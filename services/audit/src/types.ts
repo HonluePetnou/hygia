@@ -31,6 +31,8 @@ export interface AuditEvent extends AuditEntryInput {
   index: number;
   /** Estampille de Lamport. */
   lamport: number;
+  /** Horodatage ISO 8601 de l'entrée (couvert par le hachage). */
+  timestamp: string;
   /** Hachage de l'entrée précédente (chaîne vide pour la première). */
   previousHash: string;
   /** SHA-256(previousHash + JSON canonique de l'entrée). */

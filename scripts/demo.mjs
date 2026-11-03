@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Lance la démo HYGIA : infrastructure Docker si disponible, puis dossiers, ia-clinique, broker et web.
+// Lance la démo HYGIA : infrastructure Docker si disponible, puis identité, dossiers, ia-clinique, audit, broker et web.
 import { spawn, spawnSync } from 'node:child_process';
 
 // Mode hors ligne : connexion simulée (code fixe). Mode normal : service Identité (TOTP réel).
@@ -21,6 +21,7 @@ const env = {
   BROKER_SERVICE_IDENTITE_URL: process.env.BROKER_SERVICE_IDENTITE_URL ?? 'http://localhost:3004',
   IDENTITE_JWKS_URL: process.env.IDENTITE_JWKS_URL ?? 'http://localhost:3004/.well-known/jwks.json',
   BROKER_SERVICE_IA_CLINIQUE_URL: process.env.BROKER_SERVICE_IA_CLINIQUE_URL ?? 'http://localhost:3003',
+  BROKER_SERVICE_AUDIT_URL: process.env.BROKER_SERVICE_AUDIT_URL ?? 'http://localhost:3005',
   NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3000',
 };
 if (dockerAvailable()) {
@@ -35,7 +36,7 @@ if (dockerAvailable()) {
   env.NEXT_PUBLIC_DEMO_OFFLINE = '1';
 }
 
-const filters = ['identite', 'dossiers', 'ia-clinique', 'broker', 'web'];
+const filters = ['identite', 'dossiers', 'ia-clinique', '@hygia/audit', 'broker', 'web'];
 const children = filters.map((name) =>
   spawn('pnpm', ['--filter', name, 'dev'], { stdio: 'inherit', env }),
 );

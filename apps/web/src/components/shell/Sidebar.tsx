@@ -41,6 +41,14 @@ const ANALYST_SECTIONS: readonly NavSection[] = [
   },
 ];
 
+/** Profil auditeur : le journal d'audit seulement (section Conformité). */
+const AUDITOR_SECTIONS: readonly NavSection[] = [
+  {
+    titleKey: 'nav.section.compliance',
+    items: [{ href: '/audit', labelKey: 'nav.audit', Icon: ScrollText }],
+  },
+];
+
 const SECTIONS: readonly NavSection[] = [
   {
     titleKey: 'nav.section.clinic',
@@ -65,19 +73,20 @@ const SECTIONS: readonly NavSection[] = [
 export const Sidebar = observer(function Sidebar() {
   const { t, email, roleLabel, role } = useSession();
   const isAnalyst = role === 'analyste';
-  const sections = isAnalyst ? ANALYST_SECTIONS : SECTIONS;
+  const isAuditor = role === 'auditeur';
+  const sections = isAnalyst ? ANALYST_SECTIONS : isAuditor ? AUDITOR_SECTIONS : SECTIONS;
   const pathname = usePathname();
   const gateway = useGateway();
   const openAlerts = useViewModel(
     () => new OpenAlertsViewModel(gateway),
     (model) => {
-      if (!isAnalyst) void model.refresh();
+      if (!isAnalyst && !isAuditor) void model.refresh();
     },
   );
   // Le compteur est relu à chaque changement de page (une décision change le nombre d'alertes ouvertes).
   useEffect(() => {
-    if (!isAnalyst) void openAlerts.refresh();
-  }, [pathname, isAnalyst]);
+    if (!isAnalyst && !isAuditor) void openAlerts.refresh();
+  }, [pathname, isAnalyst, isAuditor]);
   const isActive = (href: string) =>
     href === '/' ? pathname === '/' : pathname === href || pathname.startsWith(`${href}/`);
 

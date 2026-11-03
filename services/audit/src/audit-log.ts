@@ -8,6 +8,8 @@ export class AuditLog {
   constructor(
     private readonly store: AuditStore,
     private readonly clock: LamportClock = new LamportClock(),
+    /** Horloge murale injectable (tests déterministes). */
+    private readonly now: () => Date = () => new Date(),
   ) {}
 
   /** Ajoute une entrée et renvoie l'événement créé. */
@@ -19,6 +21,7 @@ export class AuditLog {
       ...input,
       index: events.length,
       lamport: this.clock.tick(),
+      timestamp: this.now().toISOString(),
     };
     const event: AuditEvent = { ...body, previousHash, hash: computeHash(previousHash, body) };
     this.store.append(event);
@@ -41,6 +44,11 @@ export class AuditLog {
       previousHash = hash;
     }
     return { intact: true };
+  }
+
+  /** Toutes les entrées, de la plus ancienne à la plus récente. */
+  events(): readonly AuditEvent[] {
+    return this.store.all();
   }
 
   /** Entrées concernant un patient (« Qui a vu mon dossier ? »). */

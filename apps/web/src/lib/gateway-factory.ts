@@ -1,12 +1,15 @@
 import { demoDataset } from '@hygia/fhir';
 import {
+  HttpAuditGateway,
   HttpAuthGateway,
   HttpCopiloteGateway,
   HttpEpidemiologyGateway,
   HttpPatientsGateway,
+  InMemoryAuditGateway,
   InMemoryCopiloteGateway,
   InMemoryEpidemiologyGateway,
   InMemoryPatientsGateway,
+  type AuditGateway,
   type AuthGateway,
   type CopiloteGateway,
   type EpidemiologyGateway,
@@ -75,4 +78,10 @@ export function createEpidemiologyGateway(env: GatewayEnv, identity: () => Ident
 export function createCopiloteGateway(env: GatewayEnv, identity: () => Identity): CopiloteGateway {
   if (env.NEXT_PUBLIC_DEMO_OFFLINE === '1') return new InMemoryCopiloteGateway(demoDataset);
   return new HttpCopiloteGateway(serviceUrl(env, 'ia-clinique'), identity);
+}
+
+/** Choisit le journal d'audit : en mémoire si `NEXT_PUBLIC_DEMO_OFFLINE=1`, sinon service Audit (par le broker). */
+export function createAuditGateway(env: GatewayEnv, identity: () => Identity): AuditGateway {
+  if (env.NEXT_PUBLIC_DEMO_OFFLINE === '1') return new InMemoryAuditGateway();
+  return new HttpAuditGateway(serviceUrl(env, 'audit'), identity);
 }

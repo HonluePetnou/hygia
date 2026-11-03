@@ -15,9 +15,13 @@
     "build": "tsc -p tsconfig.build.json",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run"
+    "test": "vitest run",
+    "dev": "tsc -p tsconfig.build.json && node dist/main.js",
+    "start": "node dist/main.js"
   },
   "dependencies": {
+    "@hygia/auth": "workspace:*",
+    "@hygia/fhir": "workspace:*",
     "@hygia/types": "workspace:*"
   },
   "devDependencies": {
