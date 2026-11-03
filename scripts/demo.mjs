@@ -1,5 +1,6 @@
 #!/usr/bin/env node
-// Lance la démo HYGIA : infrastructure Docker si disponible, puis identité, dossiers, ia-clinique, audit, broker et web.
+// Lance la démo HYGIA : infrastructure Docker si disponible, puis identité, dossiers, ia-clinique, audit,
+// notification, synchronisation, agents (Python), broker et web.
 import { spawn, spawnSync } from 'node:child_process';
 
 // Mode hors ligne : connexion simulée (code fixe). Mode normal : service Identité (TOTP réel).
@@ -20,8 +21,14 @@ const env = {
   BROKER_SERVICE_DOSSIERS_URL: process.env.BROKER_SERVICE_DOSSIERS_URL ?? 'http://localhost:3001',
   BROKER_SERVICE_IDENTITE_URL: process.env.BROKER_SERVICE_IDENTITE_URL ?? 'http://localhost:3004',
   IDENTITE_JWKS_URL: process.env.IDENTITE_JWKS_URL ?? 'http://localhost:3004/.well-known/jwks.json',
-  BROKER_SERVICE_IA_CLINIQUE_URL: process.env.BROKER_SERVICE_IA_CLINIQUE_URL ?? 'http://localhost:3003',
+  BROKER_SERVICE_IA_CLINIQUE_URL:
+    process.env.BROKER_SERVICE_IA_CLINIQUE_URL ?? 'http://localhost:3003',
   BROKER_SERVICE_AUDIT_URL: process.env.BROKER_SERVICE_AUDIT_URL ?? 'http://localhost:3005',
+  BROKER_SERVICE_AGENTS_URL: process.env.BROKER_SERVICE_AGENTS_URL ?? 'http://localhost:3007',
+  BROKER_SERVICE_NOTIFICATION_URL:
+    process.env.BROKER_SERVICE_NOTIFICATION_URL ?? 'http://localhost:3008',
+  BROKER_SERVICE_SYNCHRONISATION_URL:
+    process.env.BROKER_SERVICE_SYNCHRONISATION_URL ?? 'http://localhost:3009',
   NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3000',
 };
 if (dockerAvailable()) {
@@ -44,14 +51,51 @@ if (twoInstances && process.env.BROKER_SERVICE_IA_CLINIQUE_URL === undefined) {
   env.BROKER_SERVICE_IA_CLINIQUE_URL = 'a=http://localhost:3003,b=http://localhost:3013';
 }
 
-const filters = ['identite', 'dossiers', 'ia-clinique', '@hygia/audit', 'broker', 'web'];
+const filters = [
+  'identite',
+  'dossiers',
+  'ia-clinique',
+  '@hygia/audit',
+  'notification',
+  'synchronisation',
+  'broker',
+  'web',
+];
 const children = filters.map((name) =>
   spawn('pnpm', ['--filter', name, 'dev'], { stdio: 'inherit', env }),
 );
 
+/** Interpréteur Python 3 disponible (`python3`, ou `python` sous Windows), sinon `undefined`. */
+function findPython() {
+  for (const command of ['python3', 'python']) {
+    const probe = spawnSync(command, ['--version'], { encoding: 'utf8' });
+    if (probe.status === 0 && `${probe.stdout}${probe.stderr}`.includes('Python 3')) return command;
+  }
+  return undefined;
+}
+
+// Service Agents (Python, port 3007) : veille épidémiologique, pharmacovigilance, risque de réadmission.
+const python = findPython();
+if (python === undefined) {
+  console.warn(
+    'Python 3 introuvable : le service Agents ne démarre pas (carte épidémiologique et risque de réadmission indisponibles).',
+  );
+} else {
+  children.push(
+    spawn(python, ['-m', 'hygia_agents'], {
+      stdio: 'inherit',
+      cwd: 'services/agents',
+      env: { ...env, PYTHONPATH: 'src' },
+    }),
+  );
+}
+
 if (twoInstances) {
   children.push(
-    spawn('pnpm', ['--filter', 'ia-clinique', 'dev'], { stdio: 'inherit', env: { ...env, IA_CLINIQUE_PORT: '3013' } }),
+    spawn('pnpm', ['--filter', 'ia-clinique', 'dev'], {
+      stdio: 'inherit',
+      env: { ...env, IA_CLINIQUE_PORT: '3013' },
+    }),
   );
 }
 
@@ -61,7 +105,9 @@ if (env.NEXT_PUBLIC_DEMO_OFFLINE === '1') {
   console.log(`  Mode hors ligne : tout mot de passe, code 2FA de démo : ${OFFLINE_CODE}\n`);
 } else {
   console.log(`  Compte de démo : ${DEMO_EMAIL} / ${DEMO_PASSWORD}`);
-  console.log('  Code 2FA (TOTP réel) : pnpm --filter identite code  (code de secours : DEMO-0001)\n');
+  console.log(
+    '  Code 2FA (TOTP réel) : pnpm --filter identite code  (code de secours : DEMO-0001)\n',
+  );
 }
 
 let stopping = false;

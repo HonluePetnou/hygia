@@ -22,3 +22,5 @@ orchestrator/state.json
 orchestrator/logs/
 orchestrator/LEAD_ONLY
 worktrees/
+tmp-*/
+*.tmp

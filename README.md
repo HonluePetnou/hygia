@@ -108,7 +108,7 @@ Vérifier LocalStack : `curl http://localhost:4566/_localstack/health`.
 
 ## Lancer la démo
 
-Prérequis : Node 22+ et pnpm 10+ (Docker est facultatif).
+Prérequis : Node 22+ et pnpm 10+ ; Python 3 pour le service Agents (carte épidémiologique, risque de réadmission) ; Docker est facultatif.
 
 ```bash
 pnpm install
