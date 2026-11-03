@@ -21,7 +21,7 @@ function startService(name: string): Promise<{ server: Server; url: string }> {
       return;
     }
     res.setHeader('content-type', 'application/json');
-    res.end(JSON.stringify({ name, url: req.url, correlation: req.headers['x-correlation-id'], auth: req.headers['authorization'] }));
+    res.end(JSON.stringify({ name, url: req.url, correlation: req.headers['x-correlation-id'], auth: req.headers['authorization'], role: req.headers['x-user-role'] }));
   });
   return new Promise((resolve) =>
     server.listen(0, '127.0.0.1', () => resolve({ server, url: `http://127.0.0.1:${(server.address() as AddressInfo).port}` })),
@@ -35,8 +35,8 @@ describe('broker', () => {
   let user: Record<string, string>;
 
   /** En-tête Authorization d'un jeton valide pour l'utilisateur `sub`. */
-  async function tokenFor(sub: string): Promise<Record<string, string>> {
-    const { token } = await issuer.issue({ sub, role: 'medecin', teams: [], emergency: [] }, new Date());
+  async function tokenFor(sub: string, role: 'medecin' | 'analyste' = 'medecin'): Promise<Record<string, string>> {
+    const { token } = await issuer.issue({ sub, role, teams: [], emergency: [] }, new Date());
     return { authorization: `Bearer ${token}` };
   }
 
@@ -71,6 +71,17 @@ describe('broker', () => {
     expect(a.body).toMatchObject({ name: 'dossiers', url: '/patients?q=fl' });
     const b = await request(app.getHttpServer()).get('/api/ia-clinique/copilote/x').set(user);
     expect(b.body).toMatchObject({ name: 'ia', url: '/copilote/x' });
+  });
+
+  it('réserve /api/agents/analyse au rôle analyste et transmet le rôle vérifié', async () => {
+    await boot({}, { agents: await service('agents') });
+    const get = () => request(app.getHttpServer()).get('/api/agents/analyse/foyers');
+    expect((await get().set(user)).status).toBe(403);
+    expect((await get()).status).toBe(401);
+    const res = await get().set(await tokenFor('a1', 'analyste')).set('x-user-role', 'medecin');
+    expect(res.status).toBe(200);
+    expect(res.body.role).toBe('analyste');
+    expect((await request(app.getHttpServer()).get('/api/agents/issues').set(user)).status).toBe(200);
   });
 
   it('renvoie 404 pour un service inconnu ou non déclaré', async () => {

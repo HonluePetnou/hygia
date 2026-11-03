@@ -12,6 +12,8 @@ export const TOKEN_VERIFIER = Symbol('TOKEN_VERIFIER');
 
 /** Routes du service Identité accessibles sans jeton (connexion, enrôlement, clé publique). */
 const PUBLIC_ROUTES = new Set(['identite:auth/login', 'identite:auth/mfa/enroll', 'identite:auth/mfa/verify', 'identite:.well-known/jwks.json']);
+/** Routes réservées au rôle `analyste` (branche analytique, section 8.5 du cahier). */
+const ANALYST_ROUTE = /^agents:analyse(\/|$)/;
 const PREFIX = '/api/';
 
 /** Point d'entrée unique : `/api/<service>/...` est transmis au service désigné par son nom. */
@@ -38,15 +40,22 @@ export class BrokerController {
     const route = `${name}:${path.split('?')[0]?.replace(/^\/+|\/+$/g, '') ?? ''}`;
 
     let userId = `ip:${req.ip ?? 'inconnue'}`;
+    let role: string | undefined;
     if (!PUBLIC_ROUTES.has(route)) {
       const token = bearerToken(req.headers.authorization);
       try {
         if (token === undefined) throw new Error('jeton absent');
-        userId = (await this.verifier.verify(token)).sub;
+        const claims = await this.verifier.verify(token);
+        userId = claims.sub;
+        role = claims.role;
       } catch {
         res.status(401).json({ statusCode: 401, message: 'Jeton valide requis (Authorization: Bearer)', correlationId });
         return;
       }
+    }
+    if (ANALYST_ROUTE.test(route) && role !== 'analyste') {
+      res.status(403).json({ statusCode: 403, message: 'Rôle analyste requis', correlationId });
+      return;
     }
     if (!this.limiter.tryAcquire(userId)) {
       res.setHeader('retry-after', '60');
@@ -56,6 +65,8 @@ export class BrokerController {
     // Les en-têtes d'identité simulés n'ont plus cours : seul le jeton fait foi.
     delete req.headers['x-user-id'];
     delete req.headers['x-user-role'];
+    // Rôle vérifié, transmis aux services de la branche analytique (qui ne lisent pas le JWT).
+    if (role !== undefined && ANALYST_ROUTE.test(route)) req.headers['x-user-role'] = role;
     const target = this.registry.resolve(name);
     if (target === undefined) {
       res.status(404).json({ statusCode: 404, message: `Service inconnu : ${name}`, correlationId });
