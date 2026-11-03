@@ -18,6 +18,8 @@ Monorepo initialisé ; tâches 001, 002, 003 (`@hygia/audit`) et 004 (service `d
 - [x] 006 — service IA clinique : copilote sourcé (JSON + SSE) et résumé, modèle simulé
 - [x] 007 — vues-modèles MobX partagées (`@hygia/view-models`) : dépôts HTTP + mémoire, 5 vues-modèles
 
+- [x] 008 — client web `apps/web` : socle Next.js, design system, mise en page, connexion 2FA
+
 ## À faire
 
 - [ ] Tâches suivantes dans `tasks/todo/`

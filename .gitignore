@@ -4,6 +4,7 @@ dist/
 .expo/
 cdk.out/
 coverage/
+*.tsbuildinfo
 .turbo/
 *.log
 .env
