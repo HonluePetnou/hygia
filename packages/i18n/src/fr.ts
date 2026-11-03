@@ -39,6 +39,18 @@ export const fr = {
   'copilot.send': 'Envoyer',
   'copilot.sources': 'Sources',
   'copilot.noSource': 'Aucune source ne permet de répondre',
+  'copilot.noSourceAnswer': 'Aucune source du dossier ne permet de répondre.',
+  'copilot.answerIntro': 'D’après le dossier :',
+
+  'summary.history': 'Antécédents',
+  'summary.treatments': 'Traitements en cours',
+  'summary.results': 'Derniers résultats',
+  'summary.alerts': 'Alertes',
+  'summary.condition': '{label} (depuis le {date})',
+  'summary.treatment': '{label} {dose} {unit}, {times} fois par jour (depuis le {date})',
+  'summary.result': '{label} : {value} {unit} ({date})',
+  'summary.alert.allergy': 'Allergie : {label} (criticité {criticality})',
+  'summary.alert.interaction': 'Interaction à vérifier : {first} et {second} (risque hémorragique)',
 
   'import.title': 'Importer un document',
   'import.step.reception': 'Réception',

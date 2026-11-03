@@ -41,6 +41,18 @@ export const en: Record<MessageKey, string> = {
   'copilot.send': 'Send',
   'copilot.sources': 'Sources',
   'copilot.noSource': 'No source allows an answer',
+  'copilot.noSourceAnswer': 'No source in the record allows an answer.',
+  'copilot.answerIntro': 'According to the record:',
+
+  'summary.history': 'History',
+  'summary.treatments': 'Current treatments',
+  'summary.results': 'Latest results',
+  'summary.alerts': 'Alerts',
+  'summary.condition': '{label} (since {date})',
+  'summary.treatment': '{label} {dose} {unit}, {times} times a day (since {date})',
+  'summary.result': '{label}: {value} {unit} ({date})',
+  'summary.alert.allergy': 'Allergy: {label} (criticality {criticality})',
+  'summary.alert.interaction': 'Interaction to check: {first} and {second} (bleeding risk)',
 
   'import.title': 'Import a document',
   'import.step.reception': 'Reception',
