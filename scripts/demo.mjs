@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Lance la démo HYGIA : infrastructure Docker si disponible, puis dossiers, ia-clinique et web.
+// Lance la démo HYGIA : infrastructure Docker si disponible, puis dossiers, ia-clinique, broker et web.
 import { spawn, spawnSync } from 'node:child_process';
 
 const DEMO_CODE = '481516';
@@ -11,7 +11,13 @@ function dockerAvailable() {
   return spawnSync('docker', ['info'], { stdio: 'ignore' }).status === 0;
 }
 
-const env = { ...process.env };
+const env = {
+  ...process.env,
+  // Registre de services du broker (équivalent local de Cloud Map) et adresse du broker pour le web.
+  BROKER_SERVICE_DOSSIERS_URL: process.env.BROKER_SERVICE_DOSSIERS_URL ?? 'http://localhost:3001',
+  BROKER_SERVICE_IA_CLINIQUE_URL: process.env.BROKER_SERVICE_IA_CLINIQUE_URL ?? 'http://localhost:3003',
+  NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3000',
+};
 if (dockerAvailable()) {
   console.log('Docker détecté : docker compose up -d');
   const up = spawnSync('docker', ['compose', 'up', '-d'], { stdio: 'inherit' });
@@ -24,7 +30,7 @@ if (dockerAvailable()) {
   env.NEXT_PUBLIC_DEMO_OFFLINE = '1';
 }
 
-const filters = ['dossiers', 'ia-clinique', 'web'];
+const filters = ['dossiers', 'ia-clinique', 'broker', 'web'];
 const children = filters.map((name) =>
   spawn('pnpm', ['--filter', name, 'dev'], { stdio: 'inherit', env }),
 );

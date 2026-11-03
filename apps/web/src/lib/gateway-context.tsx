@@ -29,8 +29,7 @@ export function GatewayProvider({ children, gateway, copilote, ingestion }: Gate
   const session = useSession();
   const [value] = useState<Gateways>(() => {
     const env: GatewayEnv = {
-      NEXT_PUBLIC_DOSSIERS_URL: process.env.NEXT_PUBLIC_DOSSIERS_URL,
-      NEXT_PUBLIC_IA_URL: process.env.NEXT_PUBLIC_IA_URL,
+      NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL,
       NEXT_PUBLIC_DEMO_OFFLINE: process.env.NEXT_PUBLIC_DEMO_OFFLINE,
     };
     const identity = () => session.identity;

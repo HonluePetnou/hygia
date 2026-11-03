@@ -11,20 +11,25 @@ import {
 
 /** Variables publiques lues par le client (lues littéralement pour que Next.js les inline). */
 export interface GatewayEnv {
-  NEXT_PUBLIC_DOSSIERS_URL?: string | undefined;
-  NEXT_PUBLIC_IA_URL?: string | undefined;
+  /** Adresse du broker, seul point d'entrée vers les services. */
+  NEXT_PUBLIC_API_URL?: string | undefined;
   NEXT_PUBLIC_DEMO_OFFLINE?: string | undefined;
 }
 
 /** Date du jour des données de démonstration (jour de la consultation fictive de Florence). */
 export const DEMO_TODAY = '2026-10-28';
 
-const DEFAULT_DOSSIERS_URL = 'http://localhost:3001';
-const DEFAULT_IA_URL = 'http://localhost:3003';
+const DEFAULT_API_URL = 'http://localhost:3000';
+
+/** Adresse d'un service derrière le broker : `<broker>/api/<service>`. */
+function serviceUrl(env: GatewayEnv, service: string): string {
+  const base = (env.NEXT_PUBLIC_API_URL ?? DEFAULT_API_URL).replace(/\/+$/, '');
+  return `${base}/api/${service}`;
+}
 
 /**
  * Choisit le dépôt des patients : en mémoire si `NEXT_PUBLIC_DEMO_OFFLINE=1`,
- * sinon HTTP vers les services Dossiers et IA clinique.
+ * sinon HTTP vers les services Dossiers et IA clinique, par le broker.
  */
 export function createPatientsGateway(env: GatewayEnv, identity: () => Identity): PatientsGateway {
   if (env.NEXT_PUBLIC_DEMO_OFFLINE === '1') {
@@ -32,15 +37,15 @@ export function createPatientsGateway(env: GatewayEnv, identity: () => Identity)
   }
   return new HttpPatientsGateway(
     {
-      dossiersUrl: env.NEXT_PUBLIC_DOSSIERS_URL ?? DEFAULT_DOSSIERS_URL,
-      iaCliniqueUrl: env.NEXT_PUBLIC_IA_URL ?? DEFAULT_IA_URL,
+      dossiersUrl: serviceUrl(env, 'dossiers'),
+      iaCliniqueUrl: serviceUrl(env, 'ia-clinique'),
     },
     identity,
   );
 }
 
-/** Choisit le copilote : en mémoire si `NEXT_PUBLIC_DEMO_OFFLINE=1`, sinon flux SSE du service IA. */
+/** Choisit le copilote : en mémoire si `NEXT_PUBLIC_DEMO_OFFLINE=1`, sinon flux SSE du service IA (par le broker). */
 export function createCopiloteGateway(env: GatewayEnv, identity: () => Identity): CopiloteGateway {
   if (env.NEXT_PUBLIC_DEMO_OFFLINE === '1') return new InMemoryCopiloteGateway(demoDataset);
-  return new HttpCopiloteGateway(env.NEXT_PUBLIC_IA_URL ?? DEFAULT_IA_URL, identity);
+  return new HttpCopiloteGateway(serviceUrl(env, 'ia-clinique'), identity);
 }

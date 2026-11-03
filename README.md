@@ -117,7 +117,7 @@ pnpm demo
 
 `pnpm demo` lance `docker compose up -d` si Docker est disponible, sinon bascule en mode hors ligne
 (`NEXT_PUBLIC_DEMO_OFFLINE=1`, données en mémoire). Il démarre ensuite les services `dossiers` (port 3001),
-`ia-clinique` (port 3003) et le web, puis affiche l'URL à ouvrir : **http://localhost:3100**, et le
+`ia-clinique` (port 3003), le broker (port 3000, seul point d'entrée du web : `/api/<service>/...`) et le web, puis affiche l'URL à ouvrir : **http://localhost:3100**, et le
 **code 2FA de démo : `481516`**. Ctrl+C arrête tout. `DEMO_NO_DOCKER=1 pnpm demo` force le mode hors ligne.
 
 Le scénario pas à pas est décrit dans [`docs/demo.md`](docs/demo.md).

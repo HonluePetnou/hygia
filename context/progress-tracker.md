@@ -27,6 +27,7 @@ Monorepo initialisé ; tâches 001, 002, 003 (`@hygia/audit`) et 004 (service `d
 ## À faire
 
 - [x] 011 — `pnpm demo`, `pnpm package:usb`, `docs/demo.md`, README « Lancer la démo », `OUTILS.md` à jour, CORS des services. Vérifié par curl hors Docker ; écrans web non parcourus au navigateur, README non testé sur clone propre, journal des accès via l'API (écran = tâche 021).
+- [x] 012 — `services/broker` (NestJS) : `/api/<service>/...`, registre par variables d'environnement, proxy HTTP + SSE, `x-correlation-id`, limite de débit par utilisateur (429), 503 si service muet ; web via `NEXT_PUBLIC_API_URL` ; `pnpm demo` démarre le broker.
 - [ ] Tâches suivantes dans `tasks/todo/`
 
 ## Décisions / blocages
