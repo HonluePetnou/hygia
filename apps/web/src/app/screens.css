@@ -641,3 +641,71 @@ a.btn-ai:hover {
   border: 1px solid var(--border);
   border-radius: 8px;
 }
+
+/* Recherche en langage naturel (patients) */
+.nl-search {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 8px 8px 14px;
+  border: 2px solid var(--ai, #6d5bd0);
+  border-radius: 12px;
+}
+.nl-search .input {
+  flex: 1;
+  border: 0;
+  outline: 0;
+  background: transparent;
+}
+.search-chips {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 12px;
+}
+.search-chips ul {
+  display: contents;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 6px 4px 12px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  font-size: 13px;
+}
+.chip button {
+  display: inline-flex;
+  padding: 4px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+.chip button:focus-visible {
+  outline: 2px solid var(--focus, #1c4ea3);
+}
+.badge-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.results-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+}
+.pager {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}

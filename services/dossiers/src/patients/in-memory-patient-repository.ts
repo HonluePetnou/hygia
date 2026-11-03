@@ -1,5 +1,6 @@
 import type { demoDataset } from '@hygia/fhir';
 import type {
+  Condition,
   DocumentReference,
   Encounter,
   MedicationRequest,
@@ -34,6 +35,7 @@ export class InMemoryPatientRepository implements PatientRepository {
   private readonly encounters = new Map<string, Encounter>();
   private readonly observations = new Map<string, Observation>();
   private readonly medicationRequests = new Map<string, MedicationRequest>();
+  private readonly conditions = new Map<string, Condition>();
 
   constructor(private readonly data: DemoDataset) {
     const load = <T extends { id: string }>(target: Map<string, T>, items: readonly T[]): void => {
@@ -44,6 +46,7 @@ export class InMemoryPatientRepository implements PatientRepository {
     load<Encounter>(this.encounters, data.encounters);
     load<Observation>(this.observations, data.observations);
     load<MedicationRequest>(this.medicationRequests, data.medicationRequests);
+    load<Condition>(this.conditions, data.conditions);
   }
 
   activePatients(): Patient[] {
@@ -69,6 +72,7 @@ export class InMemoryPatientRepository implements PatientRepository {
     const mine = <T extends { subject: { reference: string } }>(items: readonly T[]): T[] =>
       items.filter((item) => idOf(item.subject) === patientId);
     return {
+      conditions: mine([...this.conditions.values()]),
       encounters: mine([...this.encounters.values()]),
       observations: mine([...this.observations.values()]),
       medicationRequests: mine([...this.medicationRequests.values()]),

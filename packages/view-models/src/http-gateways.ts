@@ -1,3 +1,4 @@
+import type { SearchResponse } from '@hygia/fhir';
 import type { Locale } from '@hygia/i18n';
 import type { CopiloteGateway, IngestionGateway, PatientsGateway } from './gateways.js';
 import { GatewayError, HttpClient, authHeaders } from './http-client.js';
@@ -15,6 +16,7 @@ import type {
   IngestionResult,
   PatientOverview,
   PatientSummary,
+  RecordSearchRequest,
   Resume,
   ResourceVersion,
   TimelineEntry,
@@ -62,6 +64,10 @@ export class HttpPatientsGateway implements PatientsGateway {
 
   search(query: string): Promise<PatientSummary[]> {
     return this.dossiers.get(`/patients?q=${encodeURIComponent(query)}`);
+  }
+
+  searchRecords(request: RecordSearchRequest): Promise<SearchResponse> {
+    return this.dossiers.post('/recherche', request);
   }
 
   overview(patientId: string): Promise<PatientOverview> {

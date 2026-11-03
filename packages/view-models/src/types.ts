@@ -1,3 +1,4 @@
+import type { SearchFilter } from '@hygia/fhir';
 import type { Role } from '@hygia/types';
 import type { Locale, Translate } from '@hygia/i18n';
 
@@ -306,4 +307,14 @@ export interface ResourceVersion {
   reason: string;
   /** Contenu complet de la ressource à cette version. */
   content: Record<string, unknown>;
+}
+
+export type { SearchFilter, SearchResponse, SearchResultRow } from '@hygia/fhir';
+
+/** Demande de recherche multicritère : requête libre, ou filtres déjà compris (puce supprimée). */
+export interface RecordSearchRequest {
+  requete?: string;
+  filtres?: SearchFilter[];
+  page?: number;
+  taille?: number;
 }

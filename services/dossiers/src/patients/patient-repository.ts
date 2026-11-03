@@ -1,4 +1,5 @@
 import type {
+  Condition,
   DetectedIssue,
   DocumentReference,
   Encounter,
@@ -18,6 +19,7 @@ export interface DatedAlert {
 
 /** Contenu clinique d'un patient. */
 export interface PatientRecord {
+  conditions: Condition[];
   encounters: Encounter[];
   observations: Observation[];
   medicationRequests: MedicationRequest[];

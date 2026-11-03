@@ -1,4 +1,5 @@
 import type { Locale } from '@hygia/i18n';
+import type { SearchResponse } from '@hygia/fhir';
 import type {
   AuthSession,
   LoginChallenge,
@@ -15,6 +16,7 @@ import type {
   IngestionResult,
   PatientOverview,
   PatientSummary,
+  RecordSearchRequest,
   Resume,
   ResourceVersion,
   TimelineEntry,
@@ -27,6 +29,8 @@ export interface PatientsGateway {
   dashboard(): Promise<DashboardData>;
   /** Recherche par nom ou IPP (requête vide : tous les patients). */
   search(query: string): Promise<PatientSummary[]>;
+  /** Recherche multicritère : requête libre interprétée en filtres, ou filtres fournis (audité). */
+  searchRecords(request: RecordSearchRequest): Promise<SearchResponse>;
   /** Fiche d'un patient ; rejette avec `GatewayError` 403 hors équipe de soins. */
   patient(patientId: string): Promise<PatientSummary>;
   /** Chronologie, du plus récent au plus ancien. */

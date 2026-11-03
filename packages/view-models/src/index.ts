@@ -25,6 +25,7 @@ export { BreakGlassViewModel } from './break-glass-view-model.js';
 export type { BreakGlassReason } from './break-glass-view-model.js';
 export type { ConsultationRow, DocumentRow, WeekBar } from './dashboard-view-model.js';
 export type { SummaryLine, SummarySection, NumberedSource } from './summary-sections.js';
+export { RecordSearchViewModel } from './record-search-view-model.js';
 export { PatientSearchViewModel } from './patient-search-view-model.js';
 export { CopiloteViewModel } from './copilote-view-model.js';
 export type { CopiloteMessage, OpenedSource } from './copilote-view-model.js';

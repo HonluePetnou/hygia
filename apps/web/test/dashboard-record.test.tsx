@@ -65,7 +65,10 @@ describe('liste des patients', () => {
     const user = userEvent.setup();
     renderWith(<PatientsScreen />);
     expect(await screen.findAllByRole('row')).toHaveLength(10);
-    await user.type(screen.getByLabelText('Rechercher par nom ou IPP'), 'HYG-2024-00871');
+    await user.type(
+      screen.getByLabelText('Rechercher par nom, IPP ou question en langage naturel'),
+      'HYG-2024-00871{Enter}',
+    );
     expect(await screen.findAllByRole('row')).toHaveLength(2);
     expect(screen.getByRole('link', { name: 'Florence Ngo Bassa' })).toBeVisible();
   });

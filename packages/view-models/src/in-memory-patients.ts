@@ -1,3 +1,4 @@
+import { RuleBasedQueryInterpreter, runSearch, type PatientFile, type SearchResponse } from '@hygia/fhir';
 import type { Locale } from '@hygia/i18n';
 import { createTranslator } from '@hygia/i18n';
 import type { PatientsGateway } from './gateways.js';
@@ -22,6 +23,7 @@ import type {
   MergeRequest,
   PatientOverview,
   PatientSummary,
+  RecordSearchRequest,
   Resume,
   ResourceVersion,
   ResumeItem,
@@ -87,6 +89,30 @@ export class InMemoryPatientsGateway implements PatientsGateway {
           `${p.givenName} ${p.familyName}`.toLowerCase().includes(needle)),
     );
     return Promise.resolve(found.map(toSummary));
+  }
+
+  searchRecords(request: RecordSearchRequest): Promise<SearchResponse> {
+    const today = this.today();
+    const filtres =
+      request.filtres ?? new RuleBasedQueryInterpreter(() => today).interpret(request.requete ?? '');
+    const mine = <T extends { subject: { reference: string } }>(rows: readonly T[], id: string): T[] =>
+      rows.filter((r) => r.subject.reference === `Patient/${id}`);
+    const files = this.dataset.patients
+      .filter((p) => !this.duplicateStore.isMerged(p.id))
+      .map(
+        (patient): PatientFile => ({
+          patient,
+          conditions: mine(this.dataset.conditions, patient.id),
+          observations: mine(this.dataset.observations, patient.id),
+          encounters: mine(this.dataset.encounters, patient.id),
+          documents: mine(this.dataset.documents, patient.id),
+        }),
+      );
+    const all = runSearch(files, filtres, today);
+    const page = request.page ?? 1;
+    const taille = request.taille ?? 10;
+    const resultats = all.slice((page - 1) * taille, page * taille);
+    return Promise.resolve({ filtres, resultats, total: all.length, page, taille });
   }
 
   patient(patientId: string): Promise<PatientSummary> {
