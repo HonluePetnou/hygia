@@ -6,6 +6,7 @@ import './globals.css';
 import './screens.css';
 import './copilot-import.css';
 import './alertes.css';
+import './epidemiologie.css';
 
 const jakarta = Plus_Jakarta_Sans({
   subsets: ['latin'],

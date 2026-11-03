@@ -37,5 +37,21 @@ export { splitAnswer } from './answer-segments.js';
 export type { AnswerSegment } from './answer-segments.js';
 export { parseSseFrames, readSse } from './sse-reader.js';
 export type { SseEvent } from './sse-reader.js';
+export type * from './epidemiology-types.js';
+export { EPIDEMIOLOGY_PATHOLOGIES } from './epidemiology-types.js';
+export type { EpidemiologyGateway, DelegationNotice } from './epidemiology-gateway.js';
+export { HttpEpidemiologyGateway } from './http-epidemiology-gateway.js';
+export { InMemoryEpidemiologyGateway } from './in-memory-epidemiology.js';
+export { EpidemiologyViewModel, EPIDEMIOLOGY_PERIODS } from './epidemiology-view-model.js';
+export type { Bubble } from './epidemiology-derive.js';
+export {
+  CAMEROON_CITIES,
+  CAMEROON_OUTLINE,
+  CAMEROON_REGIONS,
+  cityOfDistrict,
+  projectPoint,
+} from './cameroon-geography.js';
+export type { GeoCity, GeoPoint } from './cameroon-geography.js';
+export { shiftWeek } from './iso-week.js';
 export { IngestionViewModel } from './ingestion-view-model.js';
 export type { StepView, EntityView, EntityDecision } from './ingestion-view-model.js';

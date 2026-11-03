@@ -1,8 +1,18 @@
 'use client';
 
 import { createContext, useContext, useState, type ReactNode } from 'react';
-import type { CopiloteGateway, IngestionGateway, PatientsGateway } from '@hygia/view-models';
-import { createCopiloteGateway, createPatientsGateway, type GatewayEnv } from './gateway-factory';
+import type {
+  CopiloteGateway,
+  EpidemiologyGateway,
+  IngestionGateway,
+  PatientsGateway,
+} from '@hygia/view-models';
+import {
+  createCopiloteGateway,
+  createEpidemiologyGateway,
+  createPatientsGateway,
+  type GatewayEnv,
+} from './gateway-factory';
 import { ApiIngestionGateway } from './ingestion-api';
 import { useSession } from './session-context';
 
@@ -10,6 +20,7 @@ interface Gateways {
   patients: PatientsGateway;
   copilote: CopiloteGateway;
   ingestion: IngestionGateway;
+  epidemiology: EpidemiologyGateway;
 }
 
 const GatewayContext = createContext<Gateways | null>(null);
@@ -22,10 +33,18 @@ export interface GatewayProviderProps {
   copilote?: CopiloteGateway;
   /** Ingestion fournie de l'extérieur (tests) ; sinon la route `/api/ingestion`. */
   ingestion?: IngestionGateway;
+  /** Veille épidémiologique fournie de l'extérieur (tests). */
+  epidemiology?: EpidemiologyGateway;
 }
 
 /** Fournit les dépôts (patients, copilote, ingestion) à tout l'arbre authentifié. */
-export function GatewayProvider({ children, gateway, copilote, ingestion }: GatewayProviderProps) {
+export function GatewayProvider({
+  children,
+  gateway,
+  copilote,
+  ingestion,
+  epidemiology,
+}: GatewayProviderProps) {
   const session = useSession();
   const [value] = useState<Gateways>(() => {
     const env: GatewayEnv = {
@@ -37,6 +56,7 @@ export function GatewayProvider({ children, gateway, copilote, ingestion }: Gate
       patients: gateway ?? createPatientsGateway(env, identity, session.setToken),
       copilote: copilote ?? createCopiloteGateway(env, identity),
       ingestion: ingestion ?? new ApiIngestionGateway(),
+      epidemiology: epidemiology ?? createEpidemiologyGateway(env, identity),
     };
   });
   return <GatewayContext.Provider value={value}>{children}</GatewayContext.Provider>;
@@ -56,6 +76,11 @@ export function useGateway(): PatientsGateway {
 /** Copilote courant ; échoue hors d'un `GatewayProvider`. */
 export function useCopiloteGateway(): CopiloteGateway {
   return useGateways().copilote;
+}
+
+/** Veille épidémiologique courante ; échoue hors d'un `GatewayProvider`. */
+export function useEpidemiologyGateway(): EpidemiologyGateway {
+  return useGateways().epidemiology;
 }
 
 /** Ingestion courante ; échoue hors d'un `GatewayProvider`. */

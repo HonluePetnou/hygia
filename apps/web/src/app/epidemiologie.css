@@ -1,0 +1,218 @@
+/* Écran « Veille épidémiologique » (maquette 08) */
+.epi-filters {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+.epi-chips,
+.epi-selects {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.epi-chip {
+  padding: 8px 14px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  cursor: pointer;
+}
+.epi-chip.is-active {
+  background: var(--danger);
+  border-color: var(--danger);
+  color: #fff;
+}
+.epi-selects select {
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+}
+.epi-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(280px, 360px);
+  gap: 20px;
+  align-items: start;
+}
+.epi-side {
+  display: grid;
+  gap: 16px;
+}
+.epi-map-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+.epi-live {
+  align-self: flex-start;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: var(--info-soft);
+  color: var(--info);
+  font-size: 13px;
+}
+.epi-live-offline {
+  background: var(--warning-soft);
+  color: var(--warning);
+}
+.epi-map {
+  position: relative;
+  max-width: 520px;
+  margin: 12px auto 0;
+  background: var(--bg);
+  border-radius: var(--radius-lg);
+}
+.epi-map svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+.epi-outline {
+  fill: var(--surface);
+  stroke: var(--border);
+  stroke-width: 2;
+}
+.epi-bubble {
+  outline: none;
+}
+.epi-bubble:focus-visible .epi-dot {
+  stroke: var(--ink);
+  stroke-width: 3;
+}
+.epi-dot {
+  fill-opacity: 0.85;
+}
+.epi-outbreak .epi-dot,
+.epi-swatch.epi-outbreak {
+  fill: var(--danger);
+  background: var(--danger);
+}
+.epi-rise .epi-dot,
+.epi-swatch.epi-rise {
+  fill: var(--warning);
+  background: var(--warning);
+}
+.epi-expected .epi-dot,
+.epi-swatch.epi-expected {
+  fill: var(--success);
+  background: var(--success);
+}
+.epi-halo {
+  fill: var(--danger);
+  fill-opacity: 0.18;
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: epi-pulse 2.4s ease-in-out infinite;
+}
+@keyframes epi-pulse {
+  0%,
+  100% {
+    transform: scale(0.85);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.1);
+    opacity: 0.5;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .epi-halo {
+    animation: none;
+  }
+}
+.epi-city {
+  font-size: 13px;
+  fill: var(--text);
+  pointer-events: none;
+}
+.epi-tooltip {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  padding: 6px 10px;
+  border-radius: var(--radius-sm);
+  background: var(--ink);
+  color: #fff;
+  font-size: 13px;
+  pointer-events: none;
+}
+.epi-legend {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  list-style: none;
+  padding: 0;
+  margin: 12px 0 0;
+  font-size: 13px;
+}
+.epi-swatch {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  margin-right: 6px;
+  border-radius: 50%;
+}
+.epi-alert-card {
+  border-color: var(--danger);
+  background: var(--danger-soft);
+}
+.epi-chart {
+  width: 100%;
+  height: auto;
+}
+.epi-area {
+  fill: var(--primary-soft);
+}
+.epi-line {
+  fill: none;
+  stroke: var(--primary);
+  stroke-width: 2;
+}
+.epi-threshold {
+  fill: none;
+  stroke: var(--danger);
+  stroke-width: 1.5;
+  stroke-dasharray: 5 4;
+}
+.epi-point {
+  fill: var(--primary);
+}
+.epi-point-alert {
+  fill: var(--danger);
+}
+.epi-chart-legend {
+  display: flex;
+  gap: 16px;
+  font-size: 13px;
+}
+.epi-key-line {
+  color: var(--primary);
+}
+.epi-key-threshold {
+  color: var(--danger);
+}
+.epi-districts {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.epi-districts li {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+}
+.epi-footer {
+  margin-top: 16px;
+}
+@media (max-width: 900px) {
+  .epi-layout {
+    grid-template-columns: 1fr;
+  }
+}

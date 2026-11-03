@@ -6,6 +6,7 @@ import {
   Bell,
   FileUp,
   Home,
+  Map,
   Plus,
   ScrollText,
   ShieldCheck,
@@ -32,6 +33,14 @@ interface NavSection {
   items: readonly NavItem[];
 }
 
+/** Profil analyste : agrégats pseudonymisés seulement, aucun accès aux dossiers identifiés. */
+const ANALYST_SECTIONS: readonly NavSection[] = [
+  {
+    titleKey: 'nav.section.analysis',
+    items: [{ href: '/epidemiologie', labelKey: 'nav.epidemiology', Icon: Map }],
+  },
+];
+
 const SECTIONS: readonly NavSection[] = [
   {
     titleKey: 'nav.section.clinic',
@@ -54,17 +63,21 @@ const SECTIONS: readonly NavSection[] = [
 
 /** Barre latérale sombre : logo, établissement, sections et utilisateur. */
 export const Sidebar = observer(function Sidebar() {
-  const { t, email, roleLabel } = useSession();
+  const { t, email, roleLabel, role } = useSession();
+  const isAnalyst = role === 'analyste';
+  const sections = isAnalyst ? ANALYST_SECTIONS : SECTIONS;
   const pathname = usePathname();
   const gateway = useGateway();
   const openAlerts = useViewModel(
     () => new OpenAlertsViewModel(gateway),
-    (model) => void model.refresh(),
+    (model) => {
+      if (!isAnalyst) void model.refresh();
+    },
   );
   // Le compteur est relu à chaque changement de page (une décision change le nombre d'alertes ouvertes).
   useEffect(() => {
-    void openAlerts.refresh();
-  }, [pathname]);
+    if (!isAnalyst) void openAlerts.refresh();
+  }, [pathname, isAnalyst]);
   const isActive = (href: string) =>
     href === '/' ? pathname === '/' : pathname === href || pathname.startsWith(`${href}/`);
 
@@ -78,7 +91,7 @@ export const Sidebar = observer(function Sidebar() {
       </div>
       <p className="sidebar-establishment">{t('shell.establishment')}</p>
       <nav aria-label={t('nav.main')}>
-        {SECTIONS.map((section) => (
+        {sections.map((section) => (
           <div key={section.titleKey}>
             <p className="nav-section-title">{t(section.titleKey)}</p>
             <ul className="nav-list">

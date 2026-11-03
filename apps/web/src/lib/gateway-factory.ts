@@ -2,11 +2,14 @@ import { demoDataset } from '@hygia/fhir';
 import {
   HttpAuthGateway,
   HttpCopiloteGateway,
+  HttpEpidemiologyGateway,
   HttpPatientsGateway,
   InMemoryCopiloteGateway,
+  InMemoryEpidemiologyGateway,
   InMemoryPatientsGateway,
   type AuthGateway,
   type CopiloteGateway,
+  type EpidemiologyGateway,
   type Identity,
   type PatientsGateway,
 } from '@hygia/view-models';
@@ -60,6 +63,12 @@ export function createPatientsGateway(
 export function createAuthGateway(env: GatewayEnv): AuthGateway | undefined {
   if (env.NEXT_PUBLIC_DEMO_OFFLINE === '1') return undefined;
   return new HttpAuthGateway(serviceUrl(env, 'identite'));
+}
+
+/** Choisit la veille épidémiologique : en mémoire si `NEXT_PUBLIC_DEMO_OFFLINE=1`, sinon service Agents (par le broker). */
+export function createEpidemiologyGateway(env: GatewayEnv, identity: () => Identity): EpidemiologyGateway {
+  if (env.NEXT_PUBLIC_DEMO_OFFLINE === '1') return new InMemoryEpidemiologyGateway();
+  return new HttpEpidemiologyGateway(serviceUrl(env, 'agents'), identity);
 }
 
 /** Choisit le copilote : en mémoire si `NEXT_PUBLIC_DEMO_OFFLINE=1`, sinon flux SSE du service IA (par le broker). */
