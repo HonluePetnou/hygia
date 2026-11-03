@@ -2,6 +2,7 @@ import type { Locale } from '@hygia/i18n';
 import { createTranslator } from '@hygia/i18n';
 import type { PatientsGateway } from './gateways.js';
 import { GatewayError } from './http-client.js';
+import { InMemoryDuplicates, toSummary } from './in-memory-duplicates.js';
 import { InMemoryKnowledge, type Dataset } from './in-memory-knowledge.js';
 import {
   DEMO_WEEK_ACTIVITY,
@@ -15,7 +16,10 @@ import type {
   BreakGlassRequest,
   ConsultationSummary,
   DashboardData,
+  DuplicateCandidate,
   Identity,
+  MergeOutcome,
+  MergeRequest,
   PatientOverview,
   PatientSummary,
   Resume,
@@ -30,6 +34,7 @@ const BREAK_GLASS_HOURS = 4;
 export class InMemoryPatientsGateway implements PatientsGateway {
   private readonly knowledge: InMemoryKnowledge;
   private readonly granted = new Set<string>();
+  private readonly duplicateStore = new InMemoryDuplicates(() => this.dataset.patients);
 
   /**
    * @param dataset Jeu de données (en pratique `demoDataset` de `@hygia/fhir`).
@@ -76,17 +81,12 @@ export class InMemoryPatientsGateway implements PatientsGateway {
     const needle = query.trim().toLowerCase();
     const found = this.dataset.patients.filter(
       (p) =>
-        needle === '' ||
-        p.ipp.toLowerCase().includes(needle) ||
-        `${p.givenName} ${p.familyName}`.toLowerCase().includes(needle),
+        !this.duplicateStore.isMerged(p.id) &&
+        (needle === '' ||
+          p.ipp.toLowerCase().includes(needle) ||
+          `${p.givenName} ${p.familyName}`.toLowerCase().includes(needle)),
     );
-    return Promise.resolve(found.map(({ id, ipp, familyName, givenName, birthDate }) => ({
-      id,
-      ipp,
-      familyName,
-      givenName,
-      birthDate,
-    })));
+    return Promise.resolve(found.map(toSummary));
   }
 
   patient(patientId: string): Promise<PatientSummary> {
@@ -94,8 +94,7 @@ export class InMemoryPatientsGateway implements PatientsGateway {
     if (denied) return Promise.reject(denied);
     const found = this.dataset.patients.find((p) => p.id === patientId);
     if (!found) return Promise.reject(new GatewayError(404, `Patient introuvable : ${patientId}`));
-    const { id, ipp, familyName, givenName, birthDate } = found;
-    return Promise.resolve({ id, ipp, familyName, givenName, birthDate });
+    return Promise.resolve(toSummary(found));
   }
 
   overview(patientId: string): Promise<PatientOverview> {
@@ -145,6 +144,30 @@ export class InMemoryPatientsGateway implements PatientsGateway {
       toVersion('Patient', patient, `${this.today()}T00:00:00Z`),
     ];
     return Promise.resolve(versions.sort((a, b) => b.createdAt.localeCompare(a.createdAt)));
+  }
+
+  duplicates(): Promise<DuplicateCandidate[]> {
+    return Promise.resolve(this.duplicateStore.list());
+  }
+
+  ignoreDuplicate(duplicateId: string): Promise<void> {
+    return this.attempt(() => this.duplicateStore.ignore(duplicateId));
+  }
+
+  mergePatients(keptId: string, mergedId: string, request: MergeRequest): Promise<MergeOutcome> {
+    return this.attempt(() => this.duplicateStore.merge(keptId, mergedId, request));
+  }
+
+  undoMerge(mergeId: string): Promise<MergeOutcome> {
+    return this.attempt(() => this.duplicateStore.undo(mergeId));
+  }
+
+  private attempt<T>(action: () => T): Promise<T> {
+    try {
+      return Promise.resolve(action());
+    } catch (error) {
+      return Promise.reject(error);
+    }
   }
 
   summary(patientId: string, locale: Locale): Promise<Resume> {

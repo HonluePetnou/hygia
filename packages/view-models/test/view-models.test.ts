@@ -54,7 +54,7 @@ describe('DashboardViewModel', () => {
     await dashboard.load();
     expect(dashboard.state).toBe('ready');
     expect(dashboard.consultations).toHaveLength(1);
-    expect(dashboard.indicators.map((i) => i.value)).toEqual([1, 2, 2, 2]);
+    expect(dashboard.indicators.map((i) => i.value)).toEqual([1, 2, 2, 3]);
     expect(dashboard.consultations[0]).toMatchObject({ status: 'alert', time: '09:00' });
     expect(dashboard.documents).toHaveLength(3);
     expect(dashboard.week).toHaveLength(7);
@@ -215,9 +215,9 @@ describe('accès refusé et bris de glace', () => {
 
   it('recherche par nom ou IPP', async () => {
     const gateway = patients();
-    expect(await gateway.search('florence')).toHaveLength(1);
+    expect(await gateway.search('florence')).toHaveLength(2);
     expect(await gateway.search('HYG-2024-00872')).toHaveLength(1);
-    expect(await gateway.search('')).toHaveLength(8);
+    expect(await gateway.search('')).toHaveLength(9);
   });
 });
 

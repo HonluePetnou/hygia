@@ -7,17 +7,18 @@ import {
   florenceMedications,
   florenceObservations,
 } from './demo-clinical.js';
+import { doublonEncounters, doublonObservations, florenceDoublon } from './demo-doublon.js';
 
 /** Jeu de données fictif déterministe (aucune donnée réelle). */
 export const demoDataset = {
   organizations: demoOrganizations,
   practitioners: demoPractitioners,
-  patients: demoPatients,
+  patients: [...demoPatients, florenceDoublon],
   careTeams: demoCareTeams,
   documents: florenceDocuments,
-  observations: florenceObservations,
+  observations: [...florenceObservations, ...doublonObservations],
   conditions: florenceConditions,
   medicationRequests: florenceMedications,
   allergies: florenceAllergies,
-  encounters: florenceEncounters,
+  encounters: [...florenceEncounters, ...doublonEncounters],
 } as const;

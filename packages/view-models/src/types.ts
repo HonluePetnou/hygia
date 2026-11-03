@@ -151,6 +151,43 @@ export interface PatientSummary {
   familyName: string;
   givenName: string;
   birthDate: string;
+  gender?: 'female' | 'male' | 'other' | 'unknown';
+  phone?: string;
+  /** Établissement de rattachement (`display` : nom lisible, si connu). */
+  managingOrganization?: { reference: string; display?: string };
+  /** Identifiant du dossier conservé, si cette fiche a été fusionnée. */
+  mergedInto?: string;
+}
+
+/** Doublon d'identité probable : deux fiches, score de similarité (0 à 1) et détail par critère. */
+export interface DuplicateCandidate {
+  id: string;
+  score: number;
+  criteria: Record<'name' | 'birthDate' | 'phone' | 'gender', number | null>;
+  a: PatientSummary;
+  b: PatientSummary;
+}
+
+/** Champs de la fiche dont la fusion laisse choisir la valeur. */
+export type MergeField = 'givenName' | 'familyName' | 'gender' | 'birthDate' | 'phone';
+
+/** Côté conservé pour un champ : `a` (dossier conservé) ou `b` (dossier fusionné). */
+export type MergeSide = 'a' | 'b';
+
+/** Demande de fusion de `b` dans `a`. */
+export interface MergeRequest {
+  motif: string;
+  choix: Partial<Record<MergeField, MergeSide>>;
+  versions?: { a: number; b: number };
+}
+
+/** Fusion effectuée (annulable tant que les fiches n'ont pas changé). */
+export interface MergeOutcome {
+  id: string;
+  keptId: string;
+  mergedId: string;
+  undone: boolean;
+  moved: { encounters: number; observations: number; medicationRequests: number; documents: number };
 }
 
 /** Médicament en cours affiché dans la colonne de droite du dossier. */

@@ -78,12 +78,14 @@ const patient = (
   givenName,
   gender,
   birthDate,
-  managingOrganization: ref('Organization', orgId(org)),
+  managingOrganization: ref('Organization', orgId(org), demoOrganizations[org - 1]?.name),
 });
 
-/** Les 8 patients fictifs ; Florence a l'IPP HYG-2024-00871, 71 ans en 2026. */
+const withPhone = (base: Patient, phone: string): Patient => ({ ...base, phone });
+
+/** Les 8 premiers patients fictifs (le 9e, doublon de Florence : `demo-doublon.ts`) ; Florence a l'IPP HYG-2024-00871, 71 ans en 2026. */
 export const demoPatients: Patient[] = [
-  patient(1, 'Florence', 'Ngo Bassa', 'female', '1955-03-12', 1),
+  withPhone(patient(1, 'Florence', 'Ngo Bassa', 'female', '1955-03-12', 1), '+237 699 12 34 65'),
   patient(2, 'Jean', 'Mbarga', 'male', '1980-07-02', 1),
   patient(3, 'Estelle', 'Fotso', 'female', '1992-11-23', 2),
   patient(4, 'Henri', 'Essomba', 'male', '1968-01-30', 2),

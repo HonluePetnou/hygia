@@ -2,12 +2,13 @@
 
 import Link from 'next/link';
 import { observer } from 'mobx-react-lite';
-import { PatientSearchViewModel } from '@hygia/view-models';
+import { DuplicatesViewModel, PatientSearchViewModel } from '@hygia/view-models';
 import { formatDate } from '@hygia/i18n';
 import { Avatar, Card, Input } from '@/components/ui';
 import { useGateway } from '@/lib/gateway-context';
 import { useSession } from '@/lib/session-context';
 import { useViewModel } from '@/lib/use-view-model';
+import { DuplicateBanners } from './DuplicateBanners';
 
 /** Liste des patients avec recherche par nom ou IPP. */
 export const PatientsScreen = observer(function PatientsScreen() {
@@ -17,11 +18,16 @@ export const PatientsScreen = observer(function PatientsScreen() {
     () => new PatientSearchViewModel(gateway, session),
     (model) => void model.search(),
   );
+  const duplicates = useViewModel(
+    () => new DuplicatesViewModel(gateway, session),
+    (model) => void model.load(),
+  );
   const { t, locale } = session;
 
   return (
     <>
       <h1>{t('patients.title')}</h1>
+      <DuplicateBanners vm={duplicates} />
       <Card className="patients-card">
         <Input
           type="search"

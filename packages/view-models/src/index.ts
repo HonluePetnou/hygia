@@ -17,6 +17,10 @@ export { PatientRecordViewModel, TIMELINE_FILTERS } from './patient-record-view-
 export type { TimelineFilter } from './patient-record-view-model.js';
 export { VersionsViewModel } from './versions-view-model.js';
 export type { VersionRow, ComparisonRow, Comparison } from './versions-view-model.js';
+export { DuplicatesViewModel } from './duplicates-view-model.js';
+export type { DuplicateBanner } from './duplicates-view-model.js';
+export { MergeViewModel } from './merge-view-model.js';
+export type { MergeRow } from './merge-view-model.js';
 export { BreakGlassViewModel } from './break-glass-view-model.js';
 export type { BreakGlassReason } from './break-glass-view-model.js';
 export type { ConsultationRow, DocumentRow, WeekBar } from './dashboard-view-model.js';

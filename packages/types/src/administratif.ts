@@ -1,4 +1,4 @@
-import type { BaseResource, IsoDateTime, Reference, Role } from './common.js';
+import type { BaseResource, IsoDateTime, Reference, Role, Uuid } from './common.js';
 
 /** Patient (données fictives uniquement). */
 export interface Patient extends BaseResource {
@@ -15,6 +15,10 @@ export interface Patient extends BaseResource {
   birthDate: string;
   /** Établissement de rattachement. */
   managingOrganization: Reference;
+  /** Téléphone, tel que saisi (utilisé pour la détection des doublons). */
+  phone?: string;
+  /** Identifiant du patient conservé si ce dossier a été fusionné (doublon). */
+  mergedInto?: Uuid;
 }
 
 /** Praticien ou membre du personnel. */

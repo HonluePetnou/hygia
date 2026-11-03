@@ -36,9 +36,29 @@ export type DocumentChanges = Partial<
   Pick<DocumentReference, 'title' | 'documentType' | 'language' | 'processingStatus'>
 >;
 
+/** Champs de la fiche que la fusion permet de choisir. */
+export type MergeableFields = Pick<Patient, 'givenName' | 'familyName' | 'gender' | 'birthDate' | 'phone'>;
+
+/** Ressources cliniques rattachées à un patient, par type. */
+export interface MovedResources {
+  encounters: string[];
+  observations: string[];
+  medicationRequests: string[];
+  documents: string[];
+}
+
+/** Trace d'une fusion : de quoi l'annuler sans perte. */
+export interface MergeRecord {
+  keptBefore: Patient;
+  mergedBefore: Patient;
+  keptAfter: Patient;
+  mergedAfter: Patient;
+  moved: MovedResources;
+}
+
 /** Accès aux données patients (implémentation en mémoire ; Prisma/PostgreSQL ensuite). */
 export interface PatientRepository {
-  /** Patients dont le nom ou l'IPP contient `query` (tous si vide). */
+  /** Patients dont le nom ou l'IPP contient `query` (tous si vide) ; les dossiers fusionnés sont exclus. */
   search(query: string): Patient[];
   findById(id: string): Patient | undefined;
   /** Document par identifiant (état courant). */
@@ -59,4 +79,13 @@ export interface PatientRepository {
     changes: DocumentChanges,
     expectedVersion: number,
   ): SaveResult<DocumentReference>;
+  /** Tous les patients actifs (non fusionnés). */
+  activePatients(): Patient[];
+  /**
+   * Fusionne `mergedId` dans `keptId` : ressources déplacées, champs choisis appliqués, l'autre
+   * dossier marqué « fusionné dans » (versions incrémentées). Le contrôle d'accès est fait avant.
+   */
+  merge(keptId: string, mergedId: string, fields: MergeableFields): MergeRecord;
+  /** Annule une fusion : ressources, fiches et marque « fusionné dans » reviennent à l'état d'avant. */
+  unmerge(record: MergeRecord): void;
 }

@@ -122,7 +122,8 @@ describe('service Dossiers', () => {
 
   it('recherche limitée aux patients de l’équipe (nom ou IPP, sans accents)', async () => {
     const byName = await http().get('/patients?q=ngo').set(nana).expect(200);
-    expect(byName.body).toHaveLength(1);
+    // Florence et son doublon (« BASSA NGO »), tous deux visibles de l'équipe.
+    expect(byName.body).toHaveLength(2);
     await http()
       .get('/patients?q=HYG-2024-00871')
       .set(nana)

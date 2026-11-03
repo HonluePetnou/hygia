@@ -64,7 +64,7 @@ describe('liste des patients', () => {
   it('filtre par nom ou IPP', async () => {
     const user = userEvent.setup();
     renderWith(<PatientsScreen />);
-    expect(await screen.findAllByRole('row')).toHaveLength(9);
+    expect(await screen.findAllByRole('row')).toHaveLength(10);
     await user.type(screen.getByLabelText('Rechercher par nom ou IPP'), 'HYG-2024-00871');
     expect(await screen.findAllByRole('row')).toHaveLength(2);
     expect(screen.getByRole('link', { name: 'Florence Ngo Bassa' })).toBeVisible();

@@ -4,7 +4,7 @@ _Dernière mise à jour : 2026-11-03_
 
 ## État actuel
 
-Monorepo initialisé ; tâches 001, 002, 003 (`@hygia/audit`) et 004 (service `dossiers`) 005 (`@hygia/ingestion`) et 006 (`ia-clinique`) et 007 (`view-models`) et 013 (service Identité) et 014 (historique des versions) terminées.
+Monorepo initialisé ; tâches 001, 002, 003 (`@hygia/audit`) et 004 (service `dossiers`) 005 (`@hygia/ingestion`) et 006 (`ia-clinique`) et 007 (`view-models`) et 013 (service Identité) et 014 (historique des versions) et 015 (doublons et fusion) terminées.
 
 ## Fait
 
@@ -30,6 +30,7 @@ Monorepo initialisé ; tâches 001, 002, 003 (`@hygia/audit`) et 004 (service `d
 - [x] 012 — `services/broker` (NestJS) : `/api/<service>/...`, registre par variables d'environnement, proxy HTTP + SSE, `x-correlation-id`, limite de débit par utilisateur (429), 503 si service muet ; web via `NEXT_PUBLIC_API_URL` ; `pnpm demo` démarre le broker.
 - [x] 013 — `services/identite` (comptes, TOTP réel + QR + codes de secours, JWT 30 min + JWKS, équipes, bris de glace 4 h avec événement DPO) et `@hygia/auth` ; broker/dossiers/ia-clinique vérifient le jeton (en-têtes `x-user-*` supprimés) ; connexion web branchée. Pas de renouvellement automatique du jeton côté web ; `docs/demo.md` à mettre à jour.
 - [x] 014 — historique des versions : `DocumentStore` (mémoire + S3 versionné via `S3Operations`), `PATCH /documents/:id`, `GET /patients/:id/versions`, `GET /documents/:id/versions[/:n]`, lectures auditées ; web : onglet « Versions » avec comparaison côte à côte. Pas d'écran de modification, `S3DocumentStore` non branché (pas d'adaptateur SDK).
+- [x] 015 — doublons d'identité : score documenté (`services/dossiers/src/doublons/similarity.ts`, seuil `DOSSIERS_SEUIL_DOUBLONS`, défaut 0,85), `GET /doublons`, `POST /doublons/:id/ignorer`, `POST /patients/:a/fusion/:b`, `POST /fusions/:id/annuler` (audités) ; dataset : 9e patient « BASSA NGO Florence » (≈ 98 %) ; web : bandeaux sur `/patients`, écran `/patients/doublons/[id]`. Paires ignorées et fusions en mémoire du service ; non testé au navigateur.
 - [ ] Tâches suivantes dans `tasks/todo/`
 
 ## Décisions / blocages

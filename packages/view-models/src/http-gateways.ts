@@ -8,7 +8,10 @@ import type {
   ChosenFile,
   CopiloteAnswer,
   DashboardData,
+  DuplicateCandidate,
   Identity,
+  MergeOutcome,
+  MergeRequest,
   IngestionResult,
   PatientOverview,
   PatientSummary,
@@ -89,6 +92,25 @@ export class HttpPatientsGateway implements PatientsGateway {
 
   summary(patientId: string, locale: Locale): Promise<Resume> {
     return this.ia.get(`/patients/${encodeURIComponent(patientId)}/resume?lang=${locale}`);
+  }
+
+  duplicates(): Promise<DuplicateCandidate[]> {
+    return this.dossiers.get('/doublons');
+  }
+
+  async ignoreDuplicate(duplicateId: string): Promise<void> {
+    await this.dossiers.post(`/doublons/${encodeURIComponent(duplicateId)}/ignorer`, {});
+  }
+
+  mergePatients(keptId: string, mergedId: string, request: MergeRequest): Promise<MergeOutcome> {
+    return this.dossiers.post(
+      `/patients/${encodeURIComponent(keptId)}/fusion/${encodeURIComponent(mergedId)}`,
+      request,
+    );
+  }
+
+  undoMerge(mergeId: string): Promise<MergeOutcome> {
+    return this.dossiers.post(`/fusions/${encodeURIComponent(mergeId)}/annuler`, {});
   }
 }
 

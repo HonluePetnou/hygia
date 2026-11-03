@@ -7,7 +7,7 @@ describe('demoDataset', () => {
   it('a la taille attendue', () => {
     expect(demoDataset.organizations).toHaveLength(3);
     expect(demoDataset.practitioners).toHaveLength(6);
-    expect(demoDataset.patients).toHaveLength(8);
+    expect(demoDataset.patients).toHaveLength(9);
     expect(demoDataset.careTeams).toHaveLength(1);
     expect(demoDataset.documents).toHaveLength(5);
   });

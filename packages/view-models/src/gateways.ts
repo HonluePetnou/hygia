@@ -9,6 +9,9 @@ import type {
   ChosenFile,
   CopiloteAnswer,
   DashboardData,
+  DuplicateCandidate,
+  MergeOutcome,
+  MergeRequest,
   IngestionResult,
   PatientOverview,
   PatientSummary,
@@ -36,6 +39,14 @@ export interface PatientsGateway {
   versions(patientId: string): Promise<ResourceVersion[]>;
   /** Résumé pré-consultation dans la langue demandée. */
   summary(patientId: string, locale: Locale): Promise<Resume>;
+  /** Doublons d'identité probables, du plus similaire au moins similaire. */
+  duplicates(): Promise<DuplicateCandidate[]>;
+  /** Ignore un doublon : la paire n'est plus proposée. */
+  ignoreDuplicate(duplicateId: string): Promise<void>;
+  /** Fusionne le dossier `mergedId` dans `keptId` (validation humaine, auditée). */
+  mergePatients(keptId: string, mergedId: string, request: MergeRequest): Promise<MergeOutcome>;
+  /** Annule une fusion. */
+  undoMerge(mergeId: string): Promise<MergeOutcome>;
 }
 
 /** Accès au copilote IA. */
