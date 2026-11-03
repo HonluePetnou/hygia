@@ -22,6 +22,8 @@ Monorepo initialisé ; tâches 001, 002, 003 (`@hygia/audit`) et 004 (service `d
 
 - [x] 009 — web : tableau de bord `/`, liste `/patients`, dossier `/patients/[id]` (résumé IA, chronologie filtrable, accès refusé + bris de glace)
 
+- [x] 010 — web : copilote `/copilote/[patientId]` (réponse en flux, sources cliquables, panneau de source, badge de langue) et import `/import` (dépôt, 5 étapes, branches 6a/6b, entités à valider) + route `/api/ingestion`
+
 ## À faire
 
 - [ ] Tâches suivantes dans `tasks/todo/`

@@ -18,6 +18,10 @@ export type { ConsultationRow, DocumentRow, WeekBar } from './dashboard-view-mod
 export type { SummaryLine, SummarySection, NumberedSource } from './summary-sections.js';
 export { PatientSearchViewModel } from './patient-search-view-model.js';
 export { CopiloteViewModel } from './copilote-view-model.js';
-export type { CopiloteMessage } from './copilote-view-model.js';
+export type { CopiloteMessage, OpenedSource } from './copilote-view-model.js';
+export { splitAnswer } from './answer-segments.js';
+export type { AnswerSegment } from './answer-segments.js';
+export { parseSseFrames, readSse } from './sse-reader.js';
+export type { SseEvent } from './sse-reader.js';
 export { IngestionViewModel } from './ingestion-view-model.js';
-export type { StepView } from './ingestion-view-model.js';
+export type { StepView, EntityView, EntityDecision } from './ingestion-view-model.js';

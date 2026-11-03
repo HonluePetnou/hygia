@@ -1,39 +1,65 @@
 'use client';
 
 import { createContext, useContext, useState, type ReactNode } from 'react';
-import type { PatientsGateway } from '@hygia/view-models';
-import { createPatientsGateway } from './gateway-factory';
+import type { CopiloteGateway, IngestionGateway, PatientsGateway } from '@hygia/view-models';
+import { createCopiloteGateway, createPatientsGateway, type GatewayEnv } from './gateway-factory';
+import { ApiIngestionGateway } from './ingestion-api';
 import { useSession } from './session-context';
 
-const GatewayContext = createContext<PatientsGateway | null>(null);
+interface Gateways {
+  patients: PatientsGateway;
+  copilote: CopiloteGateway;
+  ingestion: IngestionGateway;
+}
+
+const GatewayContext = createContext<Gateways | null>(null);
 
 export interface GatewayProviderProps {
   children: ReactNode;
-  /** Dépôt fourni de l'extérieur (tests) ; sinon choisi d'après l'environnement. */
+  /** Dépôt des patients fourni de l'extérieur (tests) ; sinon choisi d'après l'environnement. */
   gateway?: PatientsGateway;
+  /** Copilote fourni de l'extérieur (tests). */
+  copilote?: CopiloteGateway;
+  /** Ingestion fournie de l'extérieur (tests) ; sinon la route `/api/ingestion`. */
+  ingestion?: IngestionGateway;
 }
 
-/** Fournit le dépôt des patients (HTTP ou mémoire) à tout l'arbre authentifié. */
-export function GatewayProvider({ children, gateway }: GatewayProviderProps) {
+/** Fournit les dépôts (patients, copilote, ingestion) à tout l'arbre authentifié. */
+export function GatewayProvider({ children, gateway, copilote, ingestion }: GatewayProviderProps) {
   const session = useSession();
-  const [value] = useState(
-    () =>
-      gateway ??
-      createPatientsGateway(
-        {
-          NEXT_PUBLIC_DOSSIERS_URL: process.env.NEXT_PUBLIC_DOSSIERS_URL,
-          NEXT_PUBLIC_IA_URL: process.env.NEXT_PUBLIC_IA_URL,
-          NEXT_PUBLIC_DEMO_OFFLINE: process.env.NEXT_PUBLIC_DEMO_OFFLINE,
-        },
-        () => session.identity,
-      ),
-  );
+  const [value] = useState<Gateways>(() => {
+    const env: GatewayEnv = {
+      NEXT_PUBLIC_DOSSIERS_URL: process.env.NEXT_PUBLIC_DOSSIERS_URL,
+      NEXT_PUBLIC_IA_URL: process.env.NEXT_PUBLIC_IA_URL,
+      NEXT_PUBLIC_DEMO_OFFLINE: process.env.NEXT_PUBLIC_DEMO_OFFLINE,
+    };
+    const identity = () => session.identity;
+    return {
+      patients: gateway ?? createPatientsGateway(env, identity),
+      copilote: copilote ?? createCopiloteGateway(env, identity),
+      ingestion: ingestion ?? new ApiIngestionGateway(),
+    };
+  });
   return <GatewayContext.Provider value={value}>{children}</GatewayContext.Provider>;
+}
+
+function useGateways(): Gateways {
+  const gateways = useContext(GatewayContext);
+  if (!gateways) throw new Error('useGateway doit être utilisé dans un GatewayProvider');
+  return gateways;
 }
 
 /** Dépôt des patients courant ; échoue hors d'un `GatewayProvider`. */
 export function useGateway(): PatientsGateway {
-  const gateway = useContext(GatewayContext);
-  if (!gateway) throw new Error('useGateway doit être utilisé dans un GatewayProvider');
-  return gateway;
+  return useGateways().patients;
+}
+
+/** Copilote courant ; échoue hors d'un `GatewayProvider`. */
+export function useCopiloteGateway(): CopiloteGateway {
+  return useGateways().copilote;
+}
+
+/** Ingestion courante ; échoue hors d'un `GatewayProvider`. */
+export function useIngestionGateway(): IngestionGateway {
+  return useGateways().ingestion;
 }

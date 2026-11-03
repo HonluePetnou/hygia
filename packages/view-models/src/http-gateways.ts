@@ -1,6 +1,7 @@
 import type { Locale } from '@hygia/i18n';
 import type { CopiloteGateway, IngestionGateway, PatientsGateway } from './gateways.js';
-import { HttpClient } from './http-client.js';
+import { GatewayError, HttpClient } from './http-client.js';
+import { readSse } from './sse-reader.js';
 import type {
   BreakGlassGrant,
   BreakGlassRequest,
@@ -13,6 +14,7 @@ import type {
   PatientSummary,
   Resume,
   TimelineEntry,
+  WordHandler,
 } from './types.js';
 
 /** URLs de base des services (en production : celle du broker pour les trois). */
@@ -64,8 +66,37 @@ export class HttpPatientsGateway implements PatientsGateway {
 export class HttpCopiloteGateway implements CopiloteGateway {
   private readonly client: HttpClient;
 
-  constructor(baseUrl: string, identity: () => Identity, fetchFn?: typeof fetch) {
+  constructor(
+    private readonly baseUrl: string,
+    private readonly identity: () => Identity,
+    private readonly fetchFn: typeof fetch = (input, init) => fetch(input, init),
+  ) {
     this.client = new HttpClient(baseUrl, identity, fetchFn);
+  }
+
+  /** Flux SSE `GET /copilote/:patientId/flux?q=…` : évènements `word`, `sources`, `done`. */
+  async stream(patientId: string, question: string, onWord: WordHandler): Promise<CopiloteAnswer> {
+    const { userId, role } = this.identity();
+    const path = `/copilote/${encodeURIComponent(patientId)}/flux?q=${encodeURIComponent(question)}`;
+    const response = await this.fetchFn(`${this.baseUrl.replace(/\/+$/, '')}${path}`, {
+      headers: { 'x-user-id': userId, 'x-user-role': role, accept: 'text/event-stream' },
+    });
+    if (!response.ok || response.body === null) {
+      throw new GatewayError(response.status, `GET ${path}`);
+    }
+    const words: string[] = [];
+    let language: Locale = 'fr';
+    let sources: CopiloteAnswer['sources'] = [];
+    await readSse(response.body, ({ event, data }) => {
+      if (event === 'word') {
+        const { word } = data as { word: string };
+        words.push(word);
+        onWord(word);
+      } else if (event === 'sources') {
+        ({ language, sources } = data as Pick<CopiloteAnswer, 'language' | 'sources'>);
+      }
+    });
+    return { answer: words.join(' '), language, sources };
   }
 
   ask(patientId: string, question: string): Promise<CopiloteAnswer> {
@@ -81,7 +112,7 @@ export class HttpIngestionGateway implements IngestionGateway {
     this.client = new HttpClient(baseUrl, identity, fetchFn);
   }
 
-  ingest(file: ChosenFile): Promise<IngestionResult> {
-    return this.client.post('/ingestions', { fileName: file.name, size: file.size });
+  ingest(file: ChosenFile, patientId?: string): Promise<IngestionResult> {
+    return this.client.post('/ingestions', { fileName: file.name, size: file.size, patientId });
   }
 }

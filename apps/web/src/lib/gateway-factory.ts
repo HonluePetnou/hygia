@@ -1,7 +1,10 @@
 import { demoDataset } from '@hygia/fhir';
 import {
+  HttpCopiloteGateway,
   HttpPatientsGateway,
+  InMemoryCopiloteGateway,
   InMemoryPatientsGateway,
+  type CopiloteGateway,
   type Identity,
   type PatientsGateway,
 } from '@hygia/view-models';
@@ -34,4 +37,10 @@ export function createPatientsGateway(env: GatewayEnv, identity: () => Identity)
     },
     identity,
   );
+}
+
+/** Choisit le copilote : en mémoire si `NEXT_PUBLIC_DEMO_OFFLINE=1`, sinon flux SSE du service IA. */
+export function createCopiloteGateway(env: GatewayEnv, identity: () => Identity): CopiloteGateway {
+  if (env.NEXT_PUBLIC_DEMO_OFFLINE === '1') return new InMemoryCopiloteGateway(demoDataset);
+  return new HttpCopiloteGateway(env.NEXT_PUBLIC_IA_URL ?? DEFAULT_IA_URL, identity);
 }

@@ -32,6 +32,9 @@ importers:
       '@hygia/i18n':
         specifier: workspace:*
         version: link:../../packages/i18n
+      '@hygia/ingestion':
+        specifier: workspace:*
+        version: link:../../services/ingestion
       '@hygia/types':
         specifier: workspace:*
         version: link:../../packages/types

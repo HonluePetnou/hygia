@@ -10,6 +10,7 @@ import type {
   PatientSummary,
   Resume,
   TimelineEntry,
+  WordHandler,
 } from './types.js';
 
 /** Accès aux dossiers patients (service Dossiers et résumé IA, via le broker). */
@@ -34,10 +35,12 @@ export interface PatientsGateway {
 export interface CopiloteGateway {
   /** Pose une question ; la réponse cite ses sources. */
   ask(patientId: string, question: string): Promise<CopiloteAnswer>;
+  /** Même question en flux : `onWord` reçoit chaque mot au fil de l'eau, puis la réponse complète. */
+  stream(patientId: string, question: string, onWord: WordHandler): Promise<CopiloteAnswer>;
 }
 
 /** Accès à la chaîne d'ingestion. */
 export interface IngestionGateway {
-  /** Soumet un fichier et renvoie l'état de chaque étape. */
-  ingest(file: ChosenFile): Promise<IngestionResult>;
+  /** Soumet un fichier (rattaché à un patient, facultatif) et renvoie l'état de chaque étape. */
+  ingest(file: ChosenFile, patientId?: string): Promise<IngestionResult>;
 }

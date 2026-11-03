@@ -187,14 +187,43 @@ export interface IngestionStep {
   durationMs?: number;
 }
 
+/** Type d'une entité extraite d'un document. */
+export type ExtractedEntityKind = 'medication' | 'diagnosis' | 'posology' | 'date';
+
+/** Entité extraite, à valider par un soignant avant tout enregistrement. */
+export interface ExtractedEntityRow {
+  /** Texte tel que lu dans le document. */
+  sourceText: string;
+  kind: ExtractedEntityKind;
+  /** Valeur normalisée (ex. « Ibuprofène »). */
+  normalized: string;
+  /** Code ATC ou CIM-10 (absent pour les posologies et les dates). */
+  code?: string;
+  /** Confiance entre 0 et 1. */
+  confidence: number;
+}
+
+/** Statut des deux branches après l'identification : clinique (6a) et analytique (6b). */
+export interface IngestionBranches {
+  clinical: IngestionStepStatus;
+  analytic: IngestionStepStatus;
+}
+
 /** Résultat d'un import. */
 export interface IngestionResult {
   documentId: string;
   steps: IngestionStep[];
+  branches: IngestionBranches;
+  entities: ExtractedEntityRow[];
 }
 
 /** Fichier choisi par l'utilisateur. */
 export interface ChosenFile {
   name: string;
   size?: number;
+  /** Contenu du fichier (absent dans les tests en mémoire). */
+  content?: Blob;
 }
+
+/** Mot par mot : fonction appelée pour chaque mot de la réponse reçue au fil de l'eau. */
+export type WordHandler = (word: string) => void;

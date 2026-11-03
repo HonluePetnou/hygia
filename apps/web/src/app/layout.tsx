@@ -4,6 +4,7 @@ import type { ReactNode } from 'react';
 import { SessionProvider } from '@/lib/session-context';
 import './globals.css';
 import './screens.css';
+import './copilot-import.css';
 
 const jakarta = Plus_Jakarta_Sans({
   subsets: ['latin'],

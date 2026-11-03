@@ -1,0 +1,333 @@
+/* Copilote (maquette 05) et import de document (maquette 06) */
+
+.copilot-heading {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.copilot-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 20px;
+}
+.copilot-grid-open {
+  grid-template-columns: minmax(0, 1fr) 380px;
+}
+.copilot-chat {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-height: 560px;
+}
+.conversation {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  flex: 1;
+}
+.bubble-user {
+  align-self: flex-end;
+  max-width: 80%;
+  margin: 0;
+  padding: 14px 16px;
+  border-radius: var(--radius-lg);
+  background: var(--ink);
+  color: #fff;
+}
+.msg {
+  display: flex;
+  gap: 12px;
+}
+.msg-avatar {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 999px;
+  background: var(--ai-soft);
+  color: var(--ai);
+}
+.msg-body {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+}
+.answer-text {
+  margin: 0;
+}
+.source-marker {
+  border: 0;
+  background: none;
+  padding: 0 2px;
+  font: inherit;
+  font-weight: 700;
+  color: var(--ai);
+  cursor: pointer;
+}
+.source-marker:hover {
+  text-decoration: underline;
+}
+.source-chips,
+.suggestions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.source-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 32px;
+  padding: 0 12px 0 6px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--ai-soft);
+  color: var(--ai);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+.source-chip[aria-pressed='true'] {
+  outline: 2px solid var(--ai);
+}
+.source-chip-n {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 999px;
+  background: var(--ai);
+  color: #fff;
+  font-size: 11px;
+}
+.composer {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.composer-form {
+  display: flex;
+  gap: 8px;
+}
+.composer-form .input {
+  flex: 1;
+}
+.source-panel {
+  align-self: start;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.source-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  font-size: 16px;
+}
+.cited-passage {
+  margin: 0;
+  padding: 16px;
+  border-radius: var(--radius-md);
+  background: var(--ink);
+  color: #fff;
+}
+.cited-passage mark {
+  background: var(--ai-soft);
+  color: var(--ink);
+  padding: 2px 4px;
+  border-radius: 4px;
+}
+
+.import-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
+  gap: 20px;
+  align-items: start;
+}
+.import-left {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+.drop-zone {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 32px;
+  border: 2px dashed var(--primary);
+  border-radius: var(--radius-lg);
+  background: var(--primary-soft);
+  text-align: center;
+}
+.drop-zone-over {
+  background: #c9ebe3;
+}
+.drop-icon {
+  display: inline-flex;
+  padding: 14px;
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--primary);
+}
+.drop-title {
+  margin: 0;
+  font-weight: 600;
+}
+.channel-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+  list-style: none;
+  margin: 16px 0 0;
+  padding: 0;
+}
+.channel-card {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+}
+.channel-count {
+  font-size: 22px;
+  font-weight: 700;
+}
+.channel-web,
+.channel-whatsapp {
+  background: var(--primary-soft);
+  color: var(--primary);
+}
+.channel-mobile {
+  background: var(--info-soft);
+  color: var(--info);
+}
+.channel-fhir {
+  background: var(--success-soft);
+  color: var(--success);
+}
+.chain-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  list-style: none;
+  margin: 16px 0;
+  padding: 0;
+}
+.chain-step {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+}
+.chain-step-inProgress {
+  border-color: var(--ai);
+}
+.chain-step-failed {
+  border-color: var(--danger);
+  background: var(--danger-soft);
+}
+.step-icon {
+  display: inline-flex;
+  padding: 6px;
+  border-radius: 999px;
+  background: var(--bg);
+  color: var(--text-muted);
+}
+.chain-step-done .step-icon {
+  background: var(--success-soft);
+  color: var(--success);
+}
+.chain-step-inProgress .step-icon {
+  background: var(--ai-soft);
+  color: var(--ai);
+}
+.chain-step-failed .step-icon {
+  background: var(--danger-soft);
+  color: var(--danger);
+}
+.step-text {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+}
+.step-status {
+  font-size: 12px;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+.branches {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.branch {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px;
+  border-radius: var(--radius-md);
+  background: var(--bg);
+}
+.branch[data-status='done'] {
+  background: var(--primary-soft);
+}
+.confidence {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.confidence progress {
+  width: 72px;
+  height: 6px;
+  accent-color: var(--success);
+}
+.confidence progress.confidence-low {
+  accent-color: var(--warning);
+}
+.row-warning {
+  background: var(--warning-soft);
+}
+.row-rejected td:not(.row-actions) {
+  text-decoration: line-through;
+  color: var(--text-subtle);
+}
+.source-text {
+  font-style: italic;
+}
+.row-actions {
+  display: flex;
+  gap: 8px;
+}
+.row-actions .icon-button {
+  width: 32px;
+  height: 32px;
+}
+.icon-button-success {
+  color: var(--success);
+  background: var(--success-soft);
+}
+.icon-button[aria-pressed='true'] {
+  outline: 2px solid var(--ink);
+}
+
+@media (max-width: 1200px) {
+  .copilot-grid-open,
+  .import-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

@@ -26,6 +26,7 @@
   "dependencies": {
     "@hygia/fhir": "workspace:*",
     "@hygia/i18n": "workspace:*",
+    "@hygia/ingestion": "workspace:*",
     "@hygia/types": "workspace:*",
     "@hygia/view-models": "workspace:*",
     "lucide-react": "^1.66.0",

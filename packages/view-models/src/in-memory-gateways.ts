@@ -7,7 +7,19 @@ import type {
   IngestionResult,
   IngestionStep,
   IngestionStepId,
+  ExtractedEntityRow,
+  WordHandler,
 } from './types.js';
+
+const tick = (): Promise<void> => new Promise((resolve) => setTimeout(resolve, 0));
+
+/** Entités de l'ordonnance fictive (maquette 06). */
+const DEMO_ENTITIES: ExtractedEntityRow[] = [
+  { sourceText: 'Ibuprofène 400 mg : 1 cp × 3/j', kind: 'medication', normalized: 'Ibuprofène · 400 mg · 3×/j · 5 j', code: 'ATC M01AE01', confidence: 0.93 },
+  { sourceText: 'Lombalgies', kind: 'diagnosis', normalized: 'Lombalgie basse', code: 'CIM-10 M54.5', confidence: 0.81 },
+  { sourceText: 'Gel anti-inflammatoire', kind: 'medication', normalized: 'Kétoprofène gel (à confirmer)', code: 'ATC M02AA10', confidence: 0.58 },
+  { sourceText: '28/10/26', kind: 'date', normalized: '2026-10-28', confidence: 0.99 },
+];
 
 const FRENCH_HINTS = /\b(le|la|les|quel|quelle|quels|est|sont|du|des|patient|traitement)\b/i;
 
@@ -17,6 +29,15 @@ export class InMemoryCopiloteGateway implements CopiloteGateway {
 
   constructor(dataset: Dataset) {
     this.knowledge = new InMemoryKnowledge(dataset);
+  }
+
+  async stream(patientId: string, question: string, onWord: WordHandler): Promise<CopiloteAnswer> {
+    const answer = await this.ask(patientId, question);
+    for (const word of answer.answer.split(/\s+/).filter((w) => w.length > 0)) {
+      onWord(word);
+      await tick();
+    }
+    return answer;
   }
 
   ask(patientId: string, question: string): Promise<CopiloteAnswer> {
@@ -58,6 +79,12 @@ export class InMemoryIngestionGateway implements IngestionGateway {
       }
       return { id, status: 'done', durationMs };
     });
-    return Promise.resolve({ documentId: `doc-${file.name}`, steps });
+    const ok = this.failAt === undefined;
+    return Promise.resolve({
+      documentId: `doc-${file.name}`,
+      steps,
+      branches: { clinical: ok ? 'done' : 'pending', analytic: ok ? 'done' : 'pending' },
+      entities: ok ? DEMO_ENTITIES : [],
+    });
   }
 }
