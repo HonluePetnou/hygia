@@ -9,6 +9,7 @@ export { InMemoryAuthGateway } from './in-memory-auth-gateway.js';
 export type { OfflineUser } from './in-memory-auth-gateway.js';
 export type { LoadState } from './load-state.js';
 export { GatewayError } from './http-client.js';
+export type { ExportDownload } from './export-download.js';
 export { HttpPatientsGateway, HttpCopiloteGateway, HttpIngestionGateway } from './http-gateways.js';
 export type { PatientsUrls } from './http-gateways.js';
 export { InMemoryPatientsGateway } from './in-memory-patients.js';

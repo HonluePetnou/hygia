@@ -42,6 +42,10 @@ export interface PatientsGateway {
   openBreakGlass(patientId: string, request: BreakGlassRequest): Promise<BreakGlassGrant>;
   /** Versions de la fiche et des documents du patient, de la plus récente à la plus ancienne (lecture auditée). */
   versions(patientId: string): Promise<ResourceVersion[]>;
+  /** PDF du dossier dans la langue demandée (audité) ; le résumé n'y figure que s'il a été validé. */
+  exportDossier(patientId: string, locale: Locale, summary?: string[]): Promise<Blob>;
+  /** CSV des patients correspondant à la recherche, en-têtes dans la langue demandée (audité). */
+  exportSearch(request: RecordSearchRequest, locale: Locale): Promise<Blob>;
   /** Résumé pré-consultation dans la langue demandée. */
   summary(patientId: string, locale: Locale): Promise<Resume>;
   /** Doublons d'identité probables, du plus similaire au moins similaire. */

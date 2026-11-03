@@ -77,7 +77,7 @@ export function createAuthGateway(env: GatewayEnv): AuthGateway | undefined {
 /** Choisit la veille épidémiologique : en mémoire si `NEXT_PUBLIC_DEMO_OFFLINE=1`, sinon service Agents (par le broker). */
 export function createEpidemiologyGateway(env: GatewayEnv, identity: () => Identity): EpidemiologyGateway {
   if (env.NEXT_PUBLIC_DEMO_OFFLINE === '1') return new InMemoryEpidemiologyGateway();
-  return new HttpEpidemiologyGateway(serviceUrl(env, 'agents'), identity);
+  return new HttpEpidemiologyGateway(serviceUrl(env, 'agents'), identity, undefined, serviceUrl(env, 'dossiers'));
 }
 
 /** Choisit le copilote : en mémoire si `NEXT_PUBLIC_DEMO_OFFLINE=1`, sinon flux SSE du service IA (par le broker). */

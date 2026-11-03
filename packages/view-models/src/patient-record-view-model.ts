@@ -1,6 +1,7 @@
 import { makeAutoObservable, reaction, runInAction, type IReactionDisposer } from 'mobx';
 import { BreakGlassViewModel } from './break-glass-view-model.js';
 import type { PatientsGateway } from './gateways.js';
+import type { ExportDownload } from './export-download.js';
 import { GatewayError } from './http-client.js';
 import { buildSummarySections } from './summary-sections.js';
 import type { LoadState } from './load-state.js';
@@ -43,6 +44,8 @@ export class PatientRecordViewModel {
   overview: PatientOverview | null = null;
   /** Le soignant a validé le résumé IA (aucune écriture dans le dossier). */
   summaryValidated = false;
+  /** Dernier export PDF en échec. */
+  exportFailed = false;
   readonly breakGlass: BreakGlassViewModel;
 
   private patientId: string | null = null;
@@ -117,6 +120,25 @@ export class PatientRecordViewModel {
   /** Le soignant valide le résumé : simple accusé local, le dossier n'est pas modifié. */
   validateSummary(): void {
     this.summaryValidated = true;
+  }
+
+  /**
+   * PDF du dossier (audité côté serveur). Le résumé IA n'y figure que si le soignant l'a validé ;
+   * renvoie `null` (et `exportFailed`) si l'export est refusé ou échoue.
+   */
+  async exportPdf(): Promise<ExportDownload | null> {
+    const patient = this.patient;
+    if (patient === null) return null;
+    const validated = this.summaryValidated ? this.summaryView : null;
+    const lines = validated?.sections.flatMap((section) => section.lines.map((line) => line.text));
+    try {
+      const blob = await this.gateway.exportDossier(patient.id, this.i18n.locale, lines);
+      runInAction(() => (this.exportFailed = false));
+      return { blob, filename: `dossier-${patient.ipp}.pdf` };
+    } catch {
+      runInAction(() => (this.exportFailed = true));
+      return null;
+    }
   }
 
   /** Redemande le résumé dans la langue courante. */

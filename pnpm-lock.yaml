@@ -241,6 +241,9 @@ importers:
       '@hygia/fhir':
         specifier: workspace:*
         version: link:../../packages/fhir
+      '@hygia/i18n':
+        specifier: workspace:*
+        version: link:../../packages/i18n
       '@hygia/observability':
         specifier: workspace:*
         version: link:../../packages/observability

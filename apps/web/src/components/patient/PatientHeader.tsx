@@ -5,6 +5,7 @@ import { Download, Sparkles } from 'lucide-react';
 import { observer } from 'mobx-react-lite';
 import type { PatientRecordViewModel } from '@hygia/view-models';
 import { Avatar, Badge, Button, Card } from '@/components/ui';
+import { downloadFile } from '@/lib/download-file';
 import { useSession } from '@/lib/session-context';
 
 /** Onglets du dossier ; seuls ceux qui portent un `id` sont disponibles pour l'instant. */
@@ -46,9 +47,17 @@ export const PatientHeader = observer(function PatientHeader({
             ))}
           </div>
           <p className="muted">{vm.identityLine}</p>
+          {vm.exportFailed ? <p role="alert">{t('export.error')}</p> : null}
         </div>
         <div className="page-actions">
-          <Button variant="secondary" onClick={() => window.print()}>
+          <Button
+            variant="secondary"
+            onClick={() =>
+              void vm.exportPdf().then((file) => {
+                if (file !== null) downloadFile(file);
+              })
+            }
+          >
             <Download size={16} aria-hidden="true" />
             {t('patient.exportPdf')}
           </Button>

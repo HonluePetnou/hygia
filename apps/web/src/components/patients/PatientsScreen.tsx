@@ -1,10 +1,11 @@
 'use client';
 
 import { useEffect } from 'react';
-import { Search, Sparkles } from 'lucide-react';
+import { Download, Search, Sparkles } from 'lucide-react';
 import { observer } from 'mobx-react-lite';
 import { DuplicatesViewModel, RecordSearchViewModel } from '@hygia/view-models';
 import { Badge, Button, Card } from '@/components/ui';
+import { downloadFile } from '@/lib/download-file';
 import { useGateway } from '@/lib/gateway-context';
 import { useSession } from '@/lib/session-context';
 import { useViewModel } from '@/lib/use-view-model';
@@ -42,7 +43,21 @@ export const PatientsScreen = observer(function PatientsScreen({
 
   return (
     <>
-      <h1>{t('patients.title')}</h1>
+      <header className="page-header">
+        <h1>{t('patients.title')}</h1>
+        <Button
+          variant="secondary"
+          onClick={() =>
+            void vm.exportCsv().then((file) => {
+              if (file !== null) downloadFile(file);
+            })
+          }
+        >
+          <Download size={16} strokeWidth={1.75} aria-hidden="true" />
+          {t('patients.exportCsv')}
+        </Button>
+      </header>
+      {vm.exportFailed ? <p role="alert">{t('export.error')}</p> : null}
       <DuplicateBanners vm={duplicates} />
       <Card className="patients-card">
         <form

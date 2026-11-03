@@ -22,6 +22,9 @@ import { DocumentsService } from './documents/documents.service.js';
 import { DoublonsController } from './doublons/doublons.controller.js';
 import { DUPLICATE_THRESHOLD, DuplicatesService } from './doublons/duplicates.service.js';
 import { MergeService } from './doublons/merge.service.js';
+import { ExportsController } from './exports/exports.controller.js';
+import { ExportsService } from './exports/exports.service.js';
+import { EPIDEMIOLOGY_SOURCE, HttpEpidemiologySource } from './exports/epidemiology-source.js';
 import { RechercheController } from './recherche/recherche.controller.js';
 import { QUERY_INTERPRETER, SearchService } from './recherche/search.service.js';
 import { DOCUMENT_STORE } from './versions/document-store.js';
@@ -38,8 +41,11 @@ import { VersionsService } from './versions/versions.service.js';
     DoublonsController,
     RechercheController,
     AlertesController,
+    ExportsController,
   ],
   providers: [
+    ExportsService,
+    { provide: EPIDEMIOLOGY_SOURCE, useFactory: () => new HttpEpidemiologySource(loadEnv().agentsUrl) },
     AlertesService,
     { provide: ALERT_REPOSITORY, useFactory: () => new InMemoryAlertRepository(demoAlerts()) },
     { provide: ALERT_EVENTS, useFactory: () => new InMemoryAlertEventPublisher() },

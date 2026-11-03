@@ -1,3 +1,4 @@
+import type { Locale } from '@hygia/i18n';
 import { CAMEROON_CITIES } from './cameroon-geography.js';
 import type { DelegationNotice, EpidemiologyGateway } from './epidemiology-gateway.js';
 import type {
@@ -117,6 +118,11 @@ export class InMemoryEpidemiologyGateway implements EpidemiologyGateway {
     this.listeners.add(handlers);
     handlers.onStatus('live');
     return () => this.listeners.delete(handlers);
+  }
+
+  /** Hors ligne : pas de moteur PDF, le fichier contient seulement un avis. */
+  exportReport(locale: Locale): Promise<Blob> {
+    return Promise.resolve(new Blob([`%PDF-1.4 hors ligne ${locale}`], { type: 'application/pdf' }));
   }
 
   notifyDelegation(notice: DelegationNotice): Promise<void> {

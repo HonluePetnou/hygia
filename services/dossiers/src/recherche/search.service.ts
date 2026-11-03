@@ -6,6 +6,7 @@ import {
   type QueryInterpreter,
   type SearchFilter,
   type SearchResponse,
+  type SearchResultRow,
 } from '@hygia/fhir';
 import { AccessPolicy } from '../access/access-policy.js';
 import { CLOCK, type Clock } from '../access/clock.js';
@@ -33,14 +34,7 @@ export class SearchService {
    * lecture de chaque dossier affiché (page courante).
    */
   search(user: AuthenticatedUser, request: SearchRequest): SearchResponse {
-    this.policy.assertClinical(user);
-    const today = this.clock.now().toISOString().slice(0, 10);
-    const filters: SearchFilter[] = request.filters ?? this.interpreter.interpret(request.query);
-    const files = this.repository
-      .activePatients()
-      .filter((patient) => this.policy.basisFor(user, patient.id) !== undefined)
-      .map((patient): PatientFile => ({ patient, ...this.repository.recordOf(patient.id) }));
-    const all = runSearch(files, filters, today);
+    const { filters, all } = this.evaluate(user, request);
     const start = (request.page - 1) * request.size;
     const resultats = all.slice(start, start + request.size);
     for (const row of resultats) {
@@ -55,5 +49,20 @@ export class SearchService {
       });
     }
     return { filtres: filters, resultats, total: all.length, page: request.page, taille: request.size };
+  }
+
+  /**
+   * Interprète la requête (sauf si des filtres sont fournis) et renvoie tous les dossiers lisibles
+   * correspondants, sans pagination ni audit (l'appelant audite ce qu'il affiche ou exporte).
+   */
+  evaluate(user: AuthenticatedUser, request: SearchRequest): { filters: SearchFilter[]; all: SearchResultRow[] } {
+    this.policy.assertClinical(user);
+    const today = this.clock.now().toISOString().slice(0, 10);
+    const filters: SearchFilter[] = request.filters ?? this.interpreter.interpret(request.query);
+    const files = this.repository
+      .activePatients()
+      .filter((patient) => this.policy.basisFor(user, patient.id) !== undefined)
+      .map((patient): PatientFile => ({ patient, ...this.repository.recordOf(patient.id) }));
+    return { filters, all: runSearch(files, filters, today) };
   }
 }

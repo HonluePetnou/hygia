@@ -1,4 +1,5 @@
 import { makeAutoObservable, runInAction } from 'mobx';
+import type { ExportDownload } from './export-download.js';
 import type { PatientsGateway } from './gateways.js';
 import type { LoadState } from './load-state.js';
 import type { LocaleSource, SearchFilter, SearchResultRow } from './types.js';
@@ -19,6 +20,8 @@ export class RecordSearchViewModel {
   results: SearchResultRow[] = [];
   total = 0;
   page = 1;
+  /** Dernier export CSV en échec. */
+  exportFailed = false;
 
   /** Numéro de la dernière recherche lancée : écarte les réponses périmées. */
   private sequence = 0;
@@ -54,6 +57,18 @@ export class RecordSearchViewModel {
   async goToPage(page: number): Promise<void> {
     if (page < 1 || page > this.pageCount) return;
     await this.run({ filtres: this.filters }, page);
+  }
+
+  /** CSV de tous les résultats de la recherche courante (audité côté serveur) ; `null` en cas d'échec. */
+  async exportCsv(): Promise<ExportDownload | null> {
+    try {
+      const blob = await this.gateway.exportSearch({ filtres: this.filters }, this.i18n.locale);
+      runInAction(() => (this.exportFailed = false));
+      return { blob, filename: 'patients.csv' };
+    } catch {
+      runInAction(() => (this.exportFailed = true));
+      return null;
+    }
   }
 
   get pageCount(): number {

@@ -119,6 +119,21 @@ export class InMemoryPatientsGateway implements PatientsGateway {
     return Promise.resolve({ filtres, resultats, total: all.length, page, taille });
   }
 
+  /** Hors ligne : pas de moteur PDF, le fichier contient seulement un avis. */
+  exportDossier(patientId: string, locale: Locale): Promise<Blob> {
+    const denied = this.denial(patientId);
+    if (denied) return Promise.reject(denied);
+    return Promise.resolve(new Blob([`%PDF-1.4 hors ligne ${patientId} ${locale}`], { type: 'application/pdf' }));
+  }
+
+  async exportSearch(request: RecordSearchRequest, locale: Locale): Promise<Blob> {
+    const t = createTranslator(locale);
+    const { resultats } = await this.searchRecords({ ...request, page: 1, taille: 100 });
+    const headers = ['ipp', 'familyName', 'givenName', 'birthDate'].map((key) => t(`export.csv.${key}`));
+    const rows = resultats.map((r) => [r.ipp, r.familyName, r.givenName, r.birthDate].join(','));
+    return new Blob([[headers.join(','), ...rows].join('\r\n')], { type: 'text/csv;charset=utf-8' });
+  }
+
   patient(patientId: string): Promise<PatientSummary> {
     const denied = this.denial(patientId);
     if (denied) return Promise.reject(denied);

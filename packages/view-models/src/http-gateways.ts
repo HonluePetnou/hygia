@@ -71,6 +71,15 @@ export class HttpPatientsGateway implements PatientsGateway {
     return this.dossiers.post('/recherche', request);
   }
 
+  exportDossier(patientId: string, locale: Locale, summary?: string[]): Promise<Blob> {
+    const body = { langue: locale, ...(summary === undefined ? {} : { resume: summary }) };
+    return this.dossiers.postBlob(`/patients/${encodeURIComponent(patientId)}/export.pdf`, body);
+  }
+
+  exportSearch(request: RecordSearchRequest, locale: Locale): Promise<Blob> {
+    return this.dossiers.postBlob('/recherche/export.csv', { ...request, langue: locale });
+  }
+
   overview(patientId: string): Promise<PatientOverview> {
     return this.dossiers.get(`/patients/${encodeURIComponent(patientId)}/synthese`);
   }

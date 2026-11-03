@@ -34,6 +34,17 @@ export class HttpClient {
     return this.request<T>('POST', path, body);
   }
 
+  /** POST JSON, réponse binaire (export PDF ou CSV). */
+  async postBlob(path: string, body: unknown): Promise<Blob> {
+    const response = await this.fetchFn(`${this.baseUrl.replace(/\/+$/, '')}${path}`, {
+      method: 'POST',
+      headers: { ...authHeaders(this.identity()), 'content-type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+    if (!response.ok) throw new GatewayError(response.status, `POST ${path}`);
+    return response.blob();
+  }
+
   private async request<T>(method: string, path: string, body?: unknown): Promise<T> {
     const headers: Record<string, string> = authHeaders(this.identity());
     if (body !== undefined) headers['content-type'] = 'application/json';

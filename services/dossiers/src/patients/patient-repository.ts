@@ -1,4 +1,5 @@
 import type {
+  AllergyIntolerance,
   Condition,
   DetectedIssue,
   DocumentReference,
@@ -67,6 +68,10 @@ export interface PatientRepository {
   findDocument(id: string): DocumentReference | undefined;
   /** Contenu clinique du patient. */
   recordOf(patientId: string): PatientRecord;
+  /** Allergies et intolérances du patient. */
+  allergiesOf(patientId: string): AllergyIntolerance[];
+  /** Nom de l'établissement de rattachement, s'il est connu. */
+  organizationName(organizationId: string): string | undefined;
   /** Identifiants des patients suivis par les équipes de soins du praticien. */
   patientIdsOfCareTeams(practitionerId: string): ReadonlySet<string>;
   /** Remplace les champs modifiables si `expectedVersion` est la version courante. */

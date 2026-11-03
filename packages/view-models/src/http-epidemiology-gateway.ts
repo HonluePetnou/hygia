@@ -1,3 +1,4 @@
+import type { Locale } from '@hygia/i18n';
 import type { DelegationNotice, EpidemiologyGateway } from './epidemiology-gateway.js';
 import type {
   CasesResponse,
@@ -20,13 +21,23 @@ function query(params: Record<string, string | undefined>): string {
 /** Passerelle HTTP vers le service Agents (`/analyse/*`, réservé au rôle `analyste`). */
 export class HttpEpidemiologyGateway implements EpidemiologyGateway {
   private readonly client: HttpClient;
+  private readonly exports: HttpClient;
 
   constructor(
     private readonly baseUrl: string,
     private readonly identity: () => Identity,
     private readonly fetchFn: typeof fetch = (input, init) => fetch(input, init),
+    exportsUrl: string = baseUrl,
   ) {
     this.client = new HttpClient(baseUrl, identity, fetchFn);
+    this.exports = new HttpClient(exportsUrl, identity, fetchFn);
+  }
+
+  exportReport(locale: Locale, pathology?: string): Promise<Blob> {
+    return this.exports.postBlob('/analytique/rapport.pdf', {
+      langue: locale,
+      ...(pathology === undefined ? {} : { pathologie: pathology }),
+    });
   }
 
   cases(pathology: string, week?: string): Promise<CasesResponse> {

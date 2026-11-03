@@ -1,4 +1,6 @@
 import { makeAutoObservable, runInAction } from 'mobx';
+import type { Locale } from '@hygia/i18n';
+import type { ExportDownload } from './export-download.js';
 import { buildBubbles, fetchSnapshot, inRegion, type Bubble } from './epidemiology-derive.js';
 import type { EpidemiologyGateway } from './epidemiology-gateway.js';
 import {
@@ -39,6 +41,8 @@ export class EpidemiologyViewModel {
   /** Vrai une fois la délégation notifiée pour le foyer affiché. */
   notified = false;
   notifyFailed = false;
+  /** Dernier export du rapport en échec. */
+  exportFailed = false;
 
   private previous: CaseRow[] = [];
   private latestWeek: string | null = null;
@@ -148,6 +152,18 @@ export class EpidemiologyViewModel {
       });
     } catch {
       runInAction(() => (this.notifyFailed = true));
+    }
+  }
+
+  /** Rapport PDF de la pathologie affichée (agrégats pseudonymisés, audité) ; `null` en cas d'échec. */
+  async exportReport(locale: Locale): Promise<ExportDownload | null> {
+    try {
+      const blob = await this.gateway.exportReport(locale, this.pathology);
+      runInAction(() => (this.exportFailed = false));
+      return { blob, filename: 'rapport-epidemiologique.pdf' };
+    } catch {
+      runInAction(() => (this.exportFailed = true));
+      return null;
     }
   }
 

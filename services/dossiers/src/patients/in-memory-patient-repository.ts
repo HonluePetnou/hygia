@@ -1,5 +1,6 @@
 import type { demoDataset } from '@hygia/fhir';
 import type {
+  AllergyIntolerance,
   Condition,
   DocumentReference,
   Encounter,
@@ -66,6 +67,14 @@ export class InMemoryPatientRepository implements PatientRepository {
 
   findDocument(id: string): DocumentReference | undefined {
     return this.documents.get(id);
+  }
+
+  allergiesOf(patientId: string): AllergyIntolerance[] {
+    return this.data.allergies.filter((item) => idOf(item.subject) === patientId);
+  }
+
+  organizationName(organizationId: string): string | undefined {
+    return this.data.organizations.find((item) => item.id === organizationId)?.name;
   }
 
   recordOf(patientId: string): PatientRecord {

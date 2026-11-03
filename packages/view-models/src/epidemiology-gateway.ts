@@ -1,3 +1,4 @@
+import type { Locale } from '@hygia/i18n';
 import type {
   CasesResponse,
   DistrictRank,
@@ -27,6 +28,8 @@ export interface EpidemiologyGateway {
   outbreaks(week?: string): Promise<Outbreak[]>;
   /** Ouvre le flux temps réel (SSE) ; renvoie la fonction qui le ferme. */
   subscribe(handlers: LiveHandlers): () => void;
+  /** Rapport PDF de la semaine (agrégats pseudonymisés), dans la langue demandée (audité). */
+  exportReport(locale: Locale, pathology?: string): Promise<Blob>;
   /** Publie l'événement de notification de la délégation. */
   notifyDelegation(notice: DelegationNotice): Promise<void>;
 }
