@@ -1,0 +1,8 @@
+
+## Tâche 019 — veille épidémiologique (Lead, reprise après échec des juniors)
+- `services/agents` : `surveillance.py` (agrégats hebdomadaires par pathologie et district, seuil moyenne mobile 8 semaines + 2σ en écart-type de population, plancher de 3 cas), `veille.py` (`VeilleAgent` + `Coordinator`), `lease.py` (`LeaseStore` : mémoire et `DynamoDbLeaseStore` par écriture conditionnelle sur `hygia-baux`), `analytics_api.py` (`/analyse/cas|serie|districts|foyers|flux`), `outbreak_data.py` (12 villes, choléra à Mora : 14 cas en S44, 3,2 attendus, seuil 7,1).
+- Décisions : `handle` ne fait que compter (sur toutes les instances) ; le calcul (`analyse`) n'est exécuté que par le détenteur du bail, qui expire après 30 s sans renouvellement. L'identifiant d'alerte est déterministe (uuid5) pour qu'un basculement ne crée pas de doublon. Un événement portant une clé identifiante (nom, IPP, patient…) est refusé (400).
+- Rôle `analyste` : contrôlé par le broker (403 sinon, `agents/analyse*`), qui pose `x-user-role` vérifié ; le service Python le revérifie mais ne lit pas le JWT.
+- Aucune dépendance ajoutée : `boto3` est importé tardivement, seulement avec `AGENTS_DYNAMODB_URL` (LocalStack).
+- Limites : `DynamoDbLeaseStore` testé avec un faux client, pas contre LocalStack ; le flux SSE est alimenté par `POST /events` (pas de Kinesis) ; les alertes de veille ne sont pas postées sur `POST /alertes` ; compteurs en mémoire.
+- lint, typecheck, test verts.
