@@ -1,5 +1,8 @@
 export type * from './types.js';
-export type { PatientsGateway, CopiloteGateway, IngestionGateway } from './gateways.js';
+export type { PatientsGateway, CopiloteGateway, IngestionGateway, AuthGateway } from './gateways.js';
+export { HttpAuthGateway } from './http-auth-gateway.js';
+export { InMemoryAuthGateway } from './in-memory-auth-gateway.js';
+export type { OfflineUser } from './in-memory-auth-gateway.js';
 export type { LoadState } from './load-state.js';
 export { GatewayError } from './http-client.js';
 export { HttpPatientsGateway, HttpCopiloteGateway, HttpIngestionGateway } from './http-gateways.js';

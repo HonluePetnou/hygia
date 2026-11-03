@@ -11,7 +11,12 @@ export class GatewayError extends Error {
   }
 }
 
-/** Client JSON minimal : ajoute les en-têtes d'identité à chaque requête. */
+/** En-tête `Authorization: Bearer` de l'identité courante (vide sans jeton). */
+export function authHeaders(identity: Identity): Record<string, string> {
+  return identity.token === undefined ? {} : { authorization: `Bearer ${identity.token}` };
+}
+
+/** Client JSON minimal : joint le jeton d'accès à chaque requête. */
 export class HttpClient {
   constructor(
     private readonly baseUrl: string,
@@ -30,8 +35,7 @@ export class HttpClient {
   }
 
   private async request<T>(method: string, path: string, body?: unknown): Promise<T> {
-    const { userId, role } = this.identity();
-    const headers: Record<string, string> = { 'x-user-id': userId, 'x-user-role': role };
+    const headers: Record<string, string> = authHeaders(this.identity());
     if (body !== undefined) headers['content-type'] = 'application/json';
     const response = await this.fetchFn(`${this.baseUrl.replace(/\/+$/, '')}${path}`, {
       method,

@@ -1,0 +1,29 @@
+{
+  "name": "@hygia/auth",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Jeton d'accès HYGIA : émission, vérification (JWKS) et contenu des revendications",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@hygia/types": "workspace:*",
+    "jose": "^6.2.15"
+  },
+  "devDependencies": {
+    "@types/node": "^22.20.5",
+    "vitest": "^5.1.0"
+  }
+}

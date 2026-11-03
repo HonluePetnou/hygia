@@ -14,7 +14,7 @@ export const CredentialsForm = observer(function CredentialsForm() {
 
   const onSubmit = (event: FormEvent) => {
     event.preventDefault();
-    session.submitCredentials(email, password);
+    void session.submitCredentials(email, password);
   };
 
   return (
@@ -38,7 +38,7 @@ export const CredentialsForm = observer(function CredentialsForm() {
         onChange={(event) => setPassword(event.target.value)}
         error={session.errorMessage}
       />
-      <Button type="submit" block>
+      <Button type="submit" block disabled={session.submitting}>
         {t('login.submit')}
       </Button>
     </form>

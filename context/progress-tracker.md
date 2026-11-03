@@ -4,7 +4,7 @@ _Dernière mise à jour : 2026-11-03_
 
 ## État actuel
 
-Monorepo initialisé ; tâches 001, 002, 003 (`@hygia/audit`) et 004 (service `dossiers`) 005 (`@hygia/ingestion`) et 006 (`ia-clinique`) et 007 (`view-models`) terminées.
+Monorepo initialisé ; tâches 001, 002, 003 (`@hygia/audit`) et 004 (service `dossiers`) 005 (`@hygia/ingestion`) et 006 (`ia-clinique`) et 007 (`view-models`) et 013 (service Identité) terminées.
 
 ## Fait
 
@@ -28,6 +28,7 @@ Monorepo initialisé ; tâches 001, 002, 003 (`@hygia/audit`) et 004 (service `d
 
 - [x] 011 — `pnpm demo`, `pnpm package:usb`, `docs/demo.md`, README « Lancer la démo », `OUTILS.md` à jour, CORS des services. Vérifié par curl hors Docker ; écrans web non parcourus au navigateur, README non testé sur clone propre, journal des accès via l'API (écran = tâche 021).
 - [x] 012 — `services/broker` (NestJS) : `/api/<service>/...`, registre par variables d'environnement, proxy HTTP + SSE, `x-correlation-id`, limite de débit par utilisateur (429), 503 si service muet ; web via `NEXT_PUBLIC_API_URL` ; `pnpm demo` démarre le broker.
+- [x] 013 — `services/identite` (comptes, TOTP réel + QR + codes de secours, JWT 30 min + JWKS, équipes, bris de glace 4 h avec événement DPO) et `@hygia/auth` ; broker/dossiers/ia-clinique vérifient le jeton (en-têtes `x-user-*` supprimés) ; connexion web branchée. Pas de renouvellement automatique du jeton côté web ; `docs/demo.md` à mettre à jour.
 - [ ] Tâches suivantes dans `tasks/todo/`
 
 ## Décisions / blocages

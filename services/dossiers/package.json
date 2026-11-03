@@ -13,6 +13,7 @@
   },
   "dependencies": {
     "@hygia/audit": "workspace:*",
+    "@hygia/auth": "workspace:*",
     "@hygia/fhir": "workspace:*",
     "@hygia/types": "workspace:*",
     "@nestjs/common": "^12.3.2",

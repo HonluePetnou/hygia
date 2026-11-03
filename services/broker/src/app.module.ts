@@ -1,7 +1,8 @@
 import { Module } from '@nestjs/common';
+import { remoteVerifier } from '@hygia/auth';
 import { loadEnv, type Env } from './config/env.js';
 import { RateLimiter } from './limit/rate-limiter.js';
-import { BrokerController, RATE_LIMITER } from './proxy/broker.controller.js';
+import { BrokerController, RATE_LIMITER, TOKEN_VERIFIER } from './proxy/broker.controller.js';
 import { ProxyService } from './proxy/proxy.service.js';
 import { ServiceRegistry } from './registry/service-registry.js';
 
@@ -19,6 +20,7 @@ export const BROKER_ENV = Symbol('BROKER_ENV');
       useFactory: (env: Env) => new RateLimiter(env.rateLimit, env.rateWindowMs),
       inject: [BROKER_ENV],
     },
+    { provide: TOKEN_VERIFIER, useFactory: (env: Env) => remoteVerifier(env.jwksUrl), inject: [BROKER_ENV] },
   ],
 })
 export class AppModule {}

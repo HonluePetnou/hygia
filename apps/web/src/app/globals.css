@@ -421,6 +421,40 @@ a:hover {
   font-size: 13px;
   margin: 0;
 }
+.enroll {
+  display: grid;
+  gap: 12px;
+  justify-items: center;
+  text-align: center;
+}
+.enroll-qr {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: #fff;
+}
+.backup-codes {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+.backup-codes li {
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  text-align: center;
+}
+.link-button {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+}
 .lang-switch {
   display: inline-flex;
   padding: 3px;

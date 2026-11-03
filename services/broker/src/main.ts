@@ -9,6 +9,6 @@ const app = await NestFactory.create(AppModule, { bodyParser: false });
 app.enableCors({
   origin: env.webOrigin,
   exposedHeaders: ['ETag', 'x-correlation-id'],
-  allowedHeaders: ['content-type', 'x-user-id', 'x-user-role', 'x-correlation-id', 'accept', 'if-match'],
+  allowedHeaders: ['content-type', 'authorization', 'x-correlation-id', 'accept', 'if-match'],
 });
 await app.listen(env.port);

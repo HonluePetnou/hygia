@@ -15,22 +15,22 @@ import {
 const patients = () => new InMemoryPatientsGateway(demoDataset, () => '2026-10-28');
 
 describe('SessionViewModel', () => {
-  it('connecte avec le bon code', () => {
+  it('connecte avec le bon code', async () => {
     const session = new SessionViewModel();
-    expect(session.submitCredentials('nana@hygia.test', 'secret')).toBe(true);
+    expect(await session.submitCredentials('nana@hygia.test', 'secret')).toBe(true);
     expect(session.step).toBe('code');
-    expect(session.submitCode('481516')).toBe(true);
+    expect(await session.submitCode('481516')).toBe(true);
     expect(session.isAuthenticated).toBe(true);
     expect(session.errorMessage).toBeNull();
   });
 
-  it('refuse un mauvais code, un code mal formé et des identifiants vides', () => {
+  it('refuse un mauvais code, un code mal formé et des identifiants vides', async () => {
     const session = new SessionViewModel();
-    expect(session.submitCredentials('', '')).toBe(false);
+    expect(await session.submitCredentials('', '')).toBe(false);
     expect(session.errorMessage).toBe('Identifiants invalides');
-    session.submitCredentials('nana@hygia.test', 'secret');
-    expect(session.submitCode('000000')).toBe(false);
-    expect(session.submitCode('48151')).toBe(false);
+    await session.submitCredentials('nana@hygia.test', 'secret');
+    expect(await session.submitCode('000000')).toBe(false);
+    expect(await session.submitCode('48151')).toBe(false);
     expect(session.isAuthenticated).toBe(false);
     expect(session.errorKey).toBe('mfa.error');
   });
@@ -222,17 +222,18 @@ describe('accès refusé et bris de glace', () => {
 });
 
 describe('passerelle HTTP', () => {
-  it('envoie les en-têtes d’identité et l’URL de base fournie', async () => {
+  it('envoie le jeton Bearer et l’URL de base fournie, sans en-têtes d’identité simulés', async () => {
     const fetchFn = vi.fn(async () => Response.json({ answer: 'ok', language: 'fr', sources: [] }));
     const gateway = new HttpCopiloteGateway(
       'http://broker.test/',
-      () => ({ userId: 'u-1', role: 'medecin' }),
+      () => ({ userId: 'u-1', role: 'medecin', token: 'jwt.abc' }),
       fetchFn as unknown as typeof fetch,
     );
     await gateway.ask('p 1', 'Bonjour');
     const [url, init] = fetchFn.mock.calls[0] as unknown as [string, RequestInit];
     expect(url).toBe('http://broker.test/copilote/p%201');
-    expect(init.headers).toMatchObject({ 'x-user-id': 'u-1', 'x-user-role': 'medecin' });
+    expect(init.headers).toMatchObject({ authorization: 'Bearer jwt.abc' });
+    expect(init.headers).not.toHaveProperty('x-user-id');
     expect(init.body).toBe(JSON.stringify({ question: 'Bonjour' }));
   });
 });

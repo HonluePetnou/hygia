@@ -1,5 +1,9 @@
 import type { Locale } from '@hygia/i18n';
 import type {
+  AuthSession,
+  LoginChallenge,
+  MfaEnrollment,
+  SecondFactor,
   BreakGlassGrant,
   BreakGlassRequest,
   ChosenFile,
@@ -43,4 +47,14 @@ export interface CopiloteGateway {
 export interface IngestionGateway {
   /** Soumet un fichier (rattaché à un patient, facultatif) et renvoie l'état de chaque étape. */
   ingest(file: ChosenFile, patientId?: string): Promise<IngestionResult>;
+}
+
+/** Accès au service Identité (connexion en deux étapes, via le broker). */
+export interface AuthGateway {
+  /** Étape 1 : e-mail et mot de passe ; rejette avec `GatewayError` 401 si invalides. */
+  login(email: string, password: string): Promise<LoginChallenge>;
+  /** Secret et QR code pour un compte dont la double authentification n'est pas encore enrôlée. */
+  enroll(challengeId: string): Promise<MfaEnrollment>;
+  /** Étape 2 : code TOTP ou code de secours ; renvoie le jeton d'accès. */
+  verify(challengeId: string, factor: SecondFactor): Promise<AuthSession>;
 }

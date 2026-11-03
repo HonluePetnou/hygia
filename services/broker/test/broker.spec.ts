@@ -3,12 +3,13 @@ import { createServer, type IncomingMessage, type Server } from 'node:http';
 import type { AddressInfo } from 'node:net';
 import type { INestApplication } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
+import { TokenIssuer, localVerifier } from '@hygia/auth';
 import request from 'supertest';
 import { AppModule, BROKER_ENV } from '../src/app.module.js';
 import { loadEnv, type Env } from '../src/config/env.js';
 import { RateLimiter } from '../src/limit/rate-limiter.js';
+import { TOKEN_VERIFIER } from '../src/proxy/broker.controller.js';
 
-const user = { 'x-user-id': 'u1', 'x-user-role': 'medecin' };
 
 /** Faux service : renvoie son nom, le chemin reçu et l'en-tête de corrélation ; `/flux` émet du SSE. */
 function startService(name: string): Promise<{ server: Server; url: string }> {
@@ -20,7 +21,7 @@ function startService(name: string): Promise<{ server: Server; url: string }> {
       return;
     }
     res.setHeader('content-type', 'application/json');
-    res.end(JSON.stringify({ name, url: req.url, correlation: req.headers['x-correlation-id'] }));
+    res.end(JSON.stringify({ name, url: req.url, correlation: req.headers['x-correlation-id'], auth: req.headers['authorization'] }));
   });
   return new Promise((resolve) =>
     server.listen(0, '127.0.0.1', () => resolve({ server, url: `http://127.0.0.1:${(server.address() as AddressInfo).port}` })),
@@ -30,12 +31,24 @@ function startService(name: string): Promise<{ server: Server; url: string }> {
 describe('broker', () => {
   const servers: Server[] = [];
   let app: INestApplication;
+  let issuer: TokenIssuer;
+  let user: Record<string, string>;
+
+  /** En-tête Authorization d'un jeton valide pour l'utilisateur `sub`. */
+  async function tokenFor(sub: string): Promise<Record<string, string>> {
+    const { token } = await issuer.issue({ sub, role: 'medecin', teams: [], emergency: [] }, new Date());
+    return { authorization: `Bearer ${token}` };
+  }
 
   async function boot(overrides: Partial<Env>, services: Record<string, string>): Promise<void> {
     const env: Env = { ...loadEnv({}), services, timeoutMs: 300, ...overrides };
+    issuer = await TokenIssuer.create();
+    user = await tokenFor('u1');
     const module = await Test.createTestingModule({ imports: [AppModule] })
       .overrideProvider(BROKER_ENV)
       .useValue(env)
+      .overrideProvider(TOKEN_VERIFIER)
+      .useValue(localVerifier(issuer.jwks()))
       .compile();
     app = module.createNestApplication({ bodyParser: false });
     await app.init();
@@ -66,9 +79,35 @@ describe('broker', () => {
     expect((await request(app.getHttpServer()).get('/api/audit/x').set(user)).status).toBe(404);
   });
 
-  it('renvoie 401 sans identité', async () => {
+  it('renvoie 401 sans jeton, avec un faux jeton, un jeton d’une autre clé ou des en-têtes simulés', async () => {
     await boot({}, { dossiers: await service('dossiers') });
-    expect((await request(app.getHttpServer()).get('/api/dossiers/x')).status).toBe(401);
+    const get = () => request(app.getHttpServer()).get('/api/dossiers/x');
+    expect((await get()).status).toBe(401);
+    expect((await get().set('authorization', 'Bearer faux.jeton.ici')).status).toBe(401);
+    const other = await (await TokenIssuer.create()).issue(
+      { sub: 'u1', role: 'medecin', teams: [], emergency: [] },
+      new Date(),
+    );
+    expect((await get().set('authorization', `Bearer ${other.token}`)).status).toBe(401);
+    expect((await get().set({ 'x-user-id': 'u1', 'x-user-role': 'medecin' })).status).toBe(401);
+  });
+
+  it('laisse passer sans jeton seulement la connexion et la clé publique du service Identité', async () => {
+    await boot({}, { identite: await service('identite') });
+    const call = (path: string) => request(app.getHttpServer()).post(`/api/identite/${path}`);
+    expect((await call('auth/login')).status).toBe(200);
+    expect((await call('auth/mfa/verify')).status).toBe(200);
+    expect((await request(app.getHttpServer()).get('/api/identite/.well-known/jwks.json')).status).toBe(200);
+    expect((await call('comptes')).status).toBe(401);
+    expect((await call('bris-de-glace')).status).toBe(401);
+    expect((await call('auth/refresh')).status).toBe(401);
+  });
+
+  it('transmet l’en-tête Authorization au service', async () => {
+    await boot({}, { dossiers: await service('dossiers') });
+    const res = await request(app.getHttpServer()).get('/api/dossiers/x').set(user);
+    expect(res.status).toBe(200);
+    expect(res.body.auth).toBe(user['authorization']);
   });
 
   it('renvoie 503 si le service ne répond pas dans le délai', async () => {
@@ -110,11 +149,12 @@ describe('broker', () => {
 
   it('limite le débit par utilisateur (429)', async () => {
     await boot({ rateLimit: 2 }, { dossiers: await service('dossiers') });
-    const call = (id: string) => request(app.getHttpServer()).get('/api/dossiers/x').set('x-user-id', id);
-    expect((await call('u1')).status).toBe(200);
-    expect((await call('u1')).status).toBe(200);
-    expect((await call('u1')).status).toBe(429);
-    expect((await call('u2')).status).toBe(200);
+    const u2 = await tokenFor('u2');
+    const call = (headers: Record<string, string>) => request(app.getHttpServer()).get('/api/dossiers/x').set(headers);
+    expect((await call(user)).status).toBe(200);
+    expect((await call(user)).status).toBe(200);
+    expect((await call(user)).status).toBe(429);
+    expect((await call(u2)).status).toBe(200);
   });
 });
 
@@ -132,6 +172,8 @@ describe('RateLimiter', () => {
 describe('loadEnv', () => {
   it('lit le registre depuis l’environnement et rejette une URL invalide', () => {
     expect(loadEnv({ BROKER_SERVICE_IA_CLINIQUE_URL: 'http://ia:3003' }).services).toEqual({ 'ia-clinique': 'http://ia:3003' });
+    expect(loadEnv({ BROKER_SERVICE_IDENTITE_URL: 'http://id:3004/' }).jwksUrl).toBe('http://id:3004/.well-known/jwks.json');
+    expect(() => loadEnv({ BROKER_JWKS_URL: 'pas une url' })).toThrow(/BROKER_JWKS_URL/);
     expect(() => loadEnv({ BROKER_SERVICE_DOSSIERS_URL: 'pas une url' })).toThrow();
     expect(() => loadEnv({ BROKER_PORT: 'x' })).toThrow();
   });

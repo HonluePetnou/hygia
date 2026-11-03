@@ -6,6 +6,7 @@ import { ShieldCheck } from 'lucide-react';
 import { observer } from 'mobx-react-lite';
 import { LanguageSwitch } from '@/components/LanguageSwitch';
 import { useSession } from '@/lib/session-context';
+import { BackupCodesPanel } from './BackupCodesPanel';
 import { BrandPanel } from './BrandPanel';
 import { CodeForm } from './CodeForm';
 import { CredentialsForm } from './CredentialsForm';
@@ -30,7 +31,9 @@ export const LoginScreen = observer(function LoginScreen() {
         </div>
         <div className="login-card">
           <Stepper />
-          {session.step === 'credentials' ? <CredentialsForm /> : <CodeForm />}
+          {session.step === 'credentials' ? <CredentialsForm /> : null}
+          {session.step === 'enroll' || session.step === 'code' ? <CodeForm /> : null}
+          {session.step === 'backupCodes' ? <BackupCodesPanel /> : null}
           <p className="audit-note">
             <ShieldCheck size={18} strokeWidth={1.75} aria-hidden="true" />
             {t('login.audit')}

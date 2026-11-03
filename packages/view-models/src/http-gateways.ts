@@ -1,6 +1,6 @@
 import type { Locale } from '@hygia/i18n';
 import type { CopiloteGateway, IngestionGateway, PatientsGateway } from './gateways.js';
-import { GatewayError, HttpClient } from './http-client.js';
+import { GatewayError, HttpClient, authHeaders } from './http-client.js';
 import { readSse } from './sse-reader.js';
 import type {
   BreakGlassGrant,
@@ -21,16 +21,35 @@ import type {
 export interface PatientsUrls {
   dossiersUrl: string;
   iaCliniqueUrl: string;
+  /** Service Identité, qui ouvre les accès d'urgence ; sans lui, le bris de glace n'est pas possible. */
+  identiteUrl: string;
+}
+
+/** Réponse de `POST /bris-de-glace` du service Identité. */
+interface EmergencyGrant {
+  patientId: string;
+  expiresAt: string;
+  accessToken: string;
 }
 
 /** Passerelle HTTP vers les dossiers (`/patients`, `/tableau-de-bord`, `/patients/:id/synthese` ; les deux derniers sont à fournir par le broker) et le résumé IA. */
 export class HttpPatientsGateway implements PatientsGateway {
   private readonly dossiers: HttpClient;
   private readonly ia: HttpClient;
+  private readonly identite: HttpClient;
 
-  constructor(urls: PatientsUrls, identity: () => Identity, fetchFn?: typeof fetch) {
+  /**
+   * @param onToken Appelé avec le nouveau jeton (portant l'accès d'urgence) après un bris de glace.
+   */
+  constructor(
+    urls: PatientsUrls,
+    identity: () => Identity,
+    fetchFn?: typeof fetch,
+    private readonly onToken: (token: string) => void = () => undefined,
+  ) {
     this.dossiers = new HttpClient(urls.dossiersUrl, identity, fetchFn);
     this.ia = new HttpClient(urls.iaCliniqueUrl, identity, fetchFn);
+    this.identite = new HttpClient(urls.identiteUrl, identity, fetchFn);
   }
 
   dashboard(): Promise<DashboardData> {
@@ -45,7 +64,13 @@ export class HttpPatientsGateway implements PatientsGateway {
     return this.dossiers.get(`/patients/${encodeURIComponent(patientId)}/synthese`);
   }
 
-  openBreakGlass(patientId: string, request: BreakGlassRequest): Promise<BreakGlassGrant> {
+  /**
+   * Le service Identité ouvre l'accès de 4 h (et notifie la DPO) et renvoie un jeton qui le porte ;
+   * le service Dossiers en trace ensuite le motif dans l'audit, avec ce nouveau jeton.
+   */
+  async openBreakGlass(patientId: string, request: BreakGlassRequest): Promise<BreakGlassGrant> {
+    const grant = await this.identite.post<EmergencyGrant>('/bris-de-glace', { patientId, ...request });
+    this.onToken(grant.accessToken);
     return this.dossiers.post(`/patients/${encodeURIComponent(patientId)}/bris-de-glace`, request);
   }
 
@@ -76,10 +101,9 @@ export class HttpCopiloteGateway implements CopiloteGateway {
 
   /** Flux SSE `GET /copilote/:patientId/flux?q=…` : évènements `word`, `sources`, `done`. */
   async stream(patientId: string, question: string, onWord: WordHandler): Promise<CopiloteAnswer> {
-    const { userId, role } = this.identity();
     const path = `/copilote/${encodeURIComponent(patientId)}/flux?q=${encodeURIComponent(question)}`;
     const response = await this.fetchFn(`${this.baseUrl.replace(/\/+$/, '')}${path}`, {
-      headers: { 'x-user-id': userId, 'x-user-role': role, accept: 'text/event-stream' },
+      headers: { ...authHeaders(this.identity()), accept: 'text/event-stream' },
     });
     if (!response.ok || response.body === null) {
       throw new GatewayError(response.status, `GET ${path}`);

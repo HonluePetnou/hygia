@@ -22,6 +22,8 @@ export interface Env {
   rateLimit: number;
   /** Durée de la fenêtre de limitation, en ms (`BROKER_RATE_WINDOW_MS`, défaut 60000). */
   rateWindowMs: number;
+  /** URL du JWKS du service Identité (`BROKER_JWKS_URL`, sinon déduite de `identite`). */
+  jwksUrl: string;
   /** Origine web autorisée par CORS (`WEB_ORIGIN`). */
   webOrigin: string;
 }
@@ -58,7 +60,10 @@ export function loadEnv(source: Source = process.env): Env {
     if (!URL.canParse(raw)) throw new Error(`${key} invalide : « ${raw} » (URL absolue attendue)`);
     services[name] = raw;
   }
+  const jwksUrl = source['BROKER_JWKS_URL'] || `${(services['identite'] ?? 'http://localhost:3004').replace(/\/+$/, '')}/.well-known/jwks.json`;
+  if (!URL.canParse(jwksUrl)) throw new Error(`BROKER_JWKS_URL invalide : « ${jwksUrl} » (URL absolue attendue)`);
   return {
+    jwksUrl,
     port: integer(source, 'BROKER_PORT', 3000, 65535),
     services,
     timeoutMs: integer(source, 'BROKER_TIMEOUT_MS', 5000),

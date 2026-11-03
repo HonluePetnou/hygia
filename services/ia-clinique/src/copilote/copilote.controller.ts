@@ -11,10 +11,10 @@ import {
   Res,
   UseGuards,
 } from '@nestjs/common';
-import { ApiHeader, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import type { Response } from 'express';
 import { CurrentUser, type AuthenticatedUser } from '../auth/authenticated-user.js';
-import { HeaderAuthGuard } from '../auth/header-auth.guard.js';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard.js';
 import { CopiloteService } from './copilote.service.js';
 import type { CopiloteAnswer } from './copilote.types.js';
 import { WORD_DELAY_MS, streamAnswer } from './sse.js';
@@ -33,11 +33,10 @@ function parseQuestion(value: unknown): string {
 
 /** API du copilote : réponses sourcées uniquement à partir du dossier du patient. */
 @ApiTags('copilote')
-@ApiHeader({ name: 'x-user-id', description: 'Identifiant utilisateur (auth simulée, démo)' })
-@ApiHeader({ name: 'x-user-role', description: 'Rôle applicatif (auth simulée, démo)' })
+@ApiBearerAuth()
 @ApiResponse({ status: 401, description: 'En-têtes d’identité absents ou invalides' })
 @ApiResponse({ status: 403, description: 'Accès refusé (rôle ou équipe de soins)' })
-@UseGuards(HeaderAuthGuard)
+@UseGuards(JwtAuthGuard)
 @Controller('copilote')
 export class CopiloteController {
   constructor(

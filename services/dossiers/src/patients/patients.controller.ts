@@ -11,12 +11,12 @@ import {
   Res,
   UseGuards,
 } from '@nestjs/common';
-import { ApiHeader, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiHeader, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import type { Patient } from '@hygia/types';
 import type { AuditEvent } from '@hygia/audit';
 import type { Response } from 'express';
 import { CurrentUser, type AuthenticatedUser } from '../auth/authenticated-user.js';
-import { HeaderAuthGuard } from '../auth/header-auth.guard.js';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard.js';
 import {
   BreakGlassDto,
   UpdatePatientDto,
@@ -29,11 +29,10 @@ import type { TimelineEvent } from './timeline.js';
 
 /** API REST des patients et dossiers. */
 @ApiTags('patients')
-@ApiHeader({ name: 'x-user-id', description: 'Identifiant utilisateur (auth simulée, démo)' })
-@ApiHeader({ name: 'x-user-role', description: 'Rôle applicatif (auth simulée, démo)' })
-@ApiResponse({ status: 401, description: 'En-têtes d’identité absents ou invalides' })
+@ApiBearerAuth()
+@ApiResponse({ status: 401, description: 'Jeton absent, invalide ou expiré' })
 @ApiResponse({ status: 403, description: 'Accès refusé (rôle ou équipe de soins)' })
-@UseGuards(HeaderAuthGuard)
+@UseGuards(JwtAuthGuard)
 @Controller('patients')
 export class PatientsController {
   constructor(private readonly service: PatientsService) {}
@@ -77,7 +76,7 @@ export class PatientsController {
 
   @Post(':id/bris-de-glace')
   @HttpCode(201)
-  @ApiOperation({ summary: 'Ouvre un accès exceptionnel de 4 h (tracé dans l’audit)' })
+  @ApiOperation({ summary: 'Trace dans l’audit le bris de glace ouvert via le service Identité (jeton requis)' })
   breakGlass(
     @CurrentUser() user: AuthenticatedUser,
     @Param('id') id: string,

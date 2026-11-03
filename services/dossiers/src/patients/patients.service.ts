@@ -1,8 +1,7 @@
-import { ConflictException, Inject, Injectable, NotFoundException } from '@nestjs/common';
+import { ConflictException, ForbiddenException, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { AuditLog, type AuditEvent } from '@hygia/audit';
 import type { Patient } from '@hygia/types';
 import { AccessPolicy, type AccessBasis } from '../access/access-policy.js';
-import { BreakGlassRegistry } from '../access/break-glass-registry.js';
 import type { AuthenticatedUser } from '../auth/authenticated-user.js';
 import type { PatientChanges } from './dto.js';
 import { PATIENT_REPOSITORY, type PatientRepository } from './patient-repository.js';
@@ -18,7 +17,6 @@ export class PatientsService {
     @Inject(PATIENT_REPOSITORY) private readonly repository: PatientRepository,
     @Inject(AUDIT_LOG) private readonly audit: AuditLog,
     private readonly policy: AccessPolicy,
-    private readonly breakGlass: BreakGlassRegistry,
   ) {}
 
   /** Recherche par nom ou IPP, limitée aux patients que l'utilisateur peut lire. */
@@ -56,7 +54,10 @@ export class PatientsService {
     return result.patient;
   }
 
-  /** Ouvre un accès exceptionnel de 4 h ; le motif est tracé dans l'audit. */
+  /**
+   * Trace dans l'audit un bris de glace ouvert auprès du service Identité (`POST /bris-de-glace`) :
+   * l'accès doit déjà figurer dans le jeton, sinon 403. Le motif est conservé dans l'audit.
+   */
   openBreakGlass(
     user: AuthenticatedUser,
     id: string,
@@ -64,7 +65,10 @@ export class PatientsService {
   ): { patientId: string; expiresAt: string } {
     this.policy.assertClinical(user);
     const patient = this.find(id);
-    const expiresAt = this.breakGlass.open(user.id, patient.id);
+    const expiresAt = this.policy.emergencyExpiry(user, patient.id);
+    if (expiresAt === undefined) {
+      throw new ForbiddenException("Aucun accès d'urgence actif dans le jeton : passez par le service Identité");
+    }
     const details = justification.precisions ? ` — ${justification.precisions}` : '';
     this.audit.append({
       actor: user.id,
@@ -75,7 +79,7 @@ export class PatientsService {
       patientId: patient.id,
       reason: `${justification.motif}${details}`,
     });
-    return { patientId: patient.id, expiresAt: expiresAt.toISOString() };
+    return { patientId: patient.id, expiresAt };
   }
 
   /** Journal des accès à ce dossier (« Qui a vu mon dossier ? »). */

@@ -34,7 +34,7 @@ export function GatewayProvider({ children, gateway, copilote, ingestion }: Gate
     };
     const identity = () => session.identity;
     return {
-      patients: gateway ?? createPatientsGateway(env, identity),
+      patients: gateway ?? createPatientsGateway(env, identity, session.setToken),
       copilote: copilote ?? createCopiloteGateway(env, identity),
       ingestion: ingestion ?? new ApiIngestionGateway(),
     };

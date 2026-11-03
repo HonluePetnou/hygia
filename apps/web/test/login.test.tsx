@@ -1,6 +1,6 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { SessionViewModel } from '@hygia/view-models';
+import { SessionViewModel, type AuthGateway } from '@hygia/view-models';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { LoginScreen } from '@/components/login/LoginScreen';
 import { SessionProvider } from '@/lib/session-context';
@@ -62,6 +62,54 @@ describe('parcours de connexion', () => {
     await user.paste('481516');
     await user.click(screen.getByRole('button', { name: 'Vérifier et continuer' }));
     expect(session.isAuthenticated).toBe(true);
+  });
+
+  it('première connexion : QR code d’enrôlement, puis codes de secours à acquitter', async () => {
+    const user = userEvent.setup();
+    const auth: AuthGateway = {
+      login: async () => ({ challengeId: 'c', mfa: 'enroll' }),
+      enroll: async () => ({ secret: 'JBSWY3DPEHPK3PXP', otpauthUri: 'otpauth://totp/x', qrCode: 'data:image/png;base64,AA==' }),
+      verify: async () => ({
+        accessToken: 'jwt',
+        expiresAt: '2026-11-05T09:30:00.000Z',
+        user: { id: 'u', email: 'neo@hygia.local', displayName: 'Néo', role: 'analyste' },
+        backupCodes: ['aaaa111111', 'bbbb222222'],
+      }),
+    };
+    renderLogin(new SessionViewModel({ auth }));
+    await passFirstStep(user);
+
+    expect(await screen.findByAltText(/QR code d’enrôlement|QR code d'enrôlement/)).toBeInTheDocument();
+    expect(screen.getByText('JBSWY3DPEHPK3PXP')).toBeInTheDocument();
+    await user.click(screen.getByLabelText('Chiffre 1 sur 6'));
+    await user.keyboard('123456');
+    await user.click(screen.getByRole('button', { name: 'Vérifier et continuer' }));
+
+    expect(await screen.findByText('aaaa111111')).toBeInTheDocument();
+    expect(replace).not.toHaveBeenCalled();
+    await user.click(screen.getByRole('button', { name: "J'ai noté mes codes" }));
+    expect(replace).toHaveBeenCalledWith('/');
+  });
+
+  it('connexion avec un code de secours', async () => {
+    const user = userEvent.setup();
+    const verify = vi.fn(async () => ({
+      accessToken: 'jwt',
+      expiresAt: '2026-11-05T09:30:00.000Z',
+      user: { id: 'u', email: 'a@b.c', displayName: 'A', role: 'medecin' as const },
+    }));
+    const auth: AuthGateway = {
+      login: async () => ({ challengeId: 'c', mfa: 'verify' }),
+      enroll: async () => Promise.reject(new Error('inutile')),
+      verify,
+    };
+    renderLogin(new SessionViewModel({ auth }));
+    await passFirstStep(user);
+    await user.click(screen.getByRole('button', { name: 'Utiliser un code de secours' }));
+    await user.type(screen.getByLabelText('Code de secours'), 'DEMO-0001');
+    await user.click(screen.getByRole('button', { name: 'Vérifier et continuer' }));
+    expect(verify).toHaveBeenCalledWith('c', { backupCode: 'DEMO-0001' });
+    expect(replace).toHaveBeenCalledWith('/');
   });
 
   it('bascule toute l’interface en anglais', async () => {

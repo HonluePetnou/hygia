@@ -43,7 +43,7 @@ describe('HttpCopiloteGateway.stream', () => {
     const fetchFn = vi.fn(async () => new Response(body)) as unknown as typeof fetch;
     const gateway = new HttpCopiloteGateway(
       'http://ia',
-      () => ({ userId: 'u', role: 'medecin' }),
+      () => ({ userId: 'u', role: 'medecin', token: 'jwt.abc' }),
       fetchFn,
     );
     const words: string[] = [];
@@ -52,7 +52,7 @@ describe('HttpCopiloteGateway.stream', () => {
     expect(answer).toEqual({ answer: 'Non [1]', language: 'fr', sources: [] });
     expect(fetchFn).toHaveBeenCalledWith(
       'http://ia/copilote/p1/flux?q=Quoi%20%3F',
-      expect.objectContaining({ headers: expect.objectContaining({ 'x-user-id': 'u' }) }),
+      expect.objectContaining({ headers: expect.objectContaining({ authorization: 'Bearer jwt.abc' }) }),
     );
   });
 });

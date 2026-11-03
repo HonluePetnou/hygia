@@ -1,11 +1,40 @@
 import type { Role } from '@hygia/types';
 import type { Locale, Translate } from '@hygia/i18n';
 
-/** Identité transmise au broker (en-têtes `x-user-id` et `x-user-role`, auth simulée). */
+/** Identité de la session : le jeton JWT est transmis au broker (`Authorization: Bearer`). */
 export interface Identity {
   userId: string;
   role: Role;
+  /** Jeton d'accès du service Identité ; absent en mode hors ligne (aucun appel réseau). */
+  token?: string;
 }
+
+/** Première étape de connexion franchie. */
+export interface LoginChallenge {
+  challengeId: string;
+  /** `verify` : saisir le code ; `enroll` : enrôler d'abord l'application d'authentification. */
+  mfa: 'verify' | 'enroll';
+}
+
+/** Données d'enrôlement de l'application d'authentification. */
+export interface MfaEnrollment {
+  secret: string;
+  otpauthUri: string;
+  /** QR code (`data:image/png;base64,…`). */
+  qrCode: string;
+}
+
+/** Session ouverte après la seconde étape. */
+export interface AuthSession {
+  accessToken: string;
+  expiresAt: string;
+  user: { id: string; email: string; displayName: string; role: Role };
+  /** Codes de secours, fournis une seule fois après un enrôlement. */
+  backupCodes?: string[];
+}
+
+/** Second facteur saisi : code TOTP ou code de secours. */
+export type SecondFactor = { code: string } | { backupCode: string };
 
 /** Source de langue : fournit la langue courante et la fonction de traduction associée. */
 export interface LocaleSource {

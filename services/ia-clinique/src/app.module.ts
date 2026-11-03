@@ -1,9 +1,11 @@
 import { Module } from '@nestjs/common';
+import { remoteVerifier } from '@hygia/auth';
 import { AuditLog, InMemoryAuditStore } from '@hygia/audit';
 import { demoDataset } from '@hygia/fhir';
 import { AccessPolicy } from './access/access-policy.js';
 import { CLINICAL_DIRECTORY, DemoClinicalDirectory } from './access/clinical-directory.js';
-import { HeaderAuthGuard } from './auth/header-auth.guard.js';
+import { JwtAuthGuard, TOKEN_VERIFIER } from './auth/jwt-auth.guard.js';
+import { loadEnv } from './config/env.js';
 import { CopiloteController } from './copilote/copilote.controller.js';
 import { AUDIT_LOG, CopiloteService } from './copilote/copilote.service.js';
 import { WORD_DELAY_MS } from './copilote/sse.js';
@@ -22,7 +24,8 @@ import { ResumeService } from './resume/resume.service.js';
     CopiloteService,
     ResumeService,
     AccessPolicy,
-    HeaderAuthGuard,
+    JwtAuthGuard,
+    { provide: TOKEN_VERIFIER, useFactory: () => remoteVerifier(loadEnv().jwksUrl) },
     { provide: WORD_DELAY_MS, useValue: 25 },
     { provide: CLINICAL_LANGUAGE_MODEL, useFactory: () => new MockClinicalLanguageModel() },
     { provide: PASSAGE_INDEX, useFactory: () => new InMemoryPassageIndex(buildDemoCorpus()) },

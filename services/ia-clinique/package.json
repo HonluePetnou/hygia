@@ -13,6 +13,7 @@
   },
   "dependencies": {
     "@hygia/audit": "workspace:*",
+    "@hygia/auth": "workspace:*",
     "@hygia/fhir": "workspace:*",
     "@hygia/i18n": "workspace:*",
     "@hygia/types": "workspace:*",

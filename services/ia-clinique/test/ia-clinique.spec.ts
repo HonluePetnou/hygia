@@ -2,9 +2,12 @@ import 'reflect-metadata';
 import type { INestApplication } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import { AuditLog, InMemoryAuditStore } from '@hygia/audit';
+import { TokenIssuer, localVerifier } from '@hygia/auth';
+import type { Role } from '@hygia/types';
 import { FLORENCE_ID, NANA_ID } from '@hygia/fhir';
 import request from 'supertest';
 import { AppModule } from '../src/app.module.js';
+import { TOKEN_VERIFIER } from '../src/auth/jwt-auth.guard.js';
 import { AUDIT_LOG } from '../src/copilote/copilote.service.js';
 import { WORD_DELAY_MS } from '../src/copilote/sse.js';
 import { loadEnv } from '../src/config/env.js';
@@ -13,9 +16,11 @@ import { CLINICAL_LANGUAGE_MODEL } from '../src/model/clinical-language-model.js
 import { MockClinicalLanguageModel } from '../src/model/mock-clinical-language-model.js';
 
 const KAMGA_ID = '00000000-0000-4000-8000-020000000003';
-const nana = { 'x-user-id': NANA_ID, 'x-user-role': 'medecin' };
-const kamga = { 'x-user-id': KAMGA_ID, 'x-user-role': 'medecin' };
-const admin = { 'x-user-id': 'root', 'x-user-role': 'admin' };
+const TEAM_ID = '00000000-0000-4000-8000-040000000001';
+let nana: Record<string, string>;
+let kamga: Record<string, string>;
+let admin: Record<string, string>;
+let verifier: ReturnType<typeof localVerifier>;
 
 describe('service IA clinique', () => {
   let app: INestApplication;
@@ -23,9 +28,19 @@ describe('service IA clinique', () => {
 
   beforeEach(async () => {
     audit = new AuditLog(new InMemoryAuditStore());
+    const issuer = await TokenIssuer.create();
+    const as = async (sub: string, role: Role, teams: string[] = []) => ({
+      authorization: `Bearer ${(await issuer.issue({ sub, role, teams, emergency: [] }, new Date())).token}`,
+    });
+    nana = await as(NANA_ID, 'medecin', [TEAM_ID]);
+    kamga = await as(KAMGA_ID, 'medecin');
+    admin = await as('root', 'admin');
+    verifier = localVerifier(issuer.jwks());
     const module = await Test.createTestingModule({ imports: [AppModule] })
       .overrideProvider(AUDIT_LOG)
       .useValue(audit)
+      .overrideProvider(TOKEN_VERIFIER)
+      .useValue(verifier)
       .overrideProvider(WORD_DELAY_MS)
       .useValue(0)
       .compile();
@@ -41,7 +56,7 @@ describe('service IA clinique', () => {
   const ask = (question: string, headers = nana) =>
     http().post(`/copilote/${FLORENCE_ID}`).set(headers).send({ question });
 
-  it('401 sans identité, 403 hors équipe ou pour un rôle non clinique, 404 patient inconnu', async () => {
+  it('401 sans jeton, 403 hors équipe ou pour un rôle non clinique, 404 patient inconnu', async () => {
     await http().post(`/copilote/${FLORENCE_ID}`).send({ question: 'ibuprofène' }).expect(401);
     await ask('ibuprofène', kamga).expect(403);
     await ask('ibuprofène', admin).expect(403);
@@ -108,6 +123,8 @@ describe('service IA clinique', () => {
     const module = await Test.createTestingModule({ imports: [AppModule] })
       .overrideProvider(CLINICAL_LANGUAGE_MODEL)
       .useValue({ generate: async () => 'Réponse inventée sans source.' })
+      .overrideProvider(TOKEN_VERIFIER)
+      .useValue(verifier)
       .compile();
     const other = module.createNestApplication();
     await other.init();
@@ -216,8 +233,8 @@ describe('détection de langue et modèle simulé', () => {
   });
 
   it('valide IA_CLINIQUE_PORT', () => {
-    expect(loadEnv({})).toEqual({ port: 3003 });
-    expect(loadEnv({ IA_CLINIQUE_PORT: '4003' })).toEqual({ port: 4003 });
+    expect(loadEnv({})).toMatchObject({ port: 3003 });
+    expect(loadEnv({ IA_CLINIQUE_PORT: '4003' })).toMatchObject({ port: 4003 });
     expect(() => loadEnv({ IA_CLINIQUE_PORT: 'abc' })).toThrow('IA_CLINIQUE_PORT invalide');
   });
 });

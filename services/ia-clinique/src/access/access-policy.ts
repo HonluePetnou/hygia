@@ -16,7 +16,11 @@ export class AccessPolicy {
       throw new ForbiddenException(`Le rôle ${user.role} n'a pas accès aux données de santé`);
     }
     if (!this.directory.exists(patientId)) throw new NotFoundException('Patient introuvable');
-    if (!this.directory.isInCareTeam(user.id, patientId)) {
+    const emergency = user.emergency.some(
+      (g) => g.patientId === patientId && Date.parse(g.expiresAt) > Date.now(),
+    );
+    const inTeam = user.teams.length > 0 && this.directory.isInCareTeam(user.id, patientId);
+    if (!inTeam && !emergency) {
       throw new ForbiddenException("Ce patient n'appartient pas à votre équipe de soins");
     }
   }

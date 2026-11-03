@@ -2,45 +2,72 @@
 
 import { useState, type FormEvent } from 'react';
 import { observer } from 'mobx-react-lite';
-import { Button } from '@/components/ui';
+import { Button, Input } from '@/components/ui';
 import { useSession } from '@/lib/session-context';
+import { EnrollmentPanel } from './EnrollmentPanel';
 import { OtpInput } from './OtpInput';
 
-/** Étape 2 : code de vérification à 6 chiffres. */
+/** Étape 2 : code à 6 chiffres (ou code de secours) ; à la première connexion, enrôlement par QR code. */
 export const CodeForm = observer(function CodeForm() {
   const session = useSession();
   const { t } = session;
   const [code, setCode] = useState('');
+  const [backup, setBackup] = useState('');
+  const enrolling = session.step === 'enroll';
 
-  const onSubmit = (event: FormEvent) => {
+  const onSubmit = async (event: FormEvent) => {
     event.preventDefault();
-    if (!session.submitCode(code)) setCode('');
+    const ok = session.backupMode ? await session.submitBackupCode(backup) : await session.submitCode(code);
+    if (!ok) {
+      setCode('');
+      setBackup('');
+    }
   };
 
   return (
     <form className="login-form" onSubmit={onSubmit} noValidate>
       <div>
-        <h1>{t('mfa.heading')}</h1>
+        <h1>{enrolling ? t('mfa.enroll.title') : t('mfa.heading')}</h1>
         <p className="muted">{t('mfa.description', { email: session.email })}</p>
       </div>
-      <OtpInput
-        value={code}
-        onChange={setCode}
-        groupLabel={t('mfa.code')}
-        cellLabel={(n) => t('mfa.digit', { n })}
-        invalid={session.errorKey !== null}
-      />
-      {session.errorMessage ? (
+      {enrolling ? <EnrollmentPanel /> : null}
+      {session.backupMode ? (
+        <Input
+          label={t('mfa.backupLabel')}
+          autoComplete="off"
+          value={backup}
+          onChange={(event) => setBackup(event.target.value)}
+          error={session.errorMessage}
+        />
+      ) : (
+        <OtpInput
+          value={code}
+          onChange={setCode}
+          groupLabel={t('mfa.code')}
+          cellLabel={(n) => t('mfa.digit', { n })}
+          invalid={session.errorKey !== null}
+        />
+      )}
+      {!session.backupMode && session.errorMessage ? (
         <span className="field-error" role="alert">
           {session.errorMessage}
         </span>
       ) : null}
-      <Button type="submit" block disabled={code.length !== 6}>
+      <Button
+        type="submit"
+        block
+        disabled={session.submitting || (session.backupMode ? backup.trim() === '' : code.length !== 6)}
+      >
         {t('mfa.verify')}
       </Button>
-      <p className="muted">
-        {t('mfa.noAccess')} <a href="#secours">{t('mfa.backupCode')}</a>
-      </p>
+      {enrolling ? null : (
+        <p className="muted">
+          {t('mfa.noAccess')}{' '}
+          <button type="button" className="link-button" onClick={session.toggleBackupMode}>
+            {session.backupMode ? t('mfa.useApp') : t('mfa.backupCode')}
+          </button>
+        </p>
+      )}
     </form>
   );
 });

@@ -1,9 +1,11 @@
 import { demoDataset } from '@hygia/fhir';
 import {
+  HttpAuthGateway,
   HttpCopiloteGateway,
   HttpPatientsGateway,
   InMemoryCopiloteGateway,
   InMemoryPatientsGateway,
+  type AuthGateway,
   type CopiloteGateway,
   type Identity,
   type PatientsGateway,
@@ -31,7 +33,11 @@ function serviceUrl(env: GatewayEnv, service: string): string {
  * Choisit le dépôt des patients : en mémoire si `NEXT_PUBLIC_DEMO_OFFLINE=1`,
  * sinon HTTP vers les services Dossiers et IA clinique, par le broker.
  */
-export function createPatientsGateway(env: GatewayEnv, identity: () => Identity): PatientsGateway {
+export function createPatientsGateway(
+  env: GatewayEnv,
+  identity: () => Identity,
+  onToken?: (token: string) => void,
+): PatientsGateway {
   if (env.NEXT_PUBLIC_DEMO_OFFLINE === '1') {
     return new InMemoryPatientsGateway(demoDataset, () => DEMO_TODAY, identity);
   }
@@ -39,9 +45,21 @@ export function createPatientsGateway(env: GatewayEnv, identity: () => Identity)
     {
       dossiersUrl: serviceUrl(env, 'dossiers'),
       iaCliniqueUrl: serviceUrl(env, 'ia-clinique'),
+      identiteUrl: serviceUrl(env, 'identite'),
     },
     identity,
+    undefined,
+    onToken,
   );
+}
+
+/**
+ * Choisit la connexion : hors ligne (code fixe, aucun jeton réel) si `NEXT_PUBLIC_DEMO_OFFLINE=1`,
+ * sinon le service Identité (par le broker).
+ */
+export function createAuthGateway(env: GatewayEnv): AuthGateway | undefined {
+  if (env.NEXT_PUBLIC_DEMO_OFFLINE === '1') return undefined;
+  return new HttpAuthGateway(serviceUrl(env, 'identite'));
 }
 
 /** Choisit le copilote : en mémoire si `NEXT_PUBLIC_DEMO_OFFLINE=1`, sinon flux SSE du service IA (par le broker). */

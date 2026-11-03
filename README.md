@@ -117,8 +117,11 @@ pnpm demo
 
 `pnpm demo` lance `docker compose up -d` si Docker est disponible, sinon bascule en mode hors ligne
 (`NEXT_PUBLIC_DEMO_OFFLINE=1`, données en mémoire). Il démarre ensuite les services `dossiers` (port 3001),
-`ia-clinique` (port 3003), le broker (port 3000, seul point d'entrée du web : `/api/<service>/...`) et le web, puis affiche l'URL à ouvrir : **http://localhost:3100**, et le
-**code 2FA de démo : `481516`**. Ctrl+C arrête tout. `DEMO_NO_DOCKER=1 pnpm demo` force le mode hors ligne.
+`ia-clinique` (port 3003), `identite` (port 3004 : comptes, TOTP, jetons JWT), le broker (port 3000, seul point d'entrée du web : `/api/<service>/...`) et le web, puis affiche l'URL à ouvrir : **http://localhost:3100**, et le
+compte de démo. En mode normal, la connexion passe par le service Identité (voir
+[`services/identite/README.md`](services/identite/README.md)) : `aicha.nana@hd-bonassama.cm` / `Hygia-demo-2026`,
+code 2FA **réel** donné par `pnpm --filter identite code` (code de secours : `DEMO-0001`). En mode hors ligne,
+la connexion est simulée : tout mot de passe et **code 2FA `481516`**. Ctrl+C arrête tout. `DEMO_NO_DOCKER=1 pnpm demo` force le mode hors ligne.
 
 Le scénario pas à pas est décrit dans [`docs/demo.md`](docs/demo.md).
 

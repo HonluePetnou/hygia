@@ -2,7 +2,10 @@
 // Lance la démo HYGIA : infrastructure Docker si disponible, puis dossiers, ia-clinique, broker et web.
 import { spawn, spawnSync } from 'node:child_process';
 
-const DEMO_CODE = '481516';
+// Mode hors ligne : connexion simulée (code fixe). Mode normal : service Identité (TOTP réel).
+const OFFLINE_CODE = '481516';
+const DEMO_EMAIL = 'aicha.nana@hd-bonassama.cm';
+const DEMO_PASSWORD = 'Hygia-demo-2026';
 const WEB_URL = 'http://localhost:3100';
 
 /** Indique si Docker (daemon compris) est utilisable ; `DEMO_NO_DOCKER=1` force le mode hors ligne. */
@@ -15,6 +18,8 @@ const env = {
   ...process.env,
   // Registre de services du broker (équivalent local de Cloud Map) et adresse du broker pour le web.
   BROKER_SERVICE_DOSSIERS_URL: process.env.BROKER_SERVICE_DOSSIERS_URL ?? 'http://localhost:3001',
+  BROKER_SERVICE_IDENTITE_URL: process.env.BROKER_SERVICE_IDENTITE_URL ?? 'http://localhost:3004',
+  IDENTITE_JWKS_URL: process.env.IDENTITE_JWKS_URL ?? 'http://localhost:3004/.well-known/jwks.json',
   BROKER_SERVICE_IA_CLINIQUE_URL: process.env.BROKER_SERVICE_IA_CLINIQUE_URL ?? 'http://localhost:3003',
   NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3000',
 };
@@ -30,14 +35,19 @@ if (dockerAvailable()) {
   env.NEXT_PUBLIC_DEMO_OFFLINE = '1';
 }
 
-const filters = ['dossiers', 'ia-clinique', 'broker', 'web'];
+const filters = ['identite', 'dossiers', 'ia-clinique', 'broker', 'web'];
 const children = filters.map((name) =>
   spawn('pnpm', ['--filter', name, 'dev'], { stdio: 'inherit', env }),
 );
 
 console.log(`\n  HYGIA est en cours de démarrage (quelques secondes).`);
 console.log(`  URL à ouvrir : ${WEB_URL}`);
-console.log(`  Code 2FA de démo : ${DEMO_CODE}\n`);
+if (env.NEXT_PUBLIC_DEMO_OFFLINE === '1') {
+  console.log(`  Mode hors ligne : tout mot de passe, code 2FA de démo : ${OFFLINE_CODE}\n`);
+} else {
+  console.log(`  Compte de démo : ${DEMO_EMAIL} / ${DEMO_PASSWORD}`);
+  console.log('  Code 2FA (TOTP réel) : pnpm --filter identite code  (code de secours : DEMO-0001)\n');
+}
 
 let stopping = false;
 function stop() {
