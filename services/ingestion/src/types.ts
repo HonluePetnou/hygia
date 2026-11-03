@@ -6,6 +6,8 @@ export interface RawDocument {
   bytes: Uint8Array;
   /** Patient concerné (obligatoire pour produire un DocumentReference). */
   subject?: Reference;
+  /** Canal d'arrivée (« WhatsApp », « Import »…), conservé tout au long de la chaîne. */
+  channel?: string;
 }
 
 /** Types de médias acceptés. */
@@ -20,6 +22,7 @@ export interface ReceivedDocument {
   mediaType: MediaType;
   bytes: Uint8Array;
   subject?: Reference;
+  channel?: string;
   /** Vrai si le contenu a déjà été reçu (traitement arrêté). */
   duplicate: boolean;
 }

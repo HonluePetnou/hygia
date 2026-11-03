@@ -681,6 +681,17 @@ export const fr = {
   'export.error': 'L’export a échoué ou n’est pas autorisé, réessayez.',
   'patients.exportCsv': 'Exporter CSV',
   'epidemiology.exportReport': 'Exporter le rapport',
+  'notif.reminder': "Rappel : vous avez rendez-vous le {date}. Répondez 1 pour confirmer, 2 pour reporter.",
+  'notif.confirmed': 'Merci, votre rendez-vous du {date} est confirmé.',
+  'notif.postponed': 'Votre demande de report du rendez-vous du {date} est enregistrée ; le secrétariat vous recontactera.',
+  'notif.unknownReply': 'Réponse non comprise. Répondez 1 pour confirmer, 2 pour reporter.',
+  'notif.documentReceived': 'Document reçu',
+  'notif.documentRejected': "Document non pris en compte : format ou patient non reconnu.",
+  'notif.clinicianMessage': 'Message de votre médecin : {text}',
+  'notif.bell.analysisDone': "L'analyse du document {document} est terminée.",
+  'notif.bell.analysisFailed': "L'analyse du document {document} a échoué.",
+  'notif.bell.summaryReady': 'Le résumé du dossier {patient} est prêt à être validé.',
+  'notif.bell.newAlert': 'Nouvelle alerte IA : {title}',
 } as const;
 
 /** Clé de libellé valide, dérivée du dictionnaire français. */
