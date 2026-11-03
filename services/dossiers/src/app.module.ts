@@ -21,6 +21,8 @@ import { PATIENT_REPOSITORY } from './patients/patient-repository.js';
 import { PatientsController } from './patients/patients.controller.js';
 import { AUDIT_LOG } from './patients/audit-token.js';
 import { PatientsService } from './patients/patients.service.js';
+import { ConsultationsController } from './consultations/consultations.controller.js';
+import { ConsultationsService } from './consultations/consultations.service.js';
 import { DocumentsController } from './documents/documents.controller.js';
 import { DocumentsService } from './documents/documents.service.js';
 import { DoublonsController } from './doublons/doublons.controller.js';
@@ -48,8 +50,10 @@ import { VersionsService } from './versions/versions.service.js';
     ExportsController,
     ConsentsController,
     InternalConsentsController,
+    ConsultationsController,
   ],
   providers: [
+    ConsultationsService,
     ConsentsService,
     { provide: CONSENT_REPOSITORY, useFactory: () => new InMemoryConsentRepository() },
     { provide: ENV, useFactory: () => loadEnv() },

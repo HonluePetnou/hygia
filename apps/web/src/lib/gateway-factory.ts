@@ -12,6 +12,9 @@ import {
   InMemoryPortalGateway,
   type PortalGateway,
   HttpSupervisionGateway,
+  HttpScribeGateway,
+  InMemoryScribeGateway,
+  type ScribeGateway,
   InMemoryAuditGateway,
   InMemoryCopiloteGateway,
   InMemoryEpidemiologyGateway,
@@ -119,6 +122,12 @@ export function createSupervisionGateway(
 ): SupervisionGateway {
   if (env.NEXT_PUBLIC_DEMO_OFFLINE === '1') return new InMemorySupervisionGateway();
   return new HttpSupervisionGateway(serviceUrl(env, 'supervision'), identity);
+}
+
+/** Choisit le scribe : brouillon fixe si `NEXT_PUBLIC_DEMO_OFFLINE=1`, sinon service IA clinique (par le broker). */
+export function createScribeGateway(env: GatewayEnv, identity: () => Identity): ScribeGateway {
+  if (env.NEXT_PUBLIC_DEMO_OFFLINE === '1') return new InMemoryScribeGateway();
+  return new HttpScribeGateway(serviceUrl(env, 'ia-clinique'), identity);
 }
 
 /** Choisit le portail patient : en mémoire si `NEXT_PUBLIC_DEMO_OFFLINE=1`, sinon Dossiers et Notification (par le broker). */

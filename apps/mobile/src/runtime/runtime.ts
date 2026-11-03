@@ -1,5 +1,5 @@
 import { createTranslator, type Locale } from '@hygia/i18n';
-import { PatientSearchViewModel, type LocaleSource } from '@hygia/view-models';
+import { HttpScribeGateway, PatientSearchViewModel, type LocaleSource } from '@hygia/view-models';
 import { openDatabaseAsync } from 'expo-sqlite';
 import { AutoSync, type AutoSyncEvent } from '../offline/auto-sync.js';
 import { ChangeRecorder } from '../offline/change-recorder.js';
@@ -12,6 +12,8 @@ import { SyncEngine } from '../offline/sync-engine.js';
 import type { Scheduler } from '../offline/sync-protocol.js';
 import { ConnectivityState } from '../view-models/connectivity-state.js';
 import { PatientsViewModel } from '../view-models/patients-view-model.js';
+import { ScribeRegistry } from '../view-models/scribe-registry.js';
+import { SimulatedAudioRecorder } from './simulated-audio-recorder.js';
 import { SyncViewModel } from '../view-models/sync-view-model.js';
 import { VitalsEntryViewModel } from '../view-models/vitals-entry-view-model.js';
 import { readConfig } from './config.js';
@@ -23,6 +25,7 @@ export interface Runtime {
   patients: PatientsViewModel;
   entry: VitalsEntryViewModel;
   sync: SyncViewModel;
+  scribe: ScribeRegistry;
   stop: () => void;
 }
 
@@ -90,6 +93,15 @@ export async function createRuntime(locale: Locale = 'fr'): Promise<Runtime> {
     patients,
     entry,
     sync: syncModel,
+    scribe: new ScribeRegistry(
+      new HttpScribeGateway(`${config.apiUrl}/api/ia-clinique`, () => ({
+        userId: nodeId,
+        role: 'medecin',
+        ...(config.accessToken === undefined ? {} : { token: config.accessToken }),
+      })),
+      () => new SimulatedAudioRecorder(),
+      i18n,
+    ),
     stop: () => {
       autoSync.stop();
       monitor.stop();

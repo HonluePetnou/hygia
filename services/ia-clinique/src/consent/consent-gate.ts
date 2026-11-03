@@ -2,7 +2,7 @@
 export const CONSENT_GATE = Symbol('CONSENT_GATE');
 
 /** Finalités interrogées par ce service. */
-export type ConsentPurpose = 'ia';
+export type ConsentPurpose = 'ia' | 'audio';
 
 /** Vérifie le consentement d'un patient auprès du service Dossiers (propriétaire de la ressource `Consent`). */
 export interface ConsentGate {

@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { Download, Sparkles } from 'lucide-react';
+import { Download, Mic, Sparkles } from 'lucide-react';
 import { observer } from 'mobx-react-lite';
 import type { PatientRecordViewModel } from '@hygia/view-models';
 import { Avatar, Badge, Button, Card } from '@/components/ui';
@@ -27,12 +27,16 @@ export const PatientHeader = observer(function PatientHeader({
   vm,
   tab,
   onTab,
+  onDictate,
 }: {
   vm: PatientRecordViewModel;
   tab: PatientTab;
   onTab: (tab: PatientTab) => void;
+  /** Ouvre le scribe ; le bouton « Dicter » n'apparaît que s'il est fourni (et pour un médecin). */
+  onDictate?: () => void;
 }) {
-  const { t } = useSession();
+  const session = useSession();
+  const { t } = session;
   return (
     <Card className="record-header">
       <div className="record-identity">
@@ -61,6 +65,12 @@ export const PatientHeader = observer(function PatientHeader({
             <Download size={16} aria-hidden="true" />
             {t('patient.exportPdf')}
           </Button>
+          {onDictate !== undefined && session.identity.role === 'medecin' ? (
+            <Button variant="secondary" onClick={onDictate}>
+              <Mic size={16} aria-hidden="true" />
+              {t('scribe.dictate')}
+            </Button>
+          ) : null}
           <Link href="/copilote" className="btn btn-ai">
             <Sparkles size={16} aria-hidden="true" />
             {t('patient.askCopilot')}

@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto';
 import type { demoDataset } from '@hygia/fhir';
 import type {
   AllergyIntolerance,
@@ -17,6 +18,7 @@ import type {
   PatientRepository,
   SaveResult,
 } from './patient-repository.js';
+import type { ConsultationInput, ConsultationResources } from '../consultations/consultation.js';
 
 /** Forme du jeu de données de démonstration (`demoDataset`). */
 export type DemoDataset = typeof demoDataset;
@@ -48,6 +50,67 @@ export class InMemoryPatientRepository implements PatientRepository {
     load<Observation>(this.observations, data.observations);
     load<MedicationRequest>(this.medicationRequests, data.medicationRequests);
     load<Condition>(this.conditions, data.conditions);
+  }
+
+  addConsultation(
+    patientId: string,
+    practitionerId: string,
+    input: ConsultationInput,
+    at: Date,
+  ): ConsultationResources {
+    const patient = this.patients.get(patientId);
+    const subject = {
+      reference: `Patient/${patientId}`,
+      ...(patient ? { display: `${patient.givenName} ${patient.familyName}` } : {}),
+    };
+    const requester = { reference: `Practitioner/${practitionerId}` };
+    const now = at.toISOString();
+    const base = { version: 1, subject };
+    const encounter: Encounter = {
+      ...base,
+      resourceType: 'Encounter',
+      id: randomUUID(),
+      practitioner: requester,
+      encounterClass: 'ambulatory',
+      start: now,
+      end: now,
+    };
+    const observations = input.observations.map(
+      (o): Observation => ({
+        ...base,
+        resourceType: 'Observation',
+        id: randomUUID(),
+        code: o.code,
+        value: o.value,
+        unit: o.unit,
+        effectiveDate: now,
+      }),
+    );
+    const conditions = input.conditions.map(
+      (code): Condition => ({
+        ...base,
+        resourceType: 'Condition',
+        id: randomUUID(),
+        code,
+        onsetDate: now,
+      }),
+    );
+    const medicationRequests = input.prescriptions.map(
+      (p): MedicationRequest => ({
+        ...base,
+        resourceType: 'MedicationRequest',
+        id: randomUUID(),
+        requester,
+        medication: p.medication,
+        dosage: { doseValue: p.doseValue, doseUnit: p.doseUnit, timesPerDay: p.timesPerDay },
+        authoredOn: now,
+      }),
+    );
+    this.encounters.set(encounter.id, encounter);
+    for (const o of observations) this.observations.set(o.id, o);
+    for (const c of conditions) this.conditions.set(c.id, c);
+    for (const m of medicationRequests) this.medicationRequests.set(m.id, m);
+    return { encounter, observations, conditions, medicationRequests };
   }
 
   activePatients(): Patient[] {

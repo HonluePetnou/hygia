@@ -8,6 +8,7 @@ import type {
   Observation,
   Patient,
 } from '@hygia/types';
+import type { ConsultationInput, ConsultationResources } from '../consultations/consultation.js';
 
 /** Jeton d'injection de `PatientRepository`. */
 export const PATIENT_REPOSITORY = Symbol('PATIENT_REPOSITORY');
@@ -86,6 +87,13 @@ export interface PatientRepository {
     changes: DocumentChanges,
     expectedVersion: number,
   ): SaveResult<DocumentReference>;
+  /** Ajoute une consultation (rencontre, mesures, diagnostics, prescriptions) ; ressources en version 1. */
+  addConsultation(
+    patientId: string,
+    practitionerId: string,
+    input: ConsultationInput,
+    at: Date,
+  ): ConsultationResources;
   /** Tous les patients actifs (non fusionnés). */
   activePatients(): Patient[];
   /**

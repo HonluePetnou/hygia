@@ -16,15 +16,25 @@ import { InMemoryPassageIndex } from './index/in-memory-passage-index.js';
 import { PASSAGE_INDEX } from './index/passage-index.js';
 import { CLINICAL_LANGUAGE_MODEL } from './model/clinical-language-model.js';
 import { MockClinicalLanguageModel } from './model/mock-clinical-language-model.js';
+import { DOSSIER_WRITER, HttpDossierWriter } from './scribe/dossier-writer.js';
+import { MockTranscriber } from './scribe/mock-transcriber.js';
+import { ScribeController } from './scribe/scribe.controller.js';
+import { ScribeService } from './scribe/scribe.service.js';
+import { InMemoryScribeSessionStore, SCRIBE_SESSION_STORE } from './scribe/scribe-session.js';
+import { TRANSCRIBER } from './scribe/transcriber.js';
 import { ResumeController } from './resume/resume.controller.js';
 import { ResumeService } from './resume/resume.service.js';
 
 /** Module racine : index, annuaire, audit et modèle en mémoire (Bedrock / pgvector ensuite). */
 @Module({
-  controllers: [CopiloteController, ResumeController],
+  controllers: [CopiloteController, ResumeController, ScribeController],
   providers: [
     CopiloteService,
     ResumeService,
+    ScribeService,
+    { provide: TRANSCRIBER, useFactory: () => new MockTranscriber() },
+    { provide: SCRIBE_SESSION_STORE, useFactory: () => new InMemoryScribeSessionStore() },
+    { provide: DOSSIER_WRITER, useFactory: () => new HttpDossierWriter(loadEnv().dossiersUrl) },
     AccessPolicy,
     JwtAuthGuard,
     { provide: TOKEN_VERIFIER, useFactory: () => remoteVerifier(loadEnv().jwksUrl) },

@@ -640,3 +640,72 @@ a:hover {
     display: none;
   }
 }
+
+.scribe-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.scribe-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.scribe-recording {
+  background: var(--ink);
+  color: #fff;
+  border-radius: 14px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: center;
+}
+.scribe-dot {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  margin-right: 8px;
+  border-radius: 50%;
+  background: #e5484d;
+}
+.scribe-wave {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  height: 48px;
+}
+.scribe-wave span {
+  width: 4px;
+  border-radius: 2px;
+  background: #5eead4;
+}
+.scribe-draft {
+  border: 1px solid var(--ai);
+  border-radius: 14px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.scribe-draft header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.scribe-draft h4 {
+  font-size: 12px;
+  text-transform: uppercase;
+  color: var(--ai);
+  margin: 8px 0 2px;
+}
+.scribe-draft textarea {
+  width: 100%;
+  min-height: 64px;
+}
+.scribe-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}

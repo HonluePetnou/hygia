@@ -1,5 +1,7 @@
 import { createTranslator } from '@hygia/i18n';
 import type { ClinicalLanguageModel, GenerationRequest } from './clinical-language-model.js';
+import type { ConsultationDraft, StructuringRequest } from './consultation-draft.js';
+import { ConsultationExtractor } from './consultation-extractor.js';
 
 /**
  * Modèle simulé et déterministe : assemble la réponse à partir des passages fournis, dans
@@ -12,5 +14,9 @@ export class MockClinicalLanguageModel implements ClinicalLanguageModel {
     if (passages.length === 0) return t('copilot.noSourceAnswer');
     const cited = passages.map((passage, index) => `${passage.text} [${index + 1}]`);
     return `${t('copilot.answerIntro')} ${cited.join(' ')}`;
+  }
+
+  async structureConsultation({ transcript }: StructuringRequest): Promise<ConsultationDraft> {
+    return new ConsultationExtractor().extract(transcript);
   }
 }

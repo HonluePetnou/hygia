@@ -9,6 +9,7 @@ import type {
   IngestionGateway,
   PatientsGateway,
   PortalGateway,
+  ScribeGateway,
   SupervisionGateway,
 } from '@hygia/view-models';
 import {
@@ -18,6 +19,7 @@ import {
   createEpidemiologyGateway,
   createPatientsGateway,
   createPortalGateway,
+  createScribeGateway,
   createSupervisionGateway,
   type GatewayEnv,
 } from './gateway-factory';
@@ -33,6 +35,7 @@ interface Gateways {
   supervision: SupervisionGateway;
   administration: AdministrationGateway;
   portal: PortalGateway;
+  scribe: ScribeGateway;
 }
 
 const GatewayContext = createContext<Gateways | null>(null);
@@ -55,6 +58,8 @@ export interface GatewayProviderProps {
   administration?: AdministrationGateway;
   /** Portail patient fourni de l'extérieur (tests). */
   portal?: PortalGateway;
+  /** Scribe de consultation fourni de l'extérieur (tests). */
+  scribe?: ScribeGateway;
 }
 
 /** Fournit les dépôts (patients, copilote, ingestion) à tout l'arbre authentifié. */
@@ -68,6 +73,7 @@ export function GatewayProvider({
   supervision,
   administration,
   portal,
+  scribe,
 }: GatewayProviderProps) {
   const session = useSession();
   const [value] = useState<Gateways>(() => {
@@ -85,6 +91,7 @@ export function GatewayProvider({
       supervision: supervision ?? createSupervisionGateway(env, identity),
       administration: administration ?? createAdministrationGateway(env, identity),
       portal: portal ?? createPortalGateway(env, identity),
+      scribe: scribe ?? createScribeGateway(env, identity),
     };
   });
   return <GatewayContext.Provider value={value}>{children}</GatewayContext.Provider>;
@@ -129,6 +136,11 @@ export function useAdministrationGateway(): AdministrationGateway {
 /** Supervision courante ; échoue hors d'un `GatewayProvider`. */
 export function useSupervisionGateway(): SupervisionGateway {
   return useGateways().supervision;
+}
+
+/** Scribe de consultation courant ; échoue hors d'un `GatewayProvider`. */
+export function useScribeGateway(): ScribeGateway {
+  return useGateways().scribe;
 }
 
 /** Portail patient courant ; échoue hors d'un `GatewayProvider`. */
