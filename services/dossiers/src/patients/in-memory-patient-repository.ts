@@ -8,6 +8,7 @@ import type {
   MedicationRequest,
   Observation,
   Patient,
+  Practitioner,
 } from '@hygia/types';
 import type {
   DocumentChanges,
@@ -75,37 +76,31 @@ export class InMemoryPatientRepository implements PatientRepository {
       start: now,
       end: now,
     };
-    const observations = input.observations.map(
-      (o): Observation => ({
-        ...base,
-        resourceType: 'Observation',
-        id: randomUUID(),
-        code: o.code,
-        value: o.value,
-        unit: o.unit,
-        effectiveDate: now,
-      }),
-    );
-    const conditions = input.conditions.map(
-      (code): Condition => ({
-        ...base,
-        resourceType: 'Condition',
-        id: randomUUID(),
-        code,
-        onsetDate: now,
-      }),
-    );
-    const medicationRequests = input.prescriptions.map(
-      (p): MedicationRequest => ({
-        ...base,
-        resourceType: 'MedicationRequest',
-        id: randomUUID(),
-        requester,
-        medication: p.medication,
-        dosage: { doseValue: p.doseValue, doseUnit: p.doseUnit, timesPerDay: p.timesPerDay },
-        authoredOn: now,
-      }),
-    );
+    const observations = input.observations.map((o): Observation => ({
+      ...base,
+      resourceType: 'Observation',
+      id: randomUUID(),
+      code: o.code,
+      value: o.value,
+      unit: o.unit,
+      effectiveDate: now,
+    }));
+    const conditions = input.conditions.map((code): Condition => ({
+      ...base,
+      resourceType: 'Condition',
+      id: randomUUID(),
+      code,
+      onsetDate: now,
+    }));
+    const medicationRequests = input.prescriptions.map((p): MedicationRequest => ({
+      ...base,
+      resourceType: 'MedicationRequest',
+      id: randomUUID(),
+      requester,
+      medication: p.medication,
+      dosage: { doseValue: p.doseValue, doseUnit: p.doseUnit, timesPerDay: p.timesPerDay },
+      authoredOn: now,
+    }));
     this.encounters.set(encounter.id, encounter);
     for (const o of observations) this.observations.set(o.id, o);
     for (const c of conditions) this.conditions.set(c.id, c);
@@ -157,6 +152,16 @@ export class InMemoryPatientRepository implements PatientRepository {
    * Un patient est suivi par une équipe si l'un de ses membres a une consultation ou une
    * prescription le concernant.
    */
+  careTeamOf(patientId: string): Practitioner[] {
+    const organization = this.patients.get(patientId)?.managingOrganization.reference;
+    const members = new Set(
+      this.data.careTeams
+        .filter((team) => team.managingOrganization.reference === organization)
+        .flatMap((team) => team.participants.map(idOf)),
+    );
+    return this.data.practitioners.filter((practitioner) => members.has(practitioner.id));
+  }
+
   patientIdsOfCareTeams(practitionerId: string): ReadonlySet<string> {
     const colleagues = new Set<string>();
     for (const team of this.data.careTeams) {
@@ -208,7 +213,10 @@ export class InMemoryPatientRepository implements PatientRepository {
     const merged = this.patients.get(mergedId) as Patient;
     const keptAfter: Patient = { ...kept, ...fields, version: kept.version + 1 };
     const mergedAfter: Patient = { ...merged, mergedInto: keptId, version: merged.version + 1 };
-    const target = { reference: `Patient/${keptId}`, display: `${keptAfter.givenName} ${keptAfter.familyName}` };
+    const target = {
+      reference: `Patient/${keptId}`,
+      display: `${keptAfter.givenName} ${keptAfter.familyName}`,
+    };
     const moved: MovedResources = {
       encounters: this.moveAll(this.encounters, mergedId, target),
       observations: this.moveAll(this.observations, mergedId, target),
@@ -221,7 +229,10 @@ export class InMemoryPatientRepository implements PatientRepository {
   }
 
   unmerge(record: MergeRecord): void {
-    const back = { reference: `Patient/${record.mergedBefore.id}`, display: `${record.mergedBefore.givenName} ${record.mergedBefore.familyName}` };
+    const back = {
+      reference: `Patient/${record.mergedBefore.id}`,
+      display: `${record.mergedBefore.givenName} ${record.mergedBefore.familyName}`,
+    };
     const restore = <T extends { subject: { reference: string; display?: string } }>(
       map: Map<string, T>,
       ids: readonly string[],
@@ -235,8 +246,14 @@ export class InMemoryPatientRepository implements PatientRepository {
     restore(this.observations, record.moved.observations);
     restore(this.medicationRequests, record.moved.medicationRequests);
     restore(this.documents, record.moved.documents);
-    this.patients.set(record.keptBefore.id, { ...record.keptBefore, version: record.keptAfter.version + 1 });
-    this.patients.set(record.mergedBefore.id, { ...record.mergedBefore, version: record.mergedAfter.version + 1 });
+    this.patients.set(record.keptBefore.id, {
+      ...record.keptBefore,
+      version: record.keptAfter.version + 1,
+    });
+    this.patients.set(record.mergedBefore.id, {
+      ...record.mergedBefore,
+      version: record.mergedAfter.version + 1,
+    });
   }
 
   /** Rattache à `target` toutes les ressources du patient `fromId` ; renvoie leurs identifiants. */

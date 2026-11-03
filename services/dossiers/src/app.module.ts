@@ -37,6 +37,8 @@ import { DOCUMENT_STORE } from './versions/document-store.js';
 import { InMemoryDocumentStore } from './versions/in-memory-document-store.js';
 import { VersionsController } from './versions/versions.controller.js';
 import { VersionsService } from './versions/versions.service.js';
+import { SyntheseController } from './synthese/synthese.controller.js';
+import { TableauDeBordController } from './tableau-de-bord/tableau-de-bord.controller.js';
 
 /** Module racine : dépôt et audit en mémoire (remplaçables par Prisma / DynamoDB). */
 @Module({
@@ -51,6 +53,8 @@ import { VersionsService } from './versions/versions.service.js';
     ConsentsController,
     InternalConsentsController,
     ConsultationsController,
+    SyntheseController,
+    TableauDeBordController,
   ],
   providers: [
     ConsultationsService,

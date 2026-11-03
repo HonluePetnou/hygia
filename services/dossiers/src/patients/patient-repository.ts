@@ -7,6 +7,7 @@ import type {
   MedicationRequest,
   Observation,
   Patient,
+  Practitioner,
 } from '@hygia/types';
 import type { ConsultationInput, ConsultationResources } from '../consultations/consultation.js';
 
@@ -41,7 +42,10 @@ export type DocumentChanges = Partial<
 >;
 
 /** Champs de la fiche que la fusion permet de choisir. */
-export type MergeableFields = Pick<Patient, 'givenName' | 'familyName' | 'gender' | 'birthDate' | 'phone'>;
+export type MergeableFields = Pick<
+  Patient,
+  'givenName' | 'familyName' | 'gender' | 'birthDate' | 'phone'
+>;
 
 /** Ressources cliniques rattachées à un patient, par type. */
 export interface MovedResources {
@@ -75,6 +79,8 @@ export interface PatientRepository {
   organizationName(organizationId: string): string | undefined;
   /** Identifiants des patients suivis par les équipes de soins du praticien. */
   patientIdsOfCareTeams(practitionerId: string): ReadonlySet<string>;
+  /** Praticiens des équipes de soins de l'établissement du patient. */
+  careTeamOf(patientId: string): Practitioner[];
   /** Remplace les champs modifiables si `expectedVersion` est la version courante. */
   update(
     id: string,

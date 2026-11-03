@@ -30,6 +30,8 @@ const env = {
   BROKER_SERVICE_SYNCHRONISATION_URL:
     process.env.BROKER_SERVICE_SYNCHRONISATION_URL ?? 'http://localhost:3009',
   NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3000',
+  // Jour des données fictives (consultation de Florence), le même que `DEMO_TODAY` du web.
+  DOSSIERS_DATE_DEMO: process.env.DOSSIERS_DATE_DEMO ?? '2026-10-28',
 };
 if (dockerAvailable()) {
   console.log('Docker détecté : docker compose up -d');

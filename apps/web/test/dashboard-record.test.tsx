@@ -34,7 +34,9 @@ function renderWith(ui: React.ReactNode, identity?: { userId: string }) {
 describe('tableau de bord', () => {
   it('affiche le titre, les quatre indicateurs et les cartes avec les données en mémoire', async () => {
     renderWith(<DashboardScreen />);
-    expect(await screen.findByRole('heading', { level: 1, name: 'Bonjour, Dr Nana' })).toBeVisible();
+    expect(
+      await screen.findByRole('heading', { level: 1, name: 'Bonjour, Dr Nana' }),
+    ).toBeVisible();
 
     for (const label of [
       'Patients du jour',
@@ -78,11 +80,17 @@ describe('dossier patient', () => {
   it('affiche l’en-tête, le résumé IA sourcé et filtre la chronologie', async () => {
     const user = userEvent.setup();
     renderWith(<PatientScreen patientId={FLORENCE_ID} />);
-    expect(await screen.findByRole('heading', { level: 1, name: 'Florence Ngo Bassa' })).toBeVisible();
+    expect(
+      await screen.findByRole('heading', { level: 1, name: 'Florence Ngo Bassa' }),
+    ).toBeVisible();
     expect(screen.getByText('Allergie : Pénicilline')).toBeVisible();
     expect(screen.getByText('Sous anticoagulant')).toBeVisible();
     expect(screen.getByRole('button', { name: 'Valider le résumé' })).toBeVisible();
     expect(screen.getByText(/Aide à la décision/)).toBeVisible();
+    expect(screen.getByRole('link', { name: 'Demander au copilote' })).toHaveAttribute(
+      'href',
+      `/copilote/${FLORENCE_ID}`,
+    );
 
     const timeline = screen.getByRole('region', { name: 'Chronologie du dossier' });
     const all = within(timeline).getAllByRole('listitem').length;
@@ -114,13 +122,18 @@ describe('dossier patient', () => {
 
     const submit = within(dialog).getByRole('button', { name: 'Ouvrir le dossier en urgence' });
     expect(submit).toBeDisabled();
-    await user.type(within(dialog).getByLabelText('Précisions (obligatoire)'), 'Admise aux urgences');
+    await user.type(
+      within(dialog).getByLabelText('Précisions (obligatoire)'),
+      'Admise aux urgences',
+    );
     await user.click(submit);
 
     expect(spy).toHaveBeenCalledWith(FLORENCE_ID, {
       motif: 'Urgence vitale — patient inconscient ou non communicant',
       precisions: 'Admise aux urgences',
     });
-    expect(await screen.findByRole('heading', { level: 1, name: 'Florence Ngo Bassa' })).toBeVisible();
+    expect(
+      await screen.findByRole('heading', { level: 1, name: 'Florence Ngo Bassa' }),
+    ).toBeVisible();
   });
 });

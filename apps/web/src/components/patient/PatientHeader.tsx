@@ -71,7 +71,10 @@ export const PatientHeader = observer(function PatientHeader({
               {t('scribe.dictate')}
             </Button>
           ) : null}
-          <Link href="/copilote" className="btn btn-ai">
+          <Link
+            href={vm.patient ? `/copilote/${encodeURIComponent(vm.patient.id)}` : '/copilote'}
+            className="btn btn-ai"
+          >
             <Sparkles size={16} aria-hidden="true" />
             {t('patient.askCopilot')}
           </Link>

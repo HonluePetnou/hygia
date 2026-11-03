@@ -10,6 +10,11 @@ export interface Env {
   agentsUrl: string;
   /** Clé des appels internes des autres services (`DOSSIERS_INTERNAL_KEY`, valeur de démonstration par défaut). */
   internalKey: string;
+  /**
+   * Jour affiché par le tableau de bord, `AAAA-MM-JJ` (`DOSSIERS_DATE_DEMO`) : fixe la journée des
+   * données fictives pendant la démonstration ; absent, c'est la date du jour.
+   */
+  dashboardDate?: string;
 }
 
 const DEFAULT_AGENTS_URL = 'http://localhost:3007';
@@ -39,12 +44,22 @@ export function loadEnv(source: Record<string, string | undefined> = process.env
       `DOSSIERS_SEUIL_DOUBLONS invalide : « ${rawThreshold} » (nombre dans ]0 ; 1] attendu)`,
     );
   }
+  const dashboardDate = source['DOSSIERS_DATE_DEMO'] || undefined;
+  if (dashboardDate !== undefined && !/^\d{4}-\d{2}-\d{2}$/.test(dashboardDate)) {
+    throw new Error(`DOSSIERS_DATE_DEMO invalide : « ${dashboardDate} » (AAAA-MM-JJ attendu)`);
+  }
+  const base = {
+    jwksUrl,
+    duplicateThreshold,
+    agentsUrl,
+    internalKey,
+    ...(dashboardDate ? { dashboardDate } : {}),
+  };
   const raw = source['DOSSIERS_PORT'];
-  if (raw === undefined || raw === '')
-    return { port: 3001, jwksUrl, duplicateThreshold, agentsUrl, internalKey };
+  if (raw === undefined || raw === '') return { port: 3001, ...base };
   const port = Number(raw);
   if (!Number.isInteger(port) || port < 1 || port > 65535) {
     throw new Error(`DOSSIERS_PORT invalide : « ${raw} » (entier entre 1 et 65535 attendu)`);
   }
-  return { port, jwksUrl, duplicateThreshold, agentsUrl, internalKey };
+  return { port, ...base };
 }
