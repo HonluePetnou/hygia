@@ -4,8 +4,12 @@ import { useEffect, type ReactNode } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { observer } from 'mobx-react-lite';
 import { useSession } from '@/lib/session-context';
+import { AdminDenied } from './AdminDenied';
 import { Sidebar } from './Sidebar';
 import { Topbar } from './Topbar';
+
+/** Écrans accessibles à l'administrateur système. */
+const ADMIN_PATHS = ['/administration', '/supervision'];
 
 /** Mise en page authentifiée ; renvoie vers `/connexion` sans session vérifiée. */
 export const AppShell = observer(function AppShell({ children }: { children: ReactNode }) {
@@ -16,14 +20,17 @@ export const AppShell = observer(function AppShell({ children }: { children: Rea
   const analystElsewhere = session.role === 'analyste' && !pathname.startsWith('/epidemiologie');
   // L'auditeur n'a que la section Conformité : tout autre écran le ramène au journal.
   const auditorElsewhere = session.role === 'auditeur' && !pathname.startsWith('/audit');
-  // L'administrateur système n'a que la supervision : aucun accès aux données de santé.
-  const adminElsewhere = session.role === 'admin' && !pathname.startsWith('/supervision');
+  // L'administrateur système n'a que Conformité (comptes, supervision) : l'accueil l'y ramène,
+  // et tout autre écran (dont un lien direct vers un dossier patient) affiche « Accès refusé ».
+  const isAdmin = session.role === 'admin';
+  const adminHome = isAdmin && pathname === '/';
+  const adminDenied = isAdmin && !adminHome && !ADMIN_PATHS.some((path) => pathname.startsWith(path));
   const redirectTo = analystElsewhere
     ? '/epidemiologie'
     : auditorElsewhere
       ? '/audit'
-      : adminElsewhere
-        ? '/supervision'
+      : adminHome
+        ? '/administration'
         : null;
 
   useEffect(() => {
@@ -40,7 +47,7 @@ export const AppShell = observer(function AppShell({ children }: { children: Rea
       <Sidebar />
       <div className="shell-main">
         <Topbar />
-        <main className="page">{children}</main>
+        <main className="page">{adminDenied ? <AdminDenied /> : children}</main>
       </div>
     </div>
   );

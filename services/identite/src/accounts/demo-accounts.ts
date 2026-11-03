@@ -47,6 +47,7 @@ export async function buildDemoAccounts(hasher: PasswordHasher): Promise<Account
   return DEMO_SEEDS.map((seed) => ({
     ...seed,
     version: 1,
+    active: true,
     passwordHash,
     totpSecret: DEMO_TOTP_SECRET,
     backupCodeHashes: [...backupCodeHashes],

@@ -87,7 +87,7 @@ export class AuthController {
 
   private account(claims: TokenClaims) {
     const account = this.accounts.findById(claims.sub);
-    if (!account) throw new UnauthorizedException('Compte inconnu');
+    if (!account || !account.active) throw new UnauthorizedException('Compte inconnu ou désactivé');
     return account;
   }
 }

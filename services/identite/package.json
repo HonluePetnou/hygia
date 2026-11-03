@@ -13,6 +13,7 @@
     "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js"
   },
   "dependencies": {
+    "@hygia/audit": "workspace:*",
     "@hygia/auth": "workspace:*",
     "@hygia/observability": "workspace:*",
     "@hygia/fhir": "workspace:*",

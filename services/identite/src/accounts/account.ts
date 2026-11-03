@@ -15,6 +15,10 @@ export interface Account {
   totpSecret?: string;
   /** Hachages des codes de secours encore utilisables. */
   backupCodeHashes: string[];
+  /** Un compte désactivé ne peut plus ouvrir de session. */
+  active: boolean;
+  /** Dernière connexion réussie (ISO 8601). */
+  lastLoginAt?: string;
 }
 
 /** Vue publique d'un compte. */
@@ -24,6 +28,8 @@ export interface AccountSummary {
   displayName: string;
   role: Role;
   mfaEnrolled: boolean;
+  active: boolean;
+  lastLoginAt: string | null;
 }
 
 /** Projette un compte vers sa vue publique. */
@@ -34,5 +40,7 @@ export function summarize(account: Account): AccountSummary {
     displayName: account.displayName,
     role: account.role,
     mfaEnrolled: account.totpSecret !== undefined,
+    active: account.active,
+    lastLoginAt: account.lastLoginAt ?? null,
   };
 }

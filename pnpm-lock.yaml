@@ -363,6 +363,9 @@ importers:
 
   services/identite:
     dependencies:
+      '@hygia/audit':
+        specifier: workspace:*
+        version: link:../audit
       '@hygia/auth':
         specifier: workspace:*
         version: link:../../packages/auth

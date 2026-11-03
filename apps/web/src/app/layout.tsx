@@ -9,6 +9,7 @@ import './alertes.css';
 import './epidemiologie.css';
 import './audit.css';
 import './supervision.css';
+import './administration.css';
 
 const jakarta = Plus_Jakarta_Sans({
   subsets: ['latin'],

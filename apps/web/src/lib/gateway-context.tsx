@@ -2,6 +2,7 @@
 
 import { createContext, useContext, useState, type ReactNode } from 'react';
 import type {
+  AdministrationGateway,
   AuditGateway,
   CopiloteGateway,
   EpidemiologyGateway,
@@ -10,6 +11,7 @@ import type {
   SupervisionGateway,
 } from '@hygia/view-models';
 import {
+  createAdministrationGateway,
   createAuditGateway,
   createCopiloteGateway,
   createEpidemiologyGateway,
@@ -27,6 +29,7 @@ interface Gateways {
   epidemiology: EpidemiologyGateway;
   audit: AuditGateway;
   supervision: SupervisionGateway;
+  administration: AdministrationGateway;
 }
 
 const GatewayContext = createContext<Gateways | null>(null);
@@ -45,6 +48,8 @@ export interface GatewayProviderProps {
   audit?: AuditGateway;
   /** Supervision fournie de l'extérieur (tests). */
   supervision?: SupervisionGateway;
+  /** Administration fournie de l'extérieur (tests). */
+  administration?: AdministrationGateway;
 }
 
 /** Fournit les dépôts (patients, copilote, ingestion) à tout l'arbre authentifié. */
@@ -56,6 +61,7 @@ export function GatewayProvider({
   epidemiology,
   audit,
   supervision,
+  administration,
 }: GatewayProviderProps) {
   const session = useSession();
   const [value] = useState<Gateways>(() => {
@@ -71,6 +77,7 @@ export function GatewayProvider({
       epidemiology: epidemiology ?? createEpidemiologyGateway(env, identity),
       audit: audit ?? createAuditGateway(env, identity),
       supervision: supervision ?? createSupervisionGateway(env, identity),
+      administration: administration ?? createAdministrationGateway(env, identity),
     };
   });
   return <GatewayContext.Provider value={value}>{children}</GatewayContext.Provider>;
@@ -105,6 +112,11 @@ export function useIngestionGateway(): IngestionGateway {
 /** Journal d'audit courant ; échoue hors d'un `GatewayProvider`. */
 export function useAuditGateway(): AuditGateway {
   return useGateways().audit;
+}
+
+/** Administration des comptes courante ; échoue hors d'un `GatewayProvider`. */
+export function useAdministrationGateway(): AdministrationGateway {
+  return useGateways().administration;
 }
 
 /** Supervision courante ; échoue hors d'un `GatewayProvider`. */

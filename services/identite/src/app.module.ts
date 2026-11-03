@@ -1,6 +1,9 @@
 import { Module, type MiddlewareConsumer, type NestModule } from '@nestjs/common';
 import { createObservability } from '@hygia/observability';
 import { TokenIssuer, localVerifier } from '@hygia/auth';
+import { AuditLog, InMemoryAuditStore } from '@hygia/audit';
+import { AccountAdminService } from './admin/account-admin.service.js';
+import { AdminAudit, AUDIT_LOG } from './admin/admin-audit.js';
 import { AccountsController } from './admin/accounts.controller.js';
 import { AdminGuard } from './admin/admin.guard.js';
 import { TeamsController } from './admin/teams.controller.js';
@@ -33,6 +36,9 @@ import { CLOCK, SystemClock, type Clock } from './time/clock.js';
     TotpService,
     JwtAuthGuard,
     AdminGuard,
+    AdminAudit,
+    AccountAdminService,
+    { provide: AUDIT_LOG, useFactory: () => new AuditLog(new InMemoryAuditStore()) },
     { provide: JWT_ENV, useFactory: (): Env => loadEnv() },
     { provide: CLOCK, useClass: SystemClock },
     { provide: EVENT_BUS, useClass: InMemoryEventBus },

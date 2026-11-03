@@ -56,11 +56,11 @@ describe('écran Supervision', () => {
     expect(within(screen.getByTestId('service-dossiers')).getByText('3a')).toHaveAttribute('data-up', 'true');
   });
 
-  it('réduit la barre latérale de l’administrateur à la supervision', async () => {
+  it('réduit la barre latérale de l’administrateur à la section Conformité', async () => {
     setup();
     await screen.findByTestId('service-dossiers');
     const nav = screen.getByRole('navigation', { name: 'Navigation principale' });
-    expect(within(nav).getAllByRole('link').map((link) => link.textContent)).toEqual(['Supervision']);
+    expect(within(nav).getAllByRole('link').map((link) => link.textContent)).toEqual(['Comptes et rôles', 'Supervision']);
   });
 
   it('refuse l’accès (403) avec un message', async () => {

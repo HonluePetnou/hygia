@@ -5,6 +5,7 @@ import { localVerifier, remoteVerifier } from '@hygia/auth';
 import { NANA_ID } from '@hygia/fhir';
 import request from 'supertest';
 import { DEMO_BACKUP_CODES, DEMO_PASSWORD, DEMO_SEEDS, DEMO_TOTP_SECRET } from '../src/accounts/demo-accounts.js';
+import { AdminAudit } from '../src/admin/admin-audit.js';
 import { AppModule } from '../src/app.module.js';
 import { TOKEN_ISSUER } from '../src/auth/session-tokens.js';
 import { loadEnv } from '../src/config/env.js';
@@ -238,6 +239,95 @@ describe('service Identité', () => {
     const kamga = await signIn('paul.kamga@cma-bepanda.cm');
     const claims = await localVerifier(issuer.jwks(), () => clock.now()).verify(kamga);
     expect(claims.teams).toEqual([team.body.id]);
+  });
+
+  it('administration : invitation, rôle, équipe, 2FA, désactivation — chaque action est auditée', async () => {
+    const admin = await signIn('admin@hygia.local');
+    const audit = app.get(AdminAudit);
+    const team = await http().get('/equipes').set(bearer(admin)).expect(200);
+    const teamId = team.body[0].id as string;
+
+    const doctorToken = await signIn(NANA_EMAIL);
+    await http().post('/comptes/invitations').set(bearer(doctorToken)).send({}).expect(403);
+    await http().post('/comptes/invitations').set(bearer(admin)).send({ email: 'x', displayName: 'X', role: 'roi' }).expect(400);
+    const invited = await http()
+      .post('/comptes/invitations')
+      .set(bearer(admin))
+      .send({ email: 'nouveau@hd-bonassama.cm', displayName: 'Nouvel Infirmier', role: 'infirmier', teamId })
+      .expect(201);
+    expect(invited.body.temporaryPassword.length).toBeGreaterThanOrEqual(12);
+    expect(invited.body.account).toMatchObject({ role: 'infirmier', active: true, mfaEnrolled: false, teamIds: [teamId] });
+    await http()
+      .post('/comptes/invitations')
+      .set(bearer(admin))
+      .send({ email: 'NOUVEAU@hd-bonassama.cm', displayName: 'Doublon', role: 'infirmier' })
+      .expect(409);
+    const id = invited.body.account.id as string;
+    // L'invité peut se connecter avec son mot de passe provisoire (enrôlement 2FA ensuite).
+    const login = await http()
+      .post('/auth/login')
+      .send({ email: 'nouveau@hd-bonassama.cm', password: invited.body.temporaryPassword })
+      .expect(200);
+    expect(login.body.mfa).toBe('enroll');
+
+    const changed = await http().post(`/comptes/${id}/role`).set(bearer(admin)).send({ role: 'medecin' }).expect(200);
+    expect(changed.body.role).toBe('medecin');
+    await http().post(`/comptes/${id}/role`).set(bearer(admin)).send({ role: 'roi' }).expect(400);
+
+    await http().post(`/comptes/${NANA_ID}/reinitialiser-2fa`).set(bearer(admin)).expect(200);
+    const nana = (await http().get('/comptes').set(bearer(admin))).body.find((a: { id: string }) => a.id === NANA_ID);
+    expect(nana.mfaEnrolled).toBe(false);
+    expect((await http().post('/auth/login').send({ email: NANA_EMAIL, password: DEMO_PASSWORD }).expect(200)).body.mfa).toBe('enroll');
+
+    await http().post(`/comptes/${NANA_ID}/desactiver`).set(bearer(admin)).expect(200);
+    await http().post('/auth/login').send({ email: NANA_EMAIL, password: DEMO_PASSWORD }).expect(401);
+    await http().post(`/comptes/${NANA_ID}/reactiver`).set(bearer(admin)).expect(200);
+    await http().post('/auth/login').send({ email: NANA_EMAIL, password: DEMO_PASSWORD }).expect(200);
+
+    const adminId = DEMO_SEEDS.find((s) => s.role === 'admin')?.id;
+    await http().post(`/comptes/${adminId}/desactiver`).set(bearer(admin)).expect(400);
+    await http().post(`/comptes/${adminId}/role`).set(bearer(admin)).send({ role: 'medecin' }).expect(400);
+    await http().post('/comptes/inconnu/desactiver').set(bearer(admin)).expect(404);
+
+    const reasons = audit.events().map((e) => e.reason);
+    expect(reasons).toEqual([
+      'invitation (infirmier) équipe ' + teamId,
+      'rôle infirmier → medecin',
+      'double authentification réinitialisée',
+      'compte désactivé',
+      'compte réactivé',
+    ]);
+    expect(audit.events().every((e) => e.role === 'admin' && e.resourceType === 'compte')).toBe(true);
+    expect(JSON.stringify(audit.events())).not.toContain(invited.body.temporaryPassword);
+    expect(audit.events().length).toBe(5);
+  });
+
+  it('administration : équipes (création, membres, patients rattachés) auditées', async () => {
+    const admin = await signIn('admin@hygia.local');
+    const audit = app.get(AdminAudit);
+    const team = await http().post('/equipes').set(bearer(admin)).send({ name: 'Pédiatrie' }).expect(201);
+    expect(team.body).toMatchObject({ memberIds: [], patientIds: [] });
+    const base = `/equipes/${team.body.id}`;
+    await http().post(`${base}/membres`).set(bearer(admin)).send({ accountId: NANA_ID }).expect(200);
+    await http().post(`${base}/patients`).set(bearer(admin)).send({ patientId: JEAN_ID }).expect(200);
+    const attached = await http().post(`${base}/patients`).set(bearer(admin)).send({ patientId: JEAN_ID }).expect(200);
+    expect(attached.body.patientIds).toEqual([JEAN_ID]);
+    expect(attached.body.version).toBe(3);
+    await http().post(`${base}/patients/retirer`).set(bearer(admin)).send({ patientId: JEAN_ID }).expect(200);
+    const removed = await http().post(`${base}/membres/retirer`).set(bearer(admin)).send({ accountId: NANA_ID }).expect(200);
+    expect(removed.body).toMatchObject({ memberIds: [], patientIds: [] });
+    await http().post('/equipes/inconnue/patients').set(bearer(admin)).send({ patientId: JEAN_ID }).expect(404);
+    expect(audit.events().map((e) => e.reason)).toEqual([
+      'création de Pédiatrie',
+      `membre ajouté : ${NANA_ID}`,
+      'patient rattaché',
+      'patient rattaché',
+      'patient détaché',
+      `membre retiré : ${NANA_ID}`,
+    ]);
+    expect(audit.events().filter((e) => e.patientId === JEAN_ID)).toHaveLength(3);
+    const nanaToken = await signIn(NANA_EMAIL);
+    await http().post(`${base}/membres`).set(bearer(nanaToken)).send({ accountId: NANA_ID }).expect(403);
   });
 
   it('sert la spécification OpenAPI sur /docs', async () => {

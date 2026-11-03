@@ -11,6 +11,7 @@ module.exports = {
     '^.+\\.ts$': ['ts-jest', { tsconfig: 'tsconfig.json', useESM: true, diagnostics: { ignoreCodes: [151002] } }],
   },
   moduleNameMapper: {
+    '^@hygia/audit$': '<rootDir>/../audit/src/index.ts',
     '^@hygia/auth$': '<rootDir>/../../packages/auth/src/index.ts',
     '^@hygia/fhir$': '<rootDir>/../../packages/fhir/src/index.ts',
     '^@hygia/observability$': '<rootDir>/../../packages/observability/src/index.ts',

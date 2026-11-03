@@ -1,5 +1,8 @@
 import { demoDataset } from '@hygia/fhir';
 import {
+  HttpAdministrationGateway,
+  InMemoryAdministrationGateway,
+  type AdministrationGateway,
   HttpAuditGateway,
   HttpAuthGateway,
   HttpCopiloteGateway,
@@ -87,6 +90,12 @@ export function createCopiloteGateway(env: GatewayEnv, identity: () => Identity)
 export function createAuditGateway(env: GatewayEnv, identity: () => Identity): AuditGateway {
   if (env.NEXT_PUBLIC_DEMO_OFFLINE === '1') return new InMemoryAuditGateway();
   return new HttpAuditGateway(serviceUrl(env, 'audit'), identity);
+}
+
+/** Choisit l'administration : en mémoire si `NEXT_PUBLIC_DEMO_OFFLINE=1`, sinon le service Identité (par le broker). */
+export function createAdministrationGateway(env: GatewayEnv, identity: () => Identity): AdministrationGateway {
+  if (env.NEXT_PUBLIC_DEMO_OFFLINE === '1') return new InMemoryAdministrationGateway();
+  return new HttpAdministrationGateway(serviceUrl(env, 'identite'), identity);
 }
 
 /** Choisit la supervision : simulée si `NEXT_PUBLIC_DEMO_OFFLINE=1`, sinon les routes `/api/supervision` du broker (rôle admin). */

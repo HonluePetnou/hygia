@@ -19,7 +19,7 @@ export { DEMO_MFA_CODE };
 export type SessionStep = 'credentials' | 'enroll' | 'code' | 'backupCodes' | 'authenticated';
 
 /** Clés de libellé de chaque rôle. */
-const ROLE_KEYS: Record<Role, string> = {
+export const ROLE_KEYS: Record<Role, string> = {
   medecin: 'role.doctor',
   infirmier: 'role.nurse',
   administratif: 'role.administrative',
@@ -63,7 +63,8 @@ export class SessionViewModel implements LocaleSource {
   /** Codes de secours à noter (étape `backupCodes`), affichés une seule fois. */
   backupCodes: string[] = [];
 
-  private userId: string;
+  /** Identifiant de l'utilisateur connecté. */
+  userId: string;
   private token: string | undefined;
   private challenge: LoginChallenge | null = null;
   private readonly auth: AuthGateway;
@@ -79,9 +80,9 @@ export class SessionViewModel implements LocaleSource {
         { id: this.userId, displayName: this.displayName, role: this.role },
         options.expectedCode ?? DEMO_MFA_CODE,
       );
-    makeAutoObservable<SessionViewModel, 'userId' | 'token' | 'challenge' | 'auth'>(
+    makeAutoObservable<SessionViewModel, 'token' | 'challenge' | 'auth'>(
       this,
-      { userId: false, token: false, challenge: false, auth: false },
+      { token: false, challenge: false, auth: false },
       { autoBind: true },
     );
   }

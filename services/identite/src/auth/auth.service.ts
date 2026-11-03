@@ -48,7 +48,7 @@ export class AuthService {
   async login(email: string, password: string): Promise<LoginResult> {
     const account = this.accounts.findByEmail(email);
     const valid = account !== undefined && (await this.hasher.verify(password, account.passwordHash));
-    if (!account || !valid) throw new UnauthorizedException('Identifiants invalides');
+    if (!account || !account.active || !valid) throw new UnauthorizedException('Identifiants invalides');
     const challenge = this.challenges.create(account.id);
     return { challengeId: challenge.id, mfa: account.totpSecret ? 'verify' : 'enroll' };
   }
@@ -85,6 +85,8 @@ export class AuthService {
       throw new UnauthorizedException('Code incorrect ou expiré');
     }
     this.challenges.delete(challenge.id);
+    current = { ...current, version: current.version + 1, lastLoginAt: this.clock.now().toISOString() };
+    this.accounts.save(current);
     const token = await this.tokens.issueFor(current);
     return { ...token, user: summarize(current), ...(backupCodes ? { backupCodes } : {}) };
   }
@@ -92,7 +94,7 @@ export class AuthService {
   private resolve(challengeId: string): { challenge: Challenge; account: Account } {
     const challenge = this.challenges.find(challengeId);
     const account = challenge && this.accounts.findById(challenge.accountId);
-    if (!challenge || !account) throw new UnauthorizedException('Connexion expirée, recommencez');
+    if (!challenge || !account || !account.active) throw new UnauthorizedException('Connexion expirée, recommencez');
     return { challenge, account };
   }
 

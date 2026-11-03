@@ -12,6 +12,7 @@ import {
   ServerCog,
   ShieldCheck,
   Sparkles,
+  UserCog,
   Users,
   type LucideIcon,
 } from 'lucide-react';
@@ -50,11 +51,14 @@ const AUDITOR_SECTIONS: readonly NavSection[] = [
   },
 ];
 
-/** Profil administrateur système : supervision et pannes seulement (aucune donnée de santé). */
+/** Profil administrateur système : Conformité seulement (comptes et supervision, aucune donnée de santé). */
 const ADMIN_SECTIONS: readonly NavSection[] = [
   {
     titleKey: 'nav.section.compliance',
-    items: [{ href: '/supervision', labelKey: 'nav.supervision', Icon: ServerCog }],
+    items: [
+      { href: '/administration', labelKey: 'nav.administration', Icon: UserCog },
+      { href: '/supervision', labelKey: 'nav.supervision', Icon: ServerCog },
+    ],
   },
 ];
 
