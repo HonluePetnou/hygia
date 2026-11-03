@@ -23,6 +23,7 @@ import {
   parseBreakGlass,
   parseIfMatch,
   parsePatientChanges,
+  parseReason,
 } from './dto.js';
 import { PatientsService } from './patients.service.js';
 import type { TimelineEvent } from './timeline.js';
@@ -70,8 +71,14 @@ export class PatientsController {
     @Param('id') id: string,
     @Headers('if-match') ifMatch: string | undefined,
     @Body() body: UpdatePatientDto,
-  ): Patient {
-    return this.service.update(user, id, parsePatientChanges(body), parseIfMatch(ifMatch));
+  ): Promise<Patient> {
+    return this.service.update(
+      user,
+      id,
+      parsePatientChanges(body),
+      parseIfMatch(ifMatch),
+      parseReason(body, 'modification de la fiche patient'),
+    );
   }
 
   @Post(':id/bris-de-glace')

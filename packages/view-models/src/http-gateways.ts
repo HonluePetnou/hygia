@@ -13,6 +13,7 @@ import type {
   PatientOverview,
   PatientSummary,
   Resume,
+  ResourceVersion,
   TimelineEntry,
   WordHandler,
 } from './types.js';
@@ -80,6 +81,10 @@ export class HttpPatientsGateway implements PatientsGateway {
 
   timeline(patientId: string): Promise<TimelineEntry[]> {
     return this.dossiers.get(`/patients/${encodeURIComponent(patientId)}/chronologie`);
+  }
+
+  versions(patientId: string): Promise<ResourceVersion[]> {
+    return this.dossiers.get(`/patients/${encodeURIComponent(patientId)}/versions`);
   }
 
   summary(patientId: string, locale: Locale): Promise<Resume> {

@@ -9,13 +9,23 @@ import { loadEnv } from './config/env.js';
 import { InMemoryPatientRepository } from './patients/in-memory-patient-repository.js';
 import { PATIENT_REPOSITORY } from './patients/patient-repository.js';
 import { PatientsController } from './patients/patients.controller.js';
-import { AUDIT_LOG, PatientsService } from './patients/patients.service.js';
+import { AUDIT_LOG } from './patients/audit-token.js';
+import { PatientsService } from './patients/patients.service.js';
+import { DocumentsController } from './documents/documents.controller.js';
+import { DocumentsService } from './documents/documents.service.js';
+import { DOCUMENT_STORE } from './versions/document-store.js';
+import { InMemoryDocumentStore } from './versions/in-memory-document-store.js';
+import { VersionsController } from './versions/versions.controller.js';
+import { VersionsService } from './versions/versions.service.js';
 
 /** Module racine : dépôt et audit en mémoire (remplaçables par Prisma / DynamoDB). */
 @Module({
-  controllers: [PatientsController],
+  controllers: [PatientsController, VersionsController, DocumentsController],
   providers: [
     PatientsService,
+    DocumentsService,
+    VersionsService,
+    { provide: DOCUMENT_STORE, useFactory: () => new InMemoryDocumentStore() },
     AccessPolicy,
     JwtAuthGuard,
     { provide: TOKEN_VERIFIER, useFactory: () => remoteVerifier(loadEnv().jwksUrl) },

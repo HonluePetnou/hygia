@@ -19,6 +19,7 @@ import type {
   PatientOverview,
   PatientSummary,
   Resume,
+  ResourceVersion,
   ResumeItem,
   TimelineEntry,
 } from './types.js';
@@ -117,6 +118,33 @@ export class InMemoryPatientsGateway implements PatientsGateway {
     this.granted.add(patientId);
     const expiresAt = new Date(Date.now() + BREAK_GLASS_HOURS * 3_600_000).toISOString();
     return Promise.resolve({ patientId, expiresAt });
+  }
+
+  /** Hors ligne : aucune modification n'est possible, donc une seule version par ressource. */
+  versions(patientId: string): Promise<ResourceVersion[]> {
+    const denied = this.denial(patientId);
+    if (denied) return Promise.reject(denied);
+    const patient = this.dataset.patients.find((p) => p.id === patientId);
+    if (!patient) return Promise.reject(new GatewayError(404, `Patient introuvable : ${patientId}`));
+    const documents = this.dataset.documents.filter((d) => d.subject.reference === `Patient/${patientId}`);
+    const toVersion = (
+      resourceType: ResourceVersion['resourceType'],
+      resource: { id: string; version: number },
+      createdAt: string,
+    ): ResourceVersion => ({
+      resourceId: resource.id,
+      resourceType,
+      number: resource.version,
+      author: 'système',
+      createdAt,
+      reason: 'état initial',
+      content: { ...resource },
+    });
+    const versions = [
+      ...documents.map((d) => toVersion('DocumentReference', d, d.date)),
+      toVersion('Patient', patient, `${this.today()}T00:00:00Z`),
+    ];
+    return Promise.resolve(versions.sort((a, b) => b.createdAt.localeCompare(a.createdAt)));
   }
 
   summary(patientId: string, locale: Locale): Promise<Resume> {

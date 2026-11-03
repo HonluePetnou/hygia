@@ -13,6 +13,7 @@ import type {
   PatientOverview,
   PatientSummary,
   Resume,
+  ResourceVersion,
   TimelineEntry,
   WordHandler,
 } from './types.js';
@@ -31,6 +32,8 @@ export interface PatientsGateway {
   overview(patientId: string): Promise<PatientOverview>;
   /** Ouvre un accès d'urgence de 4 h (bris de glace, tracé dans l'audit). */
   openBreakGlass(patientId: string, request: BreakGlassRequest): Promise<BreakGlassGrant>;
+  /** Versions de la fiche et des documents du patient, de la plus récente à la plus ancienne (lecture auditée). */
+  versions(patientId: string): Promise<ResourceVersion[]>;
   /** Résumé pré-consultation dans la langue demandée. */
   summary(patientId: string, locale: Locale): Promise<Resume>;
 }

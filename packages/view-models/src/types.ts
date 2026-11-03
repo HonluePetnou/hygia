@@ -256,3 +256,17 @@ export interface ChosenFile {
 
 /** Mot par mot : fonction appelée pour chaque mot de la réponse reçue au fil de l'eau. */
 export type WordHandler = (word: string) => void;
+
+/** Version immuable d'une ressource du dossier (fiche patient ou document), telle que servie par Dossiers. */
+export interface ResourceVersion {
+  resourceId: string;
+  resourceType: 'Patient' | 'DocumentReference';
+  number: number;
+  /** Identifiant de l'auteur (`système` pour l'état initial). */
+  author: string;
+  /** Date ISO de la modification. */
+  createdAt: string;
+  reason: string;
+  /** Contenu complet de la ressource à cette version. */
+  content: Record<string, unknown>;
+}

@@ -545,3 +545,58 @@ a.btn-ai:hover {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
+
+/* Onglet « Versions » */
+.versions-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.3fr);
+  gap: 20px;
+  align-items: start;
+}
+.versions-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 12px;
+}
+.version-card.is-selected {
+  outline: 2px solid var(--primary);
+}
+.version-check {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+}
+.version-title {
+  font-weight: 600;
+  flex: 1;
+}
+.version-compare table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.version-compare th,
+.version-compare td {
+  text-align: left;
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--border);
+  vertical-align: top;
+}
+.version-compare tr.is-changed td {
+  background: var(--warning-soft);
+  font-weight: 600;
+}
+.version-compare tr.is-changed td:first-of-type {
+  text-decoration: line-through;
+  color: var(--text-muted);
+}
+.version-compare tr.is-changed td:last-of-type {
+  background: var(--success-soft);
+}
+@media (max-width: 900px) {
+  .versions-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

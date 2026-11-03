@@ -7,21 +7,29 @@ import type { PatientRecordViewModel } from '@hygia/view-models';
 import { Avatar, Badge, Button, Card } from '@/components/ui';
 import { useSession } from '@/lib/session-context';
 
-const TABS = [
-  'patient.tab.timeline',
-  'patient.tab.summary',
-  'patient.tab.documents',
-  'patient.tab.prescriptions',
-  'patient.tab.vitals',
-  'patient.tab.versions',
-  'patient.tab.access',
-] as const;
+/** Onglets du dossier ; seuls ceux qui portent un `id` sont disponibles pour l'instant. */
+const TABS: readonly { key: string; id?: PatientTab }[] = [
+  { key: 'patient.tab.timeline', id: 'timeline' },
+  { key: 'patient.tab.summary' },
+  { key: 'patient.tab.documents' },
+  { key: 'patient.tab.prescriptions' },
+  { key: 'patient.tab.vitals' },
+  { key: 'patient.tab.versions', id: 'versions' },
+  { key: 'patient.tab.access' },
+];
+
+/** Onglets actifs du dossier. */
+export type PatientTab = 'timeline' | 'versions';
 
 /** En-tête du dossier : avatar, nom, badges d'alerte, identité, actions et onglets. */
 export const PatientHeader = observer(function PatientHeader({
   vm,
+  tab,
+  onTab,
 }: {
   vm: PatientRecordViewModel;
+  tab: PatientTab;
+  onTab: (tab: PatientTab) => void;
 }) {
   const { t } = useSession();
   return (
@@ -51,19 +59,23 @@ export const PatientHeader = observer(function PatientHeader({
         </div>
       </div>
       <div className="record-tabs" role="tablist" aria-label={t('patient.tabs')}>
-        {TABS.map((key, index) => (
-          <button
-            key={key}
-            type="button"
-            role="tab"
-            aria-selected={index === 0}
-            aria-disabled={index === 0 ? undefined : true}
-            tabIndex={index === 0 ? 0 : -1}
-            className="record-tab"
-          >
-            {t(key)}
-          </button>
-        ))}
+        {TABS.map(({ key, id }) => {
+          const selected = id !== undefined && id === tab;
+          return (
+            <button
+              key={key}
+              type="button"
+              role="tab"
+              aria-selected={selected}
+              aria-disabled={id === undefined ? true : undefined}
+              tabIndex={selected ? 0 : -1}
+              className="record-tab"
+              onClick={id === undefined ? undefined : () => onTab(id)}
+            >
+              {t(key)}
+            </button>
+          );
+        })}
       </div>
     </Card>
   );

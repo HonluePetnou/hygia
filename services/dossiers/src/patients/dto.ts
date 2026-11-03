@@ -13,6 +13,8 @@ export class UpdatePatientDto {
   @ApiPropertyOptional() familyName?: string;
   @ApiPropertyOptional({ enum: ['female', 'male', 'other', 'unknown'] }) gender?: string;
   @ApiPropertyOptional({ example: '1955-03-12' }) birthDate?: string;
+  @ApiPropertyOptional({ description: 'Motif de la modification (enregistré dans la version)' })
+  motif?: string;
 }
 
 /** Corps de `POST /patients/:id/bris-de-glace`. */
@@ -24,14 +26,14 @@ export class BreakGlassDto {
 
 const GENDERS = ['female', 'male', 'other', 'unknown'];
 
-function asObject(body: unknown): Record<string, unknown> {
+export function asObject(body: unknown): Record<string, unknown> {
   if (typeof body !== 'object' || body === null || Array.isArray(body)) {
     throw new BadRequestException('Corps JSON attendu');
   }
   return body as Record<string, unknown>;
 }
 
-function optionalText(source: Record<string, unknown>, key: string): string | undefined {
+export function optionalText(source: Record<string, unknown>, key: string): string | undefined {
   const value = source[key];
   if (value === undefined) return undefined;
   if (typeof value !== 'string' || value.trim() === '') {
@@ -60,6 +62,13 @@ export function parsePatientChanges(body: unknown): PatientChanges {
   }
   if (Object.keys(changes).length === 0) throw new BadRequestException('Aucune modification');
   return changes;
+}
+
+/** Motif d'une modification ; `fallback` s'il est absent, 400 s'il est vide ou n'est pas un texte. */
+export function parseReason(body: unknown, fallback?: string): string {
+  const motif = optionalText(asObject(body), 'motif') ?? fallback;
+  if (motif === undefined) throw new BadRequestException('motif obligatoire');
+  return motif;
 }
 
 /** Valide le corps d'un bris de glace (motif obligatoire). */

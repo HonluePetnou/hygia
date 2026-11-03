@@ -1,6 +1,11 @@
 import type { demoDataset } from '@hygia/fhir';
-import type { Patient } from '@hygia/types';
-import type { PatientRecord, PatientRepository, SaveResult } from './patient-repository.js';
+import type { DocumentReference, Patient } from '@hygia/types';
+import type {
+  DocumentChanges,
+  PatientRecord,
+  PatientRepository,
+  SaveResult,
+} from './patient-repository.js';
 
 /** Forme du jeu de données de démonstration (`demoDataset`). */
 export type DemoDataset = typeof demoDataset;
@@ -16,9 +21,11 @@ const idOf = (reference: { reference: string }): string => reference.reference.s
 /** Dépôt en mémoire alimenté par un jeu de données fictif (tests et démo). */
 export class InMemoryPatientRepository implements PatientRepository {
   private readonly patients = new Map<string, Patient>();
+  private readonly documents = new Map<string, DocumentReference>();
 
   constructor(private readonly data: DemoDataset) {
     for (const patient of data.patients) this.patients.set(patient.id, { ...patient });
+    for (const document of data.documents) this.documents.set(document.id, { ...document });
   }
 
   search(query: string): Patient[] {
@@ -32,6 +39,10 @@ export class InMemoryPatientRepository implements PatientRepository {
     return this.patients.get(id);
   }
 
+  findDocument(id: string): DocumentReference | undefined {
+    return this.documents.get(id);
+  }
+
   recordOf(patientId: string): PatientRecord {
     const mine = <T extends { subject: { reference: string } }>(items: readonly T[]): T[] =>
       items.filter((item) => idOf(item.subject) === patientId);
@@ -39,7 +50,7 @@ export class InMemoryPatientRepository implements PatientRepository {
       encounters: mine(this.data.encounters),
       observations: mine(this.data.observations),
       medicationRequests: mine(this.data.medicationRequests),
-      documents: mine(this.data.documents),
+      documents: mine([...this.documents.values()]),
       alerts: [],
     };
   }
@@ -76,6 +87,21 @@ export class InMemoryPatientRepository implements PatientRepository {
     }
     const patient: Patient = { ...current, ...changes, version: current.version + 1 };
     this.patients.set(id, patient);
-    return { status: 'saved', patient };
+    return { status: 'saved', resource: patient };
+  }
+
+  updateDocument(
+    id: string,
+    changes: DocumentChanges,
+    expectedVersion: number,
+  ): SaveResult<DocumentReference> {
+    const current = this.documents.get(id);
+    if (!current) return { status: 'not_found' };
+    if (current.version !== expectedVersion) {
+      return { status: 'conflict', currentVersion: current.version };
+    }
+    const document: DocumentReference = { ...current, ...changes, version: current.version + 1 };
+    this.documents.set(id, document);
+    return { status: 'saved', resource: document };
   }
 }

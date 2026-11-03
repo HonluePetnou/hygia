@@ -4,11 +4,10 @@ import type { Patient } from '@hygia/types';
 import { AccessPolicy, type AccessBasis } from '../access/access-policy.js';
 import type { AuthenticatedUser } from '../auth/authenticated-user.js';
 import type { PatientChanges } from './dto.js';
+import { AUDIT_LOG } from './audit-token.js';
 import { PATIENT_REPOSITORY, type PatientRepository } from './patient-repository.js';
+import { VersionsService } from '../versions/versions.service.js';
 import { buildTimeline, type TimelineEvent } from './timeline.js';
-
-/** Jeton d'injection du journal d'audit. */
-export const AUDIT_LOG = Symbol('AUDIT_LOG');
 
 /** Cas d'usage sur les dossiers ; chaque lecture ou écriture est auditée (RF24). */
 @Injectable()
@@ -17,6 +16,7 @@ export class PatientsService {
     @Inject(PATIENT_REPOSITORY) private readonly repository: PatientRepository,
     @Inject(AUDIT_LOG) private readonly audit: AuditLog,
     private readonly policy: AccessPolicy,
+    private readonly versions: VersionsService,
   ) {}
 
   /** Recherche par nom ou IPP, limitée aux patients que l'utilisateur peut lire. */
@@ -41,7 +41,14 @@ export class PatientsService {
     return buildTimeline(this.repository.recordOf(id));
   }
 
-  update(user: AuthenticatedUser, id: string, changes: PatientChanges, version: number): Patient {
+  /** Modifie la fiche ; la modification crée une version immuable (auteur, date, motif). */
+  async update(
+    user: AuthenticatedUser,
+    id: string,
+    changes: PatientChanges,
+    version: number,
+    reason: string,
+  ): Promise<Patient> {
     const current = this.load(user, id);
     const result = this.repository.update(id, changes, version);
     if (result.status === 'not_found') throw new NotFoundException('Patient introuvable');
@@ -50,8 +57,9 @@ export class PatientsService {
         `Version périmée : attendue ${result.currentVersion}, reçue ${version}`,
       );
     }
+    await this.versions.recordChange('Patient', current, result.resource, id, user, reason);
     this.recordRead(user, current, 'modification');
-    return result.patient;
+    return result.resource;
   }
 
   /**
