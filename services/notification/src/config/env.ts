@@ -10,6 +10,10 @@ export interface Env {
   internalKey: string;
   /** Période de planification des rappels en ms (`REMINDER_INTERVAL_MS`, 0 = désactivée). */
   reminderIntervalMs: number;
+  /** URL du service Dossiers, qui détient les consentements (`DOSSIERS_URL`, défaut http://localhost:3001). */
+  dossiersUrl: string;
+  /** Clé des appels internes vers Dossiers (`DOSSIERS_INTERNAL_KEY`, valeur de démonstration par défaut). */
+  dossiersInternalKey: string;
 }
 
 const DEFAULT_JWKS_URL = 'http://localhost:3004/.well-known/jwks.json';
@@ -41,7 +45,13 @@ export function loadEnv(source: Record<string, string | undefined> = process.env
   if (!URL.canParse(jwksUrl)) {
     throw new Error(`IDENTITE_JWKS_URL invalide : « ${jwksUrl} » (URL absolue attendue)`);
   }
+  const dossiersUrl = source['DOSSIERS_URL'] || 'http://localhost:3001';
+  if (!URL.canParse(dossiersUrl)) {
+    throw new Error(`DOSSIERS_URL invalide : « ${dossiersUrl} » (URL absolue attendue)`);
+  }
   return {
+    dossiersUrl,
+    dossiersInternalKey: source['DOSSIERS_INTERNAL_KEY'] || 'demo-dossiers-key',
     port: integer(source, 'NOTIFICATION_PORT', 3008, 1, 65535),
     jwksUrl,
     webhookToken: source['WHATSAPP_WEBHOOK_TOKEN'] || 'demo-whatsapp-token',

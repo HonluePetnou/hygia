@@ -1,6 +1,7 @@
 import type { AuditGateway } from './audit-gateway.js';
 import type { AuditPageData, AuditSearch, AuditSummaryData } from './audit-types.js';
 import { GatewayError, HttpClient, authHeaders } from './http-client.js';
+import type { RightsRequestData, RightsRequestInput } from './portal-types.js';
 import type { Identity } from './types.js';
 
 function params(search: Partial<AuditSearch>): string {
@@ -9,7 +10,9 @@ function params(search: Partial<AuditSearch>): string {
   if (search.text !== undefined && search.text !== '') pairs.push(['q', search.text]);
   if (search.page !== undefined) pairs.push(['page', String(search.page)]);
   if (search.pageSize !== undefined) pairs.push(['taille', String(search.pageSize)]);
-  return pairs.length === 0 ? '' : `?${pairs.map(([k, v]) => `${k}=${encodeURIComponent(v)}`).join('&')}`;
+  return pairs.length === 0
+    ? ''
+    : `?${pairs.map(([k, v]) => `${k}=${encodeURIComponent(v)}`).join('&')}`;
 }
 
 /** Passerelle HTTP vers le service Audit (`/events`, `/summary`, `/export.csv`). */
@@ -26,6 +29,14 @@ export class HttpAuditGateway implements AuditGateway {
 
   search(search: AuditSearch): Promise<AuditPageData> {
     return this.client.get(`/events${params(search)}`);
+  }
+
+  rightsRequests(): Promise<RightsRequestData[]> {
+    return this.client.get('/rights-requests');
+  }
+
+  submitRightsRequest(input: RightsRequestInput): Promise<RightsRequestData> {
+    return this.client.post('/rights-requests', input);
   }
 
   summary(): Promise<AuditSummaryData> {

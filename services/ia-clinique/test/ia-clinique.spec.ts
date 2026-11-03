@@ -6,6 +6,7 @@ import { TokenIssuer, localVerifier } from '@hygia/auth';
 import type { Role } from '@hygia/types';
 import { FLORENCE_ID, NANA_ID } from '@hygia/fhir';
 import request from 'supertest';
+import { CONSENT_GATE, type ConsentGate } from '../src/consent/consent-gate.js';
 import { AppModule } from '../src/app.module.js';
 import { TOKEN_VERIFIER } from '../src/auth/jwt-auth.guard.js';
 import { AUDIT_LOG } from '../src/copilote/copilote.service.js';
@@ -22,12 +23,22 @@ let kamga: Record<string, string>;
 let admin: Record<string, string>;
 let verifier: ReturnType<typeof localVerifier>;
 
+/** Porte de consentement simulée : tout est accordé sauf les patients révoqués. */
+class FakeConsentGate implements ConsentGate {
+  readonly revoked = new Set<string>();
+  allows(patientId: string): Promise<boolean> {
+    return Promise.resolve(!this.revoked.has(patientId));
+  }
+}
+let consent: FakeConsentGate;
+
 describe('service IA clinique', () => {
   let app: INestApplication;
   let audit: AuditLog;
 
   beforeEach(async () => {
     audit = new AuditLog(new InMemoryAuditStore());
+    consent = new FakeConsentGate();
     const issuer = await TokenIssuer.create();
     const as = async (sub: string, role: Role, teams: string[] = []) => ({
       authorization: `Bearer ${(await issuer.issue({ sub, role, teams, emergency: [] }, new Date())).token}`,
@@ -41,6 +52,8 @@ describe('service IA clinique', () => {
       .useValue(audit)
       .overrideProvider(TOKEN_VERIFIER)
       .useValue(verifier)
+      .overrideProvider(CONSENT_GATE)
+      .useValue(consent)
       .overrideProvider(WORD_DELAY_MS)
       .useValue(0)
       .compile();
@@ -65,6 +78,22 @@ describe('service IA clinique', () => {
       .set(nana)
       .send({ question: 'ibuprofène' })
       .expect(404);
+  });
+
+  it('la révocation du consentement IA bloque le copilote, son flux et le résumé pour ce patient', async () => {
+    await ask('ibuprofène').expect(200);
+    consent.revoked.add(FLORENCE_ID);
+    await ask('ibuprofène').expect(403);
+    await http()
+      .get(`/copilote/${FLORENCE_ID}/flux`)
+      .query({ q: 'ibuprofène' })
+      .set(nana)
+      .expect(403);
+    await http().get(`/patients/${FLORENCE_ID}/resume`).set(nana).expect(403);
+    // Aucune question n'a été journalisée après la révocation.
+    expect(audit.events().filter((e) => e.action === 'question_copilote')).toHaveLength(1);
+    consent.revoked.delete(FLORENCE_ID);
+    await ask('ibuprofène').expect(200);
   });
 
   it('400 pour une question vide', async () => {
@@ -108,7 +137,13 @@ describe('service IA clinique', () => {
   });
 
   it('toute réponse non vide a au moins une source, numérotée comme ses marqueurs', async () => {
-    const questions = ['INR warfarine', 'insuffisance cardiaque', 'pénicilline', 'ordonnance', 'xyzzy'];
+    const questions = [
+      'INR warfarine',
+      'insuffisance cardiaque',
+      'pénicilline',
+      'ordonnance',
+      'xyzzy',
+    ];
     for (const question of questions) {
       const { body } = await ask(question).expect(200);
       if (body.sources.length === 0) {
@@ -123,6 +158,8 @@ describe('service IA clinique', () => {
     const module = await Test.createTestingModule({ imports: [AppModule] })
       .overrideProvider(CLINICAL_LANGUAGE_MODEL)
       .useValue({ generate: async () => 'Réponse inventée sans source.' })
+      .overrideProvider(CONSENT_GATE)
+      .useValue(consent)
       .overrideProvider(TOKEN_VERIFIER)
       .useValue(verifier)
       .compile();
@@ -139,11 +176,14 @@ describe('service IA clinique', () => {
   });
 
   it('mode dégradé : modèle déclaré indisponible par le broker → recherche simple, passages cités, sans erreur', async () => {
-    const res = await ask('Florence prend-elle de l’ibuprofène ?').set('x-hygia-fault', 'llm-unavailable').expect(200);
+    const res = await ask('Florence prend-elle de l’ibuprofène ?')
+      .set('x-hygia-fault', 'llm-unavailable')
+      .expect(200);
     expect(res.body.degraded).toBe(true);
     expect(res.body.answer).toContain('Mode dégradé : recherche simple');
     expect(res.body.sources.length).toBeGreaterThan(0);
-    for (const source of res.body.sources) expect(res.body.answer).toContain(`[${source.n}] ${source.extrait}`);
+    for (const source of res.body.sources)
+      expect(res.body.answer).toContain(`[${source.n}] ${source.extrait}`);
     const normal = await ask('Florence prend-elle de l’ibuprofène ?').expect(200);
     expect(normal.body.degraded).toBeUndefined();
   });
@@ -152,6 +192,8 @@ describe('service IA clinique', () => {
     const module = await Test.createTestingModule({ imports: [AppModule] })
       .overrideProvider(CLINICAL_LANGUAGE_MODEL)
       .useValue({ generate: async () => Promise.reject(new Error('Bedrock indisponible')) })
+      .overrideProvider(CONSENT_GATE)
+      .useValue(consent)
       .overrideProvider(TOKEN_VERIFIER)
       .useValue(verifier)
       .compile();
@@ -169,10 +211,15 @@ describe('service IA clinique', () => {
 
   it('expose /health et /metrics (requêtes, erreurs, p50/p95)', async () => {
     await ask('ibuprofène').expect(200);
-    expect((await http().get('/health').expect(200)).body).toEqual({ status: 'ok', service: 'ia-clinique' });
+    expect((await http().get('/health').expect(200)).body).toEqual({
+      status: 'ok',
+      service: 'ia-clinique',
+    });
     const metrics = (await http().get('/metrics').expect(200)).body;
     expect(metrics).toMatchObject({ service: 'ia-clinique', requests: 1, errors: 0 });
-    expect(metrics.latency).toEqual(expect.objectContaining({ p50Ms: expect.any(Number), p95Ms: expect.any(Number) }));
+    expect(metrics.latency).toEqual(
+      expect.objectContaining({ p50Ms: expect.any(Number), p95Ms: expect.any(Number) }),
+    );
     const res = await http().get('/health').set('x-correlation-id', 'corr-1').expect(200);
     expect(res.headers['x-correlation-id']).toBe('corr-1');
   });
@@ -234,7 +281,9 @@ describe('service IA clinique', () => {
     for (const section of ['antecedents', 'traitements', 'resultats', 'alertes']) {
       for (const item of body[section]) expect(item.sources.length).toBeGreaterThan(0);
     }
-    const interaction = body.alertes.find((i: { texte: string }) => i.texte.includes('Interaction'));
+    const interaction = body.alertes.find((i: { texte: string }) =>
+      i.texte.includes('Interaction'),
+    );
     expect(interaction.sources.map((s: { titre: string }) => s.titre)).toEqual([
       'Ordonnance du 28 octobre 2026',
     ]);

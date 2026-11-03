@@ -34,6 +34,11 @@ export class HttpClient {
     return this.request<T>('POST', path, body);
   }
 
+  /** PUT JSON. */
+  put<T>(path: string, body: unknown): Promise<T> {
+    return this.request<T>('PUT', path, body);
+  }
+
   /** POST JSON, réponse binaire (export PDF ou CSV). */
   async postBlob(path: string, body: unknown): Promise<Blob> {
     const response = await this.fetchFn(`${this.baseUrl.replace(/\/+$/, '')}${path}`, {

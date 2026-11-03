@@ -23,7 +23,7 @@ export class ResumeController {
     @CurrentUser() user: AuthenticatedUser,
     @Param('id') id: string,
     @Query('lang') lang?: string,
-  ): Resume {
+  ): Promise<Resume> {
     return this.service.summarize(user, id, lang === 'en' ? 'en' : 'fr');
   }
 }

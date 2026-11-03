@@ -33,6 +33,10 @@ export interface Appointment {
   /** Début, ISO 8601 (UTC). */
   startsAt: string;
   status: AppointmentStatus;
+  /** Soignant, service et site affichés au patient (facultatifs). */
+  clinician?: string;
+  service?: string;
+  site?: string;
   /** Renseigné quand le rappel a été émis (au plus une fois). */
   remindedAt?: string;
 }

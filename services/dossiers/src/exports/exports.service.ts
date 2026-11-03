@@ -40,32 +40,58 @@ export class ExportsService {
     language: Language,
     summary: string[] | undefined,
   ): ExportedFile<Buffer> {
-    this.policy.assertClinical(user);
+    const ownRecord = user.role === 'patient' && user.id === patientId;
+    if (!ownRecord) this.policy.assertClinical(user);
     const patient = this.repository.findById(patientId);
     if (!patient) throw new NotFoundException('Patient introuvable');
-    const basis = this.policy.requireAccess(user, patient.id);
+    // Droit d'accès (RF21) : le patient télécharge son propre dossier, sans résumé IA.
+    const basis = ownRecord ? 'droit_acces' : this.policy.requireAccess(user, patient.id);
     const record = this.repository.recordOf(patient.id);
     const content = buildDossierPdf({
       language,
       patient,
-      organization: this.repository.organizationName(patient.managingOrganization.reference.split('/')[1] ?? ''),
+      organization: this.repository.organizationName(
+        patient.managingOrganization.reference.split('/')[1] ?? '',
+      ),
       allergies: this.repository.allergiesOf(patient.id),
       treatments: record.medicationRequests,
       timeline: buildTimeline(record),
-      summary,
+      summary: ownRecord ? undefined : summary,
       author: { id: user.id, role: user.role, at: this.clock.now() },
     });
-    this.record(user, 'Dossier', patient.id, patient.id, basis === 'bris_de_glace' ? 'bris_de_glace' : 'soins');
+    this.record(
+      user,
+      'Dossier',
+      patient.id,
+      patient.id,
+      basis === 'bris_de_glace'
+        ? 'bris_de_glace'
+        : basis === 'droit_acces'
+          ? 'droit_acces'
+          : 'soins',
+    );
     return { filename: `dossier-${patient.ipp}.pdf`, content };
   }
 
   /** CSV des patients correspondant à la recherche (tous résultats, limités aux dossiers lisibles). */
-  searchCsv(user: AuthenticatedUser, request: SearchRequest, language: Language): ExportedFile<string> {
+  searchCsv(
+    user: AuthenticatedUser,
+    request: SearchRequest,
+    language: Language,
+  ): ExportedFile<string> {
     const { all } = this.search.evaluate(user, request);
     const t = createTranslator(language);
-    const headers = ['ipp', 'familyName', 'givenName', 'gender', 'birthDate', 'age', 'diagnoses', 'lastVisit', 'organization'].map(
-      (key) => t(`export.csv.${key}`),
-    );
+    const headers = [
+      'ipp',
+      'familyName',
+      'givenName',
+      'gender',
+      'birthDate',
+      'age',
+      'diagnoses',
+      'lastVisit',
+      'organization',
+    ].map((key) => t(`export.csv.${key}`));
     const rows = all.map((row) => [
       row.ipp,
       row.familyName,
@@ -79,7 +105,13 @@ export class ExportsService {
     ]);
     for (const row of all) {
       const basis = this.policy.basisFor(user, row.id);
-      this.record(user, 'ListePatients', row.id, row.id, basis === 'bris_de_glace' ? 'bris_de_glace' : 'soins');
+      this.record(
+        user,
+        'ListePatients',
+        row.id,
+        row.id,
+        basis === 'bris_de_glace' ? 'bris_de_glace' : 'soins',
+      );
     }
     return { filename: 'patients.csv', content: toCsv(headers, rows) };
   }
@@ -90,14 +122,25 @@ export class ExportsService {
     language: Language,
     pathology: string | undefined,
   ): Promise<ExportedFile<Buffer>> {
-    if (user.role !== 'analyste') throw new ForbiddenException('Le rapport épidémiologique est réservé au rôle analyste');
+    if (user.role !== 'analyste')
+      throw new ForbiddenException('Le rapport épidémiologique est réservé au rôle analyste');
     const data = await this.epidemiology.load(pathology);
-    const content = buildEpidemiologyPdf(language, data, { id: user.id, role: user.role, at: this.clock.now() });
+    const content = buildEpidemiologyPdf(language, data, {
+      id: user.id,
+      role: user.role,
+      at: this.clock.now(),
+    });
     this.record(user, 'RapportEpidemiologique', data.week ?? 'aucune-donnee', 'aucun', 'analyse');
     return { filename: 'rapport-epidemiologique.pdf', content };
   }
 
-  private record(user: AuthenticatedUser, type: string, resourceId: string, patientId: string, reason: string): void {
+  private record(
+    user: AuthenticatedUser,
+    type: string,
+    resourceId: string,
+    patientId: string,
+    reason: string,
+  ): void {
     this.audit.append({
       actor: user.id,
       role: user.role,

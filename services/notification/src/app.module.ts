@@ -10,6 +10,7 @@ import { ConsoleSender } from './channels/console-sender.js';
 import { EmailSender, InMemoryEmailTransport } from './channels/email-sender.js';
 import { InMemorySnsPublisher, SmsSender } from './channels/sms-sender.js';
 import { SandboxWhatsAppApi, WhatsAppSender } from './channels/whatsapp-sender.js';
+import { CONSENT_GATE, HttpConsentGate } from './consent/consent-gate.js';
 import { loadEnv } from './config/env.js';
 import { CriticalMessageService } from './critical/critical-message.service.js';
 import { MessagesController } from './critical/messages.controller.js';
@@ -24,6 +25,7 @@ import {
   InMemoryRecipientDirectory,
   RECIPIENT_DIRECTORY,
 } from './reminders/appointments.js';
+import { AppointmentsController } from './reminders/appointments.controller.js';
 import { ReminderService, CLOCK } from './reminders/reminder.service.js';
 import { ReminderTimer } from './reminders/reminder-timer.js';
 import { RemindersController } from './reminders/reminders.controller.js';
@@ -43,6 +45,7 @@ import { DOCUMENT_INGESTOR, WhatsAppWebhookService } from './whatsapp/whatsapp-w
     NotificationsController,
     MessagesController,
     RemindersController,
+    AppointmentsController,
   ],
   providers: [
     JwtAuthGuard,
@@ -55,12 +58,22 @@ import { DOCUMENT_INGESTOR, WhatsAppWebhookService } from './whatsapp/whatsapp-w
     CriticalMessageService,
     EventsService,
     WhatsAppWebhookService,
+    {
+      provide: CONSENT_GATE,
+      useFactory: () => new HttpConsentGate(loadEnv().dossiersUrl, loadEnv().dossiersInternalKey),
+    },
     { provide: ENV, useFactory: () => loadEnv() },
     { provide: TOKEN_VERIFIER, useFactory: () => remoteVerifier(loadEnv().jwksUrl) },
     { provide: CLOCK, useValue: () => new Date() },
     { provide: DOCUMENT_INGESTOR, useFactory: () => new IngestionService() },
-    { provide: RECIPIENT_DIRECTORY, useFactory: () => new InMemoryRecipientDirectory(DEMO_RECIPIENTS) },
-    { provide: APPOINTMENT_STORE, useFactory: () => new InMemoryAppointmentStore(demoAppointments(new Date())) },
+    {
+      provide: RECIPIENT_DIRECTORY,
+      useFactory: () => new InMemoryRecipientDirectory(DEMO_RECIPIENTS),
+    },
+    {
+      provide: APPOINTMENT_STORE,
+      useFactory: () => new InMemoryAppointmentStore(demoAppointments(new Date())),
+    },
     {
       provide: CHANNEL_SENDERS,
       useFactory: () => [

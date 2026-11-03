@@ -9,6 +9,8 @@ import type {
   AuditSummaryData,
 } from './audit-types.js';
 
+import type { RightsRequestData, RightsRequestInput } from './portal-types.js';
+
 const ACTIONS_OF: Record<AuditFilter, readonly AuditActionName[] | undefined> = {
   tous: undefined,
   lectures: ['lecture'],
@@ -18,19 +20,72 @@ const ACTIONS_OF: Record<AuditFilter, readonly AuditActionName[] | undefined> = 
   exports: ['export'],
 };
 
-type Seed = Pick<AuditEventData, 'actor' | 'role' | 'action' | 'resourceType' | 'resourceId' | 'reason'>;
+type Seed = Pick<
+  AuditEventData,
+  'actor' | 'role' | 'action' | 'resourceType' | 'resourceId' | 'reason'
+>;
 
 const SEEDS: readonly Seed[] = [
-  { actor: 'Dr A. Nana', role: 'medecin', action: 'lecture', resourceType: 'Patient', resourceId: 'F. Ngo Bassa', reason: 'Soins · équipe' },
-  { actor: 'Dr A. Nana', role: 'medecin', action: 'question_copilote', resourceType: 'Patient', resourceId: 'F. Ngo Bassa', reason: 'Soins · équipe' },
-  { actor: 'Agent pharmacovigilance', role: 'admin', action: 'alerte_ia', resourceType: 'MedicationRequest', resourceId: '#9921', reason: 'Surveillance' },
-  { actor: 'Dr B. Ondoa', role: 'medecin', action: 'bris_de_glace', resourceType: 'Patient', resourceId: 'S. Etoundi', reason: 'Urgence vitale — patient inconscient' },
-  { actor: 'G. Ewane', role: 'admin', action: 'import_document', resourceType: 'DocumentReference', resourceId: '#5512', reason: 'Ingestion' },
-  { actor: 'R. Mballa', role: 'infirmier', action: 'modification', resourceType: 'Observation', resourceId: 'TA · K. Abena', reason: 'Soins · équipe' },
-  { actor: 'Florence Ngo Bassa', role: 'patient', action: 'lecture', resourceType: 'Journal', resourceId: 'Journal de son dossier', reason: 'Droit d’accès' },
+  {
+    actor: 'Dr A. Nana',
+    role: 'medecin',
+    action: 'lecture',
+    resourceType: 'Patient',
+    resourceId: 'F. Ngo Bassa',
+    reason: 'Soins · équipe',
+  },
+  {
+    actor: 'Dr A. Nana',
+    role: 'medecin',
+    action: 'question_copilote',
+    resourceType: 'Patient',
+    resourceId: 'F. Ngo Bassa',
+    reason: 'Soins · équipe',
+  },
+  {
+    actor: 'Agent pharmacovigilance',
+    role: 'admin',
+    action: 'alerte_ia',
+    resourceType: 'MedicationRequest',
+    resourceId: '#9921',
+    reason: 'Surveillance',
+  },
+  {
+    actor: 'Dr B. Ondoa',
+    role: 'medecin',
+    action: 'bris_de_glace',
+    resourceType: 'Patient',
+    resourceId: 'S. Etoundi',
+    reason: 'Urgence vitale — patient inconscient',
+  },
+  {
+    actor: 'G. Ewane',
+    role: 'admin',
+    action: 'import_document',
+    resourceType: 'DocumentReference',
+    resourceId: '#5512',
+    reason: 'Ingestion',
+  },
+  {
+    actor: 'R. Mballa',
+    role: 'infirmier',
+    action: 'modification',
+    resourceType: 'Observation',
+    resourceId: 'TA · K. Abena',
+    reason: 'Soins · équipe',
+  },
+  {
+    actor: 'Florence Ngo Bassa',
+    role: 'patient',
+    action: 'lecture',
+    resourceType: 'Journal',
+    resourceId: 'Journal de son dossier',
+    reason: 'Droit d’accès',
+  },
 ];
 
-const hashOf = (n: number) => `${(n * 2654435761).toString(16).padStart(8, '0')}${'0'.repeat(56)}`.slice(0, 64);
+const hashOf = (n: number) =>
+  `${(n * 2654435761).toString(16).padStart(8, '0')}${'0'.repeat(56)}`.slice(0, 64);
 
 /** Entrées fictives du jour (une toutes les 17 minutes, la plus ancienne en premier). */
 export function demoAuditEvents(day = '2026-10-28'): AuditEventData[] {
@@ -53,6 +108,7 @@ export function demoAuditEvents(day = '2026-10-28'): AuditEventData[] {
 /** Journal en mémoire pour la démonstration hors ligne et les tests. */
 export class InMemoryAuditGateway implements AuditGateway {
   private readonly events: AuditEventData[];
+  private readonly requests: RightsRequestData[] = [];
 
   constructor(
     events: readonly AuditEventData[] = demoAuditEvents(),
@@ -88,6 +144,33 @@ export class InMemoryAuditGateway implements AuditGateway {
     });
   }
 
+  rightsRequests(): Promise<RightsRequestData[]> {
+    return Promise.resolve([...this.requests].reverse());
+  }
+
+  submitRightsRequest(input: RightsRequestInput): Promise<RightsRequestData> {
+    const created = this.now();
+    const event = this.events.find((e) => e.index === input.eventIndex);
+    const request: RightsRequestData = {
+      id: `demande-${this.requests.length + 1}`,
+      version: 1,
+      patientId: FLORENCE_ID,
+      kind: input.kind,
+      message: input.message,
+      ...(event
+        ? {
+            eventIndex: event.index,
+            eventSummary: `${event.actor} · ${event.action} · ${event.timestamp}`,
+          }
+        : {}),
+      createdAt: created.toISOString(),
+      dueAt: new Date(created.getTime() + 30 * 86_400_000).toISOString(),
+      status: 'ouverte',
+    };
+    this.requests.push(request);
+    return Promise.resolve(request);
+  }
+
   summary(): Promise<AuditSummaryData> {
     const day = this.now().toISOString().slice(0, 10);
     const today = this.events.filter((e) => e.timestamp.startsWith(day));
@@ -104,9 +187,11 @@ export class InMemoryAuditGateway implements AuditGateway {
   }
 
   exportCsv(search: Omit<AuditSearch, 'page' | 'pageSize'>): Promise<string> {
-    const lines = this.matching(search).map(
-      (e) => [e.lamport, e.timestamp, e.actor, e.action, e.resourceId, e.reason, e.hash].join(','),
+    const lines = this.matching(search).map((e) =>
+      [e.lamport, e.timestamp, e.actor, e.action, e.resourceId, e.reason, e.hash].join(','),
     );
-    return Promise.resolve(['lamport,timestamp,actor,action,resourceId,reason,hash', ...lines].join('\r\n'));
+    return Promise.resolve(
+      ['lamport,timestamp,actor,action,resourceId,reason,hash', ...lines].join('\r\n'),
+    );
   }
 }

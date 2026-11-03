@@ -19,7 +19,11 @@ describe('AuditViewModel', () => {
     expect(vm.chain.at(-1)?.latest).toBe(true);
     expect(vm.rows[0]?.lamport).toBe(48196);
     const breakGlass = vm.rows.find((row) => row.action === 'bris_de_glace');
-    expect(breakGlass).toMatchObject({ highlighted: true, actionLabel: 'Bris de glace', roleLabel: 'Médecin' });
+    expect(breakGlass).toMatchObject({
+      highlighted: true,
+      actionLabel: 'Bris de glace',
+      roleLabel: 'Médecin',
+    });
   });
 
   it('filtre par catégorie et par texte, et revient à la page 1', async () => {
@@ -74,6 +78,8 @@ describe('AuditViewModel', () => {
       summary: () => Promise.reject(new GatewayError(status, 'GET /summary')),
       search: () => Promise.reject(new GatewayError(status, 'GET /events')),
       exportCsv: () => Promise.reject(new GatewayError(status, 'GET /export.csv')),
+      rightsRequests: () => Promise.reject(new GatewayError(status, 'GET /rights-requests')),
+      submitRightsRequest: () => Promise.reject(new GatewayError(status, 'POST /rights-requests')),
     });
     const refused = new AuditViewModel(failing(403), new SessionViewModel());
     await refused.load();
@@ -90,7 +96,9 @@ describe('HttpAuditGateway', () => {
     const calls: { url: string; auth: string | null }[] = [];
     const fetchFn = ((input: string, init?: RequestInit) => {
       calls.push({ url: input, auth: new Headers(init?.headers).get('authorization') });
-      return Promise.resolve(new Response(JSON.stringify({ items: [], total: 0, page: 2, pageSize: 10 })));
+      return Promise.resolve(
+        new Response(JSON.stringify({ items: [], total: 0, page: 2, pageSize: 10 })),
+      );
     }) as unknown as typeof fetch;
     const gateway = new HttpAuditGateway(
       'http://broker/api/audit/',

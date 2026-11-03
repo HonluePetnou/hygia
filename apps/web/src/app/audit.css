@@ -155,3 +155,23 @@
     grid-template-columns: 1fr;
   }
 }
+
+.audit-rights {
+  margin-top: 16px;
+}
+.audit-rights h2 {
+  margin: 0 0 4px;
+  font-size: 18px;
+}
+.audit-rights-list {
+  list-style: none;
+  margin: 12px 0 0;
+  padding: 0;
+}
+.audit-rights-list li {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 10px 0;
+  border-top: 1px solid var(--border);
+}

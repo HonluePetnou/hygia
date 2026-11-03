@@ -12,6 +12,10 @@ import { demoAlerts } from './alertes/demo-alerts.js';
 import { CLOCK, SystemClock, type Clock } from './access/clock.js';
 import { JwtAuthGuard, TOKEN_VERIFIER } from './auth/jwt-auth.guard.js';
 import { loadEnv } from './config/env.js';
+import { ENV } from './config/env-token.js';
+import { ConsentsController, InternalConsentsController } from './consents/consents.controller.js';
+import { CONSENT_REPOSITORY, InMemoryConsentRepository } from './consents/consent-repository.js';
+import { ConsentsService } from './consents/consents.service.js';
 import { InMemoryPatientRepository } from './patients/in-memory-patient-repository.js';
 import { PATIENT_REPOSITORY } from './patients/patient-repository.js';
 import { PatientsController } from './patients/patients.controller.js';
@@ -42,10 +46,18 @@ import { VersionsService } from './versions/versions.service.js';
     RechercheController,
     AlertesController,
     ExportsController,
+    ConsentsController,
+    InternalConsentsController,
   ],
   providers: [
+    ConsentsService,
+    { provide: CONSENT_REPOSITORY, useFactory: () => new InMemoryConsentRepository() },
+    { provide: ENV, useFactory: () => loadEnv() },
     ExportsService,
-    { provide: EPIDEMIOLOGY_SOURCE, useFactory: () => new HttpEpidemiologySource(loadEnv().agentsUrl) },
+    {
+      provide: EPIDEMIOLOGY_SOURCE,
+      useFactory: () => new HttpEpidemiologySource(loadEnv().agentsUrl),
+    },
     AlertesService,
     { provide: ALERT_REPOSITORY, useFactory: () => new InMemoryAlertRepository(demoAlerts()) },
     { provide: ALERT_EVENTS, useFactory: () => new InMemoryAlertEventPublisher() },
@@ -55,7 +67,8 @@ import { VersionsService } from './versions/versions.service.js';
     SearchService,
     {
       provide: QUERY_INTERPRETER,
-      useFactory: (clock: Clock) => new RuleBasedQueryInterpreter(() => clock.now().toISOString().slice(0, 10)),
+      useFactory: (clock: Clock) =>
+        new RuleBasedQueryInterpreter(() => clock.now().toISOString().slice(0, 10)),
       inject: [CLOCK],
     },
     MergeService,
@@ -74,7 +87,10 @@ export class AppModule implements NestModule {
   /** `/health`, `/metrics` et journal `x-correlation-id`. */
   configure(consumer: MiddlewareConsumer): void {
     const quiet = process.env['NODE_ENV'] === 'test';
-    const { middleware } = createObservability({ service: 'dossiers', ...(quiet ? { log: () => undefined } : {}) });
+    const { middleware } = createObservability({
+      service: 'dossiers',
+      ...(quiet ? { log: () => undefined } : {}),
+    });
     consumer.apply(middleware).forRoutes('*path');
   }
 }

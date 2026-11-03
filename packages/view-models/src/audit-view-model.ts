@@ -8,6 +8,7 @@ import {
   type AuditFilter,
   type AuditSummaryData,
 } from './audit-types.js';
+import type { RightsRequestData } from './portal-types.js';
 import { GatewayError } from './http-client.js';
 import type { LoadState } from './load-state.js';
 import type { LocaleSource } from './types.js';
@@ -37,6 +38,16 @@ export interface AuditRow {
   shortHash: string;
   /** Ligne surlignée : accès par bris de glace. */
   highlighted: boolean;
+}
+
+/** Ligne du tableau des demandes des patients (vue DPO). */
+export interface RightsRow {
+  key: string;
+  kindLabel: string;
+  patientId: string;
+  message: string;
+  createdAt: string;
+  dueAt: string;
 }
 
 /** Maillon du schéma de chaînage. */
@@ -71,6 +82,8 @@ export class AuditViewModel {
   total = 0;
   items: AuditEventData[] = [];
   summary: AuditSummaryData | null = null;
+  /** Demandes des patients adressées à la DPO (droits, signalements). */
+  rightsRequests: RightsRequestData[] = [];
   exportFailed = false;
   private token = 0;
 
@@ -95,6 +108,7 @@ export class AuditViewModel {
         this.summary = summary;
       });
       await this.reload();
+      await this.loadRightsRequests();
     } catch (error) {
       this.fail(error);
     }
@@ -177,6 +191,33 @@ export class AuditViewModel {
       reason: e.reason,
       shortHash: abbreviateHash(e.hash),
       highlighted: e.action === 'bris_de_glace',
+    }));
+  }
+
+  /** Demandes des patients ; une indisponibilité n'empêche pas d'afficher le journal. */
+  async loadRightsRequests(): Promise<void> {
+    try {
+      const requests = await this.gateway.rightsRequests();
+      runInAction(() => {
+        this.rightsRequests = requests;
+      });
+    } catch {
+      runInAction(() => {
+        this.rightsRequests = [];
+      });
+    }
+  }
+
+  /** Lignes du tableau « Demandes des patients ». */
+  get rightsRows(): RightsRow[] {
+    const { t } = this.i18n;
+    return this.rightsRequests.map((r) => ({
+      key: r.id,
+      kindLabel: t(`portal.rights.kind.${r.kind}`),
+      patientId: r.patientId,
+      message: r.message === '' ? (r.eventSummary ?? '') : r.message,
+      createdAt: r.createdAt.slice(0, 10),
+      dueAt: r.dueAt.slice(0, 10),
     }));
   }
 

@@ -10,6 +10,7 @@ import { useViewModel } from '@/lib/use-view-model';
 import { AuditFilters } from './AuditFilters';
 import { AuditIndicators } from './AuditIndicators';
 import { AuditTable } from './AuditTable';
+import { RightsRequestsPanel } from './RightsRequestsPanel';
 import { ChainDiagram } from './ChainDiagram';
 import { downloadCsv } from './download-csv';
 
@@ -59,6 +60,7 @@ export const AuditScreen = observer(function AuditScreen() {
             <AuditTable vm={vm} />
             <p className="muted audit-footer">{t('audit.footer')}</p>
           </section>
+          <RightsRequestsPanel vm={vm} />
         </>
       ) : null}
     </>

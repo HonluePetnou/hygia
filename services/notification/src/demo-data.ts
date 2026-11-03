@@ -26,5 +26,8 @@ export function demoAppointments(now: Date): Appointment[] {
     patientId: r.patientId,
     startsAt: tomorrow.toISOString(),
     status: 'scheduled',
+    ...(index === 0
+      ? { clinician: 'Dr Aïcha Nana', service: 'Cardiologie', site: 'Bonassama' }
+      : {}),
   }));
 }

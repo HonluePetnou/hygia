@@ -1,7 +1,11 @@
 import { timingSafeEqual } from 'node:crypto';
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import { bearerToken, type TokenClaims, type TokenVerifier } from '@hygia/auth';
-import { createObservability, type ObservabilityMiddleware, type RequestLog } from '@hygia/observability';
+import {
+  createObservability,
+  type ObservabilityMiddleware,
+  type RequestLog,
+} from '@hygia/observability';
 import { ROLES, type Role } from '@hygia/types';
 import type { AuditLog } from './audit-log.js';
 import type { ChainVerifier } from './chain-verifier.js';
@@ -14,6 +18,7 @@ import {
   type AuditQuery,
   type AuditSummary,
 } from './query.js';
+import { RightsRegistry, RightsRequestError, type RightsKind } from './rights-requests.js';
 import { AUDIT_ACTIONS, type AuditEntryInput } from './types.js';
 
 /** Erreur HTTP portée jusqu'à la réponse. */
@@ -35,6 +40,8 @@ export interface AuditApiOptions {
   internalKey?: string | undefined;
   /** Destination du journal des requêtes (`x-correlation-id`) ; sans elle, rien n'est journalisé. */
   requestLog?: ((line: RequestLog) => void) | undefined;
+  /** Registre des demandes des patients à la DPO ; par défaut, un registre en mémoire. */
+  rights?: RightsRegistry | undefined;
 }
 
 function json(res: ServerResponse, status: number, body: unknown): void {
@@ -59,8 +66,10 @@ function positiveInt(value: string | null, name: string): number | undefined {
  */
 export class AuditApi {
   private readonly observability: ObservabilityMiddleware;
+  private readonly rights: RightsRegistry;
 
   constructor(private readonly options: AuditApiOptions) {
+    this.rights = options.rights ?? new RightsRegistry(options.now);
     this.observability = createObservability({
       service: 'audit',
       log: options.requestLog ?? (() => undefined),
@@ -82,11 +91,16 @@ export class AuditApi {
       if (req.method === 'POST' && url.pathname === '/internal/events') {
         return await this.append(req, res);
       }
+      if (req.method === 'POST' && url.pathname === '/rights-requests') {
+        return await this.createRightsRequest(req, res);
+      }
       if (req.method !== 'GET') throw new HttpError(405, 'Méthode non autorisée');
       const user = await this.authenticate(req);
       switch (url.pathname) {
         case '/events':
           return json(res, 200, searchEvents(this.options.log.events(), this.query(user, url)));
+        case '/rights-requests':
+          return json(res, 200, this.rights.list(user.role === 'patient' ? user.sub : undefined));
         case '/summary':
           this.requireAuditor(user);
           return json(res, 200, this.summary());
@@ -138,7 +152,12 @@ export class AuditApi {
     if (pageSize !== undefined) query.pageSize = pageSize;
     const patientId = user.role === 'patient' ? user.sub : text(params.get('patient'));
     if (patientId !== undefined) query.patientId = patientId;
-    for (const [param, key] of [['acteur', 'actor'], ['q', 'text'], ['du', 'from'], ['au', 'to']] as const) {
+    for (const [param, key] of [
+      ['acteur', 'actor'],
+      ['q', 'text'],
+      ['du', 'from'],
+      ['au', 'to'],
+    ] as const) {
       const value = text(params.get(param));
       if (value !== undefined) query[key] = value;
     }
@@ -179,6 +198,43 @@ export class AuditApi {
       'content-disposition': 'attachment; filename="journal-audit.csv"',
     });
     res.end(toCsv(rows));
+  }
+
+  /** Demande d'exercice des droits ou signalement : réservée au patient, transmise à la DPO. */
+  private async createRightsRequest(req: IncomingMessage, res: ServerResponse): Promise<void> {
+    const user = await this.authenticate(req);
+    if (user.role !== 'patient') throw new HttpError(403, 'Réservé au patient');
+    const body = (await readJson(req)) as Record<string, unknown> | null;
+    const message = body?.['message'];
+    const eventIndex = body?.['eventIndex'];
+    if (message !== undefined && typeof message !== 'string')
+      throw new HttpError(400, 'message invalide');
+    if (eventIndex !== undefined && !Number.isInteger(eventIndex))
+      throw new HttpError(400, 'eventIndex invalide');
+    try {
+      const request = this.rights.create(
+        user.sub,
+        {
+          kind: body?.['kind'] as RightsKind,
+          message: message ?? '',
+          ...(typeof eventIndex === 'number' ? { eventIndex } : {}),
+        },
+        this.options.log.events(),
+      );
+      this.options.log.append({
+        actor: user.sub,
+        role: user.role,
+        action: 'creation',
+        resourceType: 'DemandeDroit',
+        resourceId: request.id,
+        patientId: user.sub,
+        reason: `Demande ${request.kind} à la DPO`,
+      });
+      json(res, 201, request);
+    } catch (error) {
+      if (error instanceof RightsRequestError) throw new HttpError(400, error.message);
+      throw error;
+    }
   }
 
   private async append(req: IncomingMessage, res: ServerResponse): Promise<void> {
@@ -222,7 +278,10 @@ function parseEntry(body: unknown): AuditEntryInput {
     throw new HttpError(400, 'action invalide');
   }
   const fields = ['actor', 'resourceType', 'resourceId', 'patientId', 'reason'] as const;
-  const entry = { role: role as Role, action: action as AuditEntryInput['action'] } as AuditEntryInput;
+  const entry = {
+    role: role as Role,
+    action: action as AuditEntryInput['action'],
+  } as AuditEntryInput;
   for (const field of fields) {
     const value = b[field];
     if (typeof value !== 'string') throw new HttpError(400, `${field} requis`);

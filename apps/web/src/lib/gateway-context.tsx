@@ -8,6 +8,7 @@ import type {
   EpidemiologyGateway,
   IngestionGateway,
   PatientsGateway,
+  PortalGateway,
   SupervisionGateway,
 } from '@hygia/view-models';
 import {
@@ -16,6 +17,7 @@ import {
   createCopiloteGateway,
   createEpidemiologyGateway,
   createPatientsGateway,
+  createPortalGateway,
   createSupervisionGateway,
   type GatewayEnv,
 } from './gateway-factory';
@@ -30,6 +32,7 @@ interface Gateways {
   audit: AuditGateway;
   supervision: SupervisionGateway;
   administration: AdministrationGateway;
+  portal: PortalGateway;
 }
 
 const GatewayContext = createContext<Gateways | null>(null);
@@ -50,6 +53,8 @@ export interface GatewayProviderProps {
   supervision?: SupervisionGateway;
   /** Administration fournie de l'extérieur (tests). */
   administration?: AdministrationGateway;
+  /** Portail patient fourni de l'extérieur (tests). */
+  portal?: PortalGateway;
 }
 
 /** Fournit les dépôts (patients, copilote, ingestion) à tout l'arbre authentifié. */
@@ -62,6 +67,7 @@ export function GatewayProvider({
   audit,
   supervision,
   administration,
+  portal,
 }: GatewayProviderProps) {
   const session = useSession();
   const [value] = useState<Gateways>(() => {
@@ -78,6 +84,7 @@ export function GatewayProvider({
       audit: audit ?? createAuditGateway(env, identity),
       supervision: supervision ?? createSupervisionGateway(env, identity),
       administration: administration ?? createAdministrationGateway(env, identity),
+      portal: portal ?? createPortalGateway(env, identity),
     };
   });
   return <GatewayContext.Provider value={value}>{children}</GatewayContext.Provider>;
@@ -122,4 +129,9 @@ export function useAdministrationGateway(): AdministrationGateway {
 /** Supervision courante ; échoue hors d'un `GatewayProvider`. */
 export function useSupervisionGateway(): SupervisionGateway {
   return useGateways().supervision;
+}
+
+/** Portail patient courant ; échoue hors d'un `GatewayProvider`. */
+export function usePortalGateway(): PortalGateway {
+  return useGateways().portal;
 }

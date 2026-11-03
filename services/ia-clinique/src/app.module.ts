@@ -6,6 +6,7 @@ import { createObservability } from '@hygia/observability';
 import { AccessPolicy } from './access/access-policy.js';
 import { CLINICAL_DIRECTORY, DemoClinicalDirectory } from './access/clinical-directory.js';
 import { JwtAuthGuard, TOKEN_VERIFIER } from './auth/jwt-auth.guard.js';
+import { CONSENT_GATE, HttpConsentGate } from './consent/consent-gate.js';
 import { loadEnv } from './config/env.js';
 import { CopiloteController } from './copilote/copilote.controller.js';
 import { AUDIT_LOG, CopiloteService } from './copilote/copilote.service.js';
@@ -27,6 +28,10 @@ import { ResumeService } from './resume/resume.service.js';
     AccessPolicy,
     JwtAuthGuard,
     { provide: TOKEN_VERIFIER, useFactory: () => remoteVerifier(loadEnv().jwksUrl) },
+    {
+      provide: CONSENT_GATE,
+      useFactory: () => new HttpConsentGate(loadEnv().dossiersUrl, loadEnv().internalKey),
+    },
     { provide: WORD_DELAY_MS, useValue: 25 },
     { provide: CLINICAL_LANGUAGE_MODEL, useFactory: () => new MockClinicalLanguageModel() },
     { provide: PASSAGE_INDEX, useFactory: () => new InMemoryPassageIndex(buildDemoCorpus()) },
@@ -38,7 +43,10 @@ export class AppModule implements NestModule {
   /** `/health`, `/metrics` et journal `x-correlation-id`. */
   configure(consumer: MiddlewareConsumer): void {
     const quiet = process.env['NODE_ENV'] === 'test';
-    const { middleware } = createObservability({ service: 'ia-clinique', ...(quiet ? { log: () => undefined } : {}) });
+    const { middleware } = createObservability({
+      service: 'ia-clinique',
+      ...(quiet ? { log: () => undefined } : {}),
+    });
     consumer.apply(middleware).forRoutes('*path');
   }
 }

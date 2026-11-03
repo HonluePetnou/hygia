@@ -3,7 +3,12 @@ export type * from './alert-types.js';
 export { AlertsViewModel, ALERT_TABS } from './alerts-view-model.js';
 export type { AlertRow, AlertDetailView } from './alerts-view-model.js';
 export { OpenAlertsViewModel } from './open-alerts-view-model.js';
-export type { PatientsGateway, CopiloteGateway, IngestionGateway, AuthGateway } from './gateways.js';
+export type {
+  PatientsGateway,
+  CopiloteGateway,
+  IngestionGateway,
+  AuthGateway,
+} from './gateways.js';
 export { HttpAuthGateway } from './http-auth-gateway.js';
 export { InMemoryAuthGateway } from './in-memory-auth-gateway.js';
 export type { OfflineUser } from './in-memory-auth-gateway.js';
@@ -62,14 +67,24 @@ export type { AuditGateway } from './audit-gateway.js';
 export { HttpAuditGateway } from './http-audit-gateway.js';
 export { InMemoryAuditGateway, demoAuditEvents } from './in-memory-audit-gateway.js';
 export { AuditViewModel, AUDIT_PAGE_SIZE, abbreviateHash } from './audit-view-model.js';
-export type { AuditRow, ChainLink } from './audit-view-model.js';
+export type { AuditRow, ChainLink, RightsRow } from './audit-view-model.js';
 export type * from './supervision-types.js';
 export { EXPERIMENT_IDS, SUPERVISED_SERVICES } from './supervision-types.js';
 export type { SupervisionGateway } from './supervision-gateway.js';
 export { HttpSupervisionGateway } from './http-supervision-gateway.js';
 export { InMemorySupervisionGateway } from './in-memory-supervision-gateway.js';
-export { SupervisionViewModel, CHART_HEIGHT, CHART_WIDTH, formatLatency } from './supervision-view-model.js';
-export type { ServiceCard, ExerciseBanner, ExperimentRow, LatencyChart } from './supervision-view-model.js';
+export {
+  SupervisionViewModel,
+  CHART_HEIGHT,
+  CHART_WIDTH,
+  formatLatency,
+} from './supervision-view-model.js';
+export type {
+  ServiceCard,
+  ExerciseBanner,
+  ExperimentRow,
+  LatencyChart,
+} from './supervision-view-model.js';
 export type * from './administration-types.js';
 export { SECURITY_POLICY } from './administration-types.js';
 export type { AdministrationGateway } from './administration-gateway.js';
@@ -79,3 +94,11 @@ export { AdministrationViewModel, INVITABLE_ROLES } from './administration-view-
 export type { ActionError, AdministrationContext } from './administration-view-model.js';
 export type { AccountRow, TeamCard } from './administration-rows.js';
 export { ROLE_KEYS as ROLE_LABEL_KEYS } from './session-view-model.js';
+export type * from './portal-types.js';
+export { CONSENT_PURPOSES, RIGHTS_KINDS } from './portal-types.js';
+export type { PortalGateway } from './portal-gateway.js';
+export { HttpPortalGateway } from './http-portal-gateway.js';
+export type { PortalUrls } from './http-portal-gateway.js';
+export { InMemoryPortalGateway } from './in-memory-portal-gateway.js';
+export { PortalViewModel, PORTAL_LOG_PREVIEW, REQUIRED_CONSENT } from './portal-view-model.js';
+export type { AccessKind, AccessRow, PortalSession } from './portal-view-model.js';

@@ -1,7 +1,8 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { ForbiddenException, Inject, Injectable } from '@nestjs/common';
 import { AuditLog } from '@hygia/audit';
 import { createTranslator, type Translate } from '@hygia/i18n';
 import type { Language } from '@hygia/types';
+import { CONSENT_GATE, type ConsentGate } from '../consent/consent-gate.js';
 import { AccessPolicy } from '../access/access-policy.js';
 import { CLINICAL_DIRECTORY, type ClinicalDirectory } from '../access/clinical-directory.js';
 import type { AuthenticatedUser } from '../auth/authenticated-user.js';
@@ -37,11 +38,15 @@ export class ResumeService {
     @Inject(PASSAGE_INDEX) private readonly index: PassageIndex,
     @Inject(CLINICAL_DIRECTORY) private readonly directory: ClinicalDirectory,
     @Inject(AUDIT_LOG) private readonly audit: AuditLog,
+    @Inject(CONSENT_GATE) private readonly consent: ConsentGate,
     private readonly policy: AccessPolicy,
   ) {}
 
-  summarize(user: AuthenticatedUser, patientId: string, language: Language): Resume {
+  async summarize(user: AuthenticatedUser, patientId: string, language: Language): Promise<Resume> {
     this.policy.require(user, patientId);
+    if (!(await this.consent.allows(patientId, 'ia'))) {
+      throw new ForbiddenException('Le patient a refusé l’usage de l’IA sur son dossier');
+    }
     this.audit.append({
       actor: user.id,
       role: user.role,

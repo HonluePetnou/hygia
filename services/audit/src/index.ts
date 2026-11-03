@@ -22,3 +22,10 @@ export {
   type S3ObjectLockOperations,
 } from './s3-audit-store.js';
 export { loadAuditEnv, type AuditEnv } from './config.js';
+export {
+  RightsRegistry,
+  RightsRequestError,
+  RIGHTS_KINDS,
+  RIGHTS_DEADLINE_DAYS,
+} from './rights-requests.js';
+export type { RightsKind, RightsRequest, RightsRequestInput } from './rights-requests.js';

@@ -11,6 +11,7 @@ import { ConsoleSender } from '../src/channels/console-sender.js';
 import { EmailSender, InMemoryEmailTransport } from '../src/channels/email-sender.js';
 import { InMemorySnsPublisher, SmsSender } from '../src/channels/sms-sender.js';
 import { SandboxWhatsAppApi, WhatsAppSender } from '../src/channels/whatsapp-sender.js';
+import { CONSENT_GATE, type ConsentGate } from '../src/consent/consent-gate.js';
 import { loadEnv } from '../src/config/env.js';
 import { DEMO_RECIPIENTS } from '../src/demo-data.js';
 import {
@@ -31,10 +32,24 @@ const WEBHOOK = { 'x-webhook-token': 'demo-whatsapp-token' };
 const appointments = (): Appointment[] => [
   { id: 'a-fr', patientId: FR.patientId, startsAt: TOMORROW, status: 'scheduled' },
   { id: 'a-en', patientId: EN.patientId, startsAt: TOMORROW, status: 'scheduled' },
-  { id: 'a-later', patientId: FR.patientId, startsAt: '2026-11-10T09:00:00.000Z', status: 'scheduled' },
+  {
+    id: 'a-later',
+    patientId: FR.patientId,
+    startsAt: '2026-11-10T09:00:00.000Z',
+    status: 'scheduled',
+  },
 ];
 
+/** Porte de consentement simulée : WhatsApp accordé sauf pour les patients refusés. */
+class FakeConsentGate implements ConsentGate {
+  readonly refused = new Set<string>();
+  allows(patientId: string): Promise<boolean> {
+    return Promise.resolve(!this.refused.has(patientId));
+  }
+}
+
 describe('service Notification', () => {
+  let consent: FakeConsentGate;
   let app: INestApplication;
   let whatsapp: SandboxWhatsAppApi;
   let sms: InMemorySnsPublisher;
@@ -42,14 +57,17 @@ describe('service Notification', () => {
   let ingested: RawDocument[];
   let ingestOutcome: IngestionOutcome;
   let role: string;
+  let userId = 'u1';
 
   beforeEach(async () => {
     whatsapp = new SandboxWhatsAppApi();
+    consent = new FakeConsentGate();
     sms = new InMemorySnsPublisher();
     store = new InMemoryAppointmentStore(appointments());
     ingested = [];
     ingestOutcome = { status: 'duplicate' };
     role = 'administratif';
+    userId = 'u1';
     const moduleRef = await Test.createTestingModule({ imports: [AppModule] })
       .overrideProvider(CHANNEL_SENDERS)
       .useValue([
@@ -58,6 +76,8 @@ describe('service Notification', () => {
         new EmailSender(new InMemoryEmailTransport()),
         new ConsoleSender(() => undefined),
       ])
+      .overrideProvider(CONSENT_GATE)
+      .useValue(consent)
       .overrideProvider(CLOCK)
       .useValue(() => NOW)
       .overrideProvider(APPOINTMENT_STORE)
@@ -71,7 +91,7 @@ describe('service Notification', () => {
       })
       .overrideProvider(TOKEN_VERIFIER)
       .useValue({
-        verify: async () => ({ sub: 'u1', role, teams: [], emergency: [] }),
+        verify: async () => ({ sub: userId, role, teams: [], emergency: [] }),
       })
       .compile();
     app = moduleRef.createNestApplication();
@@ -86,7 +106,8 @@ describe('service Notification', () => {
   const runReminders = () => request(app.getHttpServer()).post('/rappels/executer').set(auth);
   const inbound = (body: object) =>
     request(app.getHttpServer()).post('/webhooks/whatsapp').set(WEBHOOK).send(body);
-  const event = (body: object) => request(app.getHttpServer()).post('/events').set(INTERNAL).send(body);
+  const event = (body: object) =>
+    request(app.getHttpServer()).post('/events').set(INTERNAL).send(body);
 
   it('envoie le rappel de la veille en français et en anglais, avec « 1 » / « 2 »', async () => {
     const res = await runReminders().expect(201);
@@ -128,6 +149,27 @@ describe('service Notification', () => {
     };
     await registry.send({ recipient: FR, text: 'repli' }, ['whatsapp', 'sms']);
     expect(sms.published).toEqual([{ phoneNumber: FR.phone, message: 'repli' }]);
+  });
+
+  it('n’envoie aucun rappel WhatsApp à un patient qui l’a refusé : repli sur le SMS', async () => {
+    consent.refused.add(FR.patientId);
+    await runReminders().expect(201);
+    expect(whatsapp.sent.map((m) => m.to)).toEqual([EN.phone]);
+    expect(sms.published.map((m) => m.phoneNumber)).toEqual([FR.phone]);
+  });
+
+  it('indique au patient connecté son prochain rendez-vous, et à lui seul', async () => {
+    const asPatient = async (sub: string) => {
+      role = 'patient';
+      userId = sub;
+      return request(app.getHttpServer()).get('/rendez-vous/prochain').set(auth);
+    };
+    const mine = await asPatient(FR.patientId);
+    expect(mine.status).toBe(200);
+    expect(mine.body).toMatchObject({ id: 'a-fr', startsAt: TOMORROW });
+    expect((await asPatient('inconnu')).status).toBe(404);
+    role = 'medecin';
+    await request(app.getHttpServer()).get('/rendez-vous/prochain').set(auth).expect(403);
   });
 
   it('confirme le rendez-vous quand la patiente répond « 1 »', async () => {
@@ -195,10 +237,20 @@ describe('service Notification', () => {
     expect(sent.body.status).toBe('blocked');
     expect(whatsapp.sent).toHaveLength(0);
 
-    await event({ type: 'alerte.notification', alertId: 'alert-other', patientId: FR.patientId, title: 't' }).expect(202);
+    await event({
+      type: 'alerte.notification',
+      alertId: 'alert-other',
+      patientId: FR.patientId,
+      title: 't',
+    }).expect(202);
     expect(whatsapp.sent).toHaveLength(0);
 
-    await event({ type: 'alerte.notification', alertId: 'alert-1', patientId: FR.patientId, title: 't' }).expect(202);
+    await event({
+      type: 'alerte.notification',
+      alertId: 'alert-1',
+      patientId: FR.patientId,
+      title: 't',
+    }).expect(202);
     expect(whatsapp.sent).toHaveLength(1);
     expect(whatsapp.sent[0]!.body).toBe('Message de votre médecin : Interaction à vérifier');
   });
@@ -213,7 +265,11 @@ describe('service Notification', () => {
     expect(ok.body.status).toBe('sent');
     expect(whatsapp.sent[0]!.body).toBe('Message from your doctor: See you soon');
     role = 'patient';
-    await request(app.getHttpServer()).post('/messages').set(auth).send({ patientId: EN.patientId, text: 'x' }).expect(403);
+    await request(app.getHttpServer())
+      .post('/messages')
+      .set(auth)
+      .send({ patientId: EN.patientId, text: 'x' })
+      .expect(403);
   });
 
   it('alimente la cloche selon le rôle (nouvelle alerte, fin d’analyse)', async () => {
@@ -232,7 +288,10 @@ describe('service Notification', () => {
   });
 
   it('refuse les événements sans clé interne et le déclenchement des rappels par un patient', async () => {
-    await request(app.getHttpServer()).post('/events').send({ type: 'analyse.terminee', document: 'x' }).expect(401);
+    await request(app.getHttpServer())
+      .post('/events')
+      .send({ type: 'analyse.terminee', document: 'x' })
+      .expect(401);
     await event({ type: 'inconnu' }).expect(400);
     role = 'patient';
     await runReminders().expect(403);
@@ -243,7 +302,9 @@ describe('configuration', () => {
   it('valide les variables d’environnement', () => {
     expect(loadEnv({}).port).toBe(3008);
     expect(() => loadEnv({ NOTIFICATION_PORT: 'abc' })).toThrow('NOTIFICATION_PORT invalide');
-    expect(() => loadEnv({ IDENTITE_JWKS_URL: 'pas-une-url' })).toThrow('IDENTITE_JWKS_URL invalide');
+    expect(() => loadEnv({ IDENTITE_JWKS_URL: 'pas-une-url' })).toThrow(
+      'IDENTITE_JWKS_URL invalide',
+    );
     expect(() => loadEnv({ REMINDER_INTERVAL_MS: '-1' })).toThrow('REMINDER_INTERVAL_MS invalide');
   });
 });

@@ -24,14 +24,19 @@ export const AppShell = observer(function AppShell({ children }: { children: Rea
   // et tout autre écran (dont un lien direct vers un dossier patient) affiche « Accès refusé ».
   const isAdmin = session.role === 'admin';
   const adminHome = isAdmin && pathname === '/';
-  const adminDenied = isAdmin && !adminHome && !ADMIN_PATHS.some((path) => pathname.startsWith(path));
-  const redirectTo = analystElsewhere
-    ? '/epidemiologie'
-    : auditorElsewhere
-      ? '/audit'
-      : adminHome
-        ? '/administration'
-        : null;
+  const adminDenied =
+    isAdmin && !adminHome && !ADMIN_PATHS.some((path) => pathname.startsWith(path));
+  // Le patient n'a que son portail : tout écran du personnel soignant le ramène à `/portail`.
+  const patientElsewhere = session.role === 'patient';
+  const redirectTo = patientElsewhere
+    ? '/portail'
+    : analystElsewhere
+      ? '/epidemiologie'
+      : auditorElsewhere
+        ? '/audit'
+        : adminHome
+          ? '/administration'
+          : null;
 
   useEffect(() => {
     if (!session.isAuthenticated) router.replace('/connexion');

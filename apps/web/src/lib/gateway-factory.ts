@@ -8,6 +8,9 @@ import {
   HttpCopiloteGateway,
   HttpEpidemiologyGateway,
   HttpPatientsGateway,
+  HttpPortalGateway,
+  InMemoryPortalGateway,
+  type PortalGateway,
   HttpSupervisionGateway,
   InMemoryAuditGateway,
   InMemoryCopiloteGateway,
@@ -75,9 +78,17 @@ export function createAuthGateway(env: GatewayEnv): AuthGateway | undefined {
 }
 
 /** Choisit la veille épidémiologique : en mémoire si `NEXT_PUBLIC_DEMO_OFFLINE=1`, sinon service Agents (par le broker). */
-export function createEpidemiologyGateway(env: GatewayEnv, identity: () => Identity): EpidemiologyGateway {
+export function createEpidemiologyGateway(
+  env: GatewayEnv,
+  identity: () => Identity,
+): EpidemiologyGateway {
   if (env.NEXT_PUBLIC_DEMO_OFFLINE === '1') return new InMemoryEpidemiologyGateway();
-  return new HttpEpidemiologyGateway(serviceUrl(env, 'agents'), identity, undefined, serviceUrl(env, 'dossiers'));
+  return new HttpEpidemiologyGateway(
+    serviceUrl(env, 'agents'),
+    identity,
+    undefined,
+    serviceUrl(env, 'dossiers'),
+  );
 }
 
 /** Choisit le copilote : en mémoire si `NEXT_PUBLIC_DEMO_OFFLINE=1`, sinon flux SSE du service IA (par le broker). */
@@ -93,13 +104,28 @@ export function createAuditGateway(env: GatewayEnv, identity: () => Identity): A
 }
 
 /** Choisit l'administration : en mémoire si `NEXT_PUBLIC_DEMO_OFFLINE=1`, sinon le service Identité (par le broker). */
-export function createAdministrationGateway(env: GatewayEnv, identity: () => Identity): AdministrationGateway {
+export function createAdministrationGateway(
+  env: GatewayEnv,
+  identity: () => Identity,
+): AdministrationGateway {
   if (env.NEXT_PUBLIC_DEMO_OFFLINE === '1') return new InMemoryAdministrationGateway();
   return new HttpAdministrationGateway(serviceUrl(env, 'identite'), identity);
 }
 
 /** Choisit la supervision : simulée si `NEXT_PUBLIC_DEMO_OFFLINE=1`, sinon les routes `/api/supervision` du broker (rôle admin). */
-export function createSupervisionGateway(env: GatewayEnv, identity: () => Identity): SupervisionGateway {
+export function createSupervisionGateway(
+  env: GatewayEnv,
+  identity: () => Identity,
+): SupervisionGateway {
   if (env.NEXT_PUBLIC_DEMO_OFFLINE === '1') return new InMemorySupervisionGateway();
   return new HttpSupervisionGateway(serviceUrl(env, 'supervision'), identity);
+}
+
+/** Choisit le portail patient : en mémoire si `NEXT_PUBLIC_DEMO_OFFLINE=1`, sinon Dossiers et Notification (par le broker). */
+export function createPortalGateway(env: GatewayEnv, identity: () => Identity): PortalGateway {
+  if (env.NEXT_PUBLIC_DEMO_OFFLINE === '1') return new InMemoryPortalGateway();
+  return new HttpPortalGateway(
+    { dossiersUrl: serviceUrl(env, 'dossiers'), notificationUrl: serviceUrl(env, 'notification') },
+    identity,
+  );
 }

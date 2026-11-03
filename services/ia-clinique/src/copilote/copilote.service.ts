@@ -1,11 +1,15 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { ForbiddenException, Inject, Injectable } from '@nestjs/common';
 import { AuditLog } from '@hygia/audit';
 import { createTranslator } from '@hygia/i18n';
 import { AccessPolicy } from '../access/access-policy.js';
 import type { AuthenticatedUser } from '../auth/authenticated-user.js';
+import { CONSENT_GATE, type ConsentGate } from '../consent/consent-gate.js';
 import { PASSAGE_INDEX, type Passage, type PassageIndex } from '../index/passage-index.js';
 import { detectLanguage } from '../index/text.js';
-import { CLINICAL_LANGUAGE_MODEL, type ClinicalLanguageModel } from '../model/clinical-language-model.js';
+import {
+  CLINICAL_LANGUAGE_MODEL,
+  type ClinicalLanguageModel,
+} from '../model/clinical-language-model.js';
 import { toSource, type CopiloteAnswer, type CopiloteSource } from './copilote.types.js';
 
 /** Jeton d'injection du journal d'audit. */
@@ -25,6 +29,7 @@ export class CopiloteService {
     @Inject(PASSAGE_INDEX) private readonly index: PassageIndex,
     @Inject(CLINICAL_LANGUAGE_MODEL) private readonly model: ClinicalLanguageModel,
     @Inject(AUDIT_LOG) private readonly audit: AuditLog,
+    @Inject(CONSENT_GATE) private readonly consent: ConsentGate,
     private readonly policy: AccessPolicy,
   ) {}
 
@@ -36,6 +41,10 @@ export class CopiloteService {
     options: { modelUnavailable?: boolean } = {},
   ): Promise<CopiloteAnswer> {
     this.policy.require(user, patientId);
+    // Consentement IA révoqué par le patient : aucune question, aucun passage retrouvé.
+    if (!(await this.consent.allows(patientId, 'ia'))) {
+      throw new ForbiddenException('Le patient a refusé l’usage de l’IA sur son dossier');
+    }
     this.audit.append({
       actor: user.id,
       role: user.role,
