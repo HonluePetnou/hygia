@@ -1,0 +1,30 @@
+{
+  "name": "@hygia/view-models",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Vues-modèles MobX partagées entre le web et le mobile (MVVM)",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@hygia/fhir": "workspace:*",
+    "@hygia/i18n": "workspace:*",
+    "@hygia/types": "workspace:*",
+    "mobx": "^6.13.5"
+  },
+  "devDependencies": {
+    "vitest": "^5.1.0"
+  }
+}

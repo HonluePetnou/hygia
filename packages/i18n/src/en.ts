@@ -71,4 +71,19 @@ export const en: Record<MessageKey, string> = {
   'role.nurse': 'Nurse',
   'role.admin': 'Administrator',
   'role.auditor': 'Auditor',
+
+  'role.administrative': 'Administrative',
+  'role.analyst': 'Analyst',
+  'role.patient': 'Patient',
+
+  'patient.filter.all': 'All',
+  'patient.filter.consultations': 'Consultations',
+  'patient.filter.exams': 'Exams',
+  'patient.filter.prescriptions': 'Prescriptions',
+  'patient.filter.alerts': 'Alerts',
+
+  'import.noFile': 'No file selected',
+  'error.generic': 'An error occurred.',
+  'copilot.you': 'You',
+  'copilot.assistant': 'AI copilot',
 };

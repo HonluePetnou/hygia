@@ -69,6 +69,21 @@ export const fr = {
   'role.nurse': 'Infirmier',
   'role.admin': 'Administrateur',
   'role.auditor': 'Auditeur',
+
+  'role.administrative': 'Administratif',
+  'role.analyst': 'Analyste',
+  'role.patient': 'Patient',
+
+  'patient.filter.all': 'Tout',
+  'patient.filter.consultations': 'Consultations',
+  'patient.filter.exams': 'Examens',
+  'patient.filter.prescriptions': 'Prescriptions',
+  'patient.filter.alerts': 'Alertes',
+
+  'import.noFile': 'Aucun fichier choisi',
+  'error.generic': 'Une erreur est survenue.',
+  'copilot.you': 'Vous',
+  'copilot.assistant': 'Copilote IA',
 } as const;
 
 /** Clé de libellé valide, dérivée du dictionnaire français. */
