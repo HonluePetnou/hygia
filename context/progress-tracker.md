@@ -1,10 +1,10 @@
 # Hygia — Progress tracker
 
-_Dernière mise à jour : 2026-11-02_
+_Dernière mise à jour : 2026-11-03_
 
 ## État actuel
 
-Monorepo initialisé ; tâches 001, 002, 003 (`@hygia/audit`) et 004 (service `dossiers`) terminées.
+Monorepo initialisé ; tâches 001, 002, 003 (`@hygia/audit`) et 004 (service `dossiers`) et 005 (`@hygia/ingestion`) terminées.
 
 ## Fait
 
@@ -14,6 +14,7 @@ Monorepo initialisé ; tâches 001, 002, 003 (`@hygia/audit`) et 004 (service `d
 - [x] 003 — journal d'audit chaîné par hachage + Lamport (`@hygia/audit`)
 
 - [x] 004 — service Dossiers NestJS (REST, bris de glace, audit, OpenAPI `/docs`)
+- [x] 005 — chaîne d'ingestion en tubes et filtres (`@hygia/ingestion`)
 
 ## À faire
 
