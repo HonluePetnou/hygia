@@ -6,6 +6,8 @@ from .lease import DynamoDbLeaseStore, InMemoryLeaseStore, LeaseStore
 from .models import DOCUMENT_NORMALIZED, PRESCRIPTION_CREATED, DetectedIssue, Event, Source
 from .pharmacovigilance import PharmacovigilanceAgent
 from .quality import QualityAgent
+from .readmission_api import ReadmissionApi
+from .readmission_model import ReadmissionModel
 from .surveillance import CaseStore
 from .triage import TriageAgent
 from .veille import DIAGNOSTIC_RECORDED, Coordinator, VeilleAgent
@@ -23,5 +25,5 @@ __all__ = [
     "Agent", "AgentRegistry", "EventBus", "InMemoryEventBus", "DetectedIssue", "Event", "Source",
     "PRESCRIPTION_CREATED", "DOCUMENT_NORMALIZED", "PharmacovigilanceAgent", "QualityAgent",
     "TriageAgent", "default_registry", "AnalyticsApi", "CaseStore", "Coordinator", "VeilleAgent",
-    "LeaseStore", "InMemoryLeaseStore", "DynamoDbLeaseStore", "DIAGNOSTIC_RECORDED",
+    "ReadmissionApi", "ReadmissionModel", "LeaseStore", "InMemoryLeaseStore", "DynamoDbLeaseStore", "DIAGNOSTIC_RECORDED",
 ]

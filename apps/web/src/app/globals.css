@@ -709,3 +709,44 @@ a:hover {
   gap: 8px;
   flex-wrap: wrap;
 }
+
+/* Carte « Risque de réadmission » */
+.risk-gauge {
+  height: 10px;
+  border-radius: 999px;
+  background: var(--border);
+  overflow: hidden;
+  margin: 12px 0 8px;
+}
+.risk-gauge-fill {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: var(--success);
+}
+.risk-gauge.is-modere .risk-gauge-fill {
+  background: var(--warning);
+}
+.risk-gauge.is-eleve .risk-gauge-fill {
+  background: var(--danger);
+}
+.risk-factors {
+  list-style: none;
+  margin: 8px 0 12px;
+  padding: 0;
+  display: grid;
+  gap: 6px;
+}
+.risk-factors li {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+.risk-up {
+  color: var(--danger);
+  font-weight: 700;
+}
+.risk-down {
+  color: var(--success);
+  font-weight: 700;
+}

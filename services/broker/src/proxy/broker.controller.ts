@@ -13,6 +13,8 @@ export const TOKEN_VERIFIER = Symbol('TOKEN_VERIFIER');
 const PUBLIC_ROUTES = new Set(['identite:auth/login', 'identite:auth/mfa/enroll', 'identite:auth/mfa/verify', 'identite:.well-known/jwks.json']);
 /** Routes réservées au rôle `analyste` (branche analytique, section 8.5 du cahier). */
 const ANALYST_ROUTE = /^agents:analyse(\/|$)/;
+/** Estimation de réadmission : le service Agents contrôle le rôle (médecin, infirmier) sur l'en-tête vérifié. */
+const READMISSION_ROUTE = /^agents:readmission$/;
 const PREFIX = '/api/';
 
 /** Point d'entrée unique : `/api/<service>/...` est transmis au service désigné par son nom. */
@@ -64,7 +66,9 @@ export class BrokerController {
     delete req.headers['x-user-id'];
     delete req.headers['x-user-role'];
     // Rôle vérifié, transmis aux services de la branche analytique (qui ne lisent pas le JWT).
-    if (role !== undefined && ANALYST_ROUTE.test(route)) req.headers['x-user-role'] = role;
+    if (role !== undefined && (ANALYST_ROUTE.test(route) || READMISSION_ROUTE.test(route))) {
+      req.headers['x-user-role'] = role;
+    }
     if (!this.dispatcher.knows(name)) {
       res.status(404).json({ statusCode: 404, message: `Service inconnu : ${name}`, correlationId });
       return;

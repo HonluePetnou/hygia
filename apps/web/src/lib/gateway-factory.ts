@@ -13,6 +13,9 @@ import {
   type PortalGateway,
   HttpSupervisionGateway,
   HttpScribeGateway,
+  HttpReadmissionGateway,
+  InMemoryReadmissionGateway,
+  type ReadmissionGateway,
   InMemoryScribeGateway,
   type ScribeGateway,
   InMemoryAuditGateway,
@@ -128,6 +131,15 @@ export function createSupervisionGateway(
 export function createScribeGateway(env: GatewayEnv, identity: () => Identity): ScribeGateway {
   if (env.NEXT_PUBLIC_DEMO_OFFLINE === '1') return new InMemoryScribeGateway();
   return new HttpScribeGateway(serviceUrl(env, 'ia-clinique'), identity);
+}
+
+/** Choisit l'estimation de réadmission : en mémoire si `NEXT_PUBLIC_DEMO_OFFLINE=1`, sinon service Agents (par le broker). */
+export function createReadmissionGateway(
+  env: GatewayEnv,
+  identity: () => Identity,
+): ReadmissionGateway {
+  if (env.NEXT_PUBLIC_DEMO_OFFLINE === '1') return new InMemoryReadmissionGateway();
+  return new HttpReadmissionGateway(serviceUrl(env, 'agents'), identity);
 }
 
 /** Choisit le portail patient : en mémoire si `NEXT_PUBLIC_DEMO_OFFLINE=1`, sinon Dossiers et Notification (par le broker). */

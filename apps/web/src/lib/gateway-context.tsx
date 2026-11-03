@@ -9,6 +9,7 @@ import type {
   IngestionGateway,
   PatientsGateway,
   PortalGateway,
+  ReadmissionGateway,
   ScribeGateway,
   SupervisionGateway,
 } from '@hygia/view-models';
@@ -19,6 +20,7 @@ import {
   createEpidemiologyGateway,
   createPatientsGateway,
   createPortalGateway,
+  createReadmissionGateway,
   createScribeGateway,
   createSupervisionGateway,
   type GatewayEnv,
@@ -36,6 +38,7 @@ interface Gateways {
   administration: AdministrationGateway;
   portal: PortalGateway;
   scribe: ScribeGateway;
+  readmission: ReadmissionGateway;
 }
 
 const GatewayContext = createContext<Gateways | null>(null);
@@ -60,6 +63,8 @@ export interface GatewayProviderProps {
   portal?: PortalGateway;
   /** Scribe de consultation fourni de l'extérieur (tests). */
   scribe?: ScribeGateway;
+  /** Risque de réadmission fourni de l'extérieur (tests). */
+  readmission?: ReadmissionGateway;
 }
 
 /** Fournit les dépôts (patients, copilote, ingestion) à tout l'arbre authentifié. */
@@ -74,6 +79,7 @@ export function GatewayProvider({
   administration,
   portal,
   scribe,
+  readmission,
 }: GatewayProviderProps) {
   const session = useSession();
   const [value] = useState<Gateways>(() => {
@@ -92,6 +98,7 @@ export function GatewayProvider({
       administration: administration ?? createAdministrationGateway(env, identity),
       portal: portal ?? createPortalGateway(env, identity),
       scribe: scribe ?? createScribeGateway(env, identity),
+      readmission: readmission ?? createReadmissionGateway(env, identity),
     };
   });
   return <GatewayContext.Provider value={value}>{children}</GatewayContext.Provider>;
@@ -141,6 +148,11 @@ export function useSupervisionGateway(): SupervisionGateway {
 /** Scribe de consultation courant ; échoue hors d'un `GatewayProvider`. */
 export function useScribeGateway(): ScribeGateway {
   return useGateways().scribe;
+}
+
+/** Estimation du risque de réadmission courante ; échoue hors d'un `GatewayProvider`. */
+export function useReadmissionGateway(): ReadmissionGateway {
+  return useGateways().readmission;
 }
 
 /** Portail patient courant ; échoue hors d'un `GatewayProvider`. */

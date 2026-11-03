@@ -1,5 +1,6 @@
 'use client';
 
+import type { ReactNode } from 'react';
 import { Pill } from 'lucide-react';
 import { observer } from 'mobx-react-lite';
 import type { PatientOverview } from '@hygia/view-models';
@@ -7,7 +8,14 @@ import { Avatar, Card } from '@/components/ui';
 import { useSession } from '@/lib/session-context';
 
 /** Colonne de droite : constantes, traitements en cours et équipe de soins. */
-export const SideColumn = observer(function SideColumn({ overview }: { overview: PatientOverview }) {
+export const SideColumn = observer(function SideColumn({
+  overview,
+  children,
+}: {
+  overview: PatientOverview;
+  /** Cartes supplémentaires (ex. risque de réadmission), sous les traitements. */
+  children?: ReactNode;
+}) {
   const { t } = useSession();
   return (
     <div className="record-side">
@@ -43,6 +51,8 @@ export const SideColumn = observer(function SideColumn({ overview }: { overview:
           ))}
         </ul>
       </Card>
+
+      {children}
 
       <Card aria-labelledby="team-title">
         <h2 id="team-title">{t('patient.careTeam.title')}</h2>

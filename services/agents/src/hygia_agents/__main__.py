@@ -9,6 +9,8 @@ from . import AnalyticsApi, CaseStore, Coordinator, InMemoryLeaseStore, VeilleAg
 from .http_bus import HttpEventBus
 from .lease import localstack_lease_store
 from .outbreak_data import demo_events
+from .readmission_api import HttpConsentGate, ReadmissionApi
+from .readmission_model import ReadmissionModel
 
 
 def main() -> None:
@@ -18,6 +20,9 @@ def main() -> None:
     coordinator = Coordinator(leases, os.environ.get("AGENTS_INSTANCE_ID", str(uuid.uuid4())))
     server = HttpEventBus(default_registry, port=int(os.environ.get("AGENTS_PORT", "3007")),
                           analytics=AnalyticsApi(store),
+                          readmission=ReadmissionApi(ReadmissionModel.trained(), HttpConsentGate(
+                              os.environ.get("DOSSIERS_URL", "http://localhost:3001"),
+                              os.environ.get("DOSSIERS_INTERNAL_KEY", "demo-dossiers-key"))),
                           request_log=lambda line: print(json.dumps(line), flush=True))
     veille = VeilleAgent(store, coordinator, server.registry.issues.append)
     server.registry.register(veille)

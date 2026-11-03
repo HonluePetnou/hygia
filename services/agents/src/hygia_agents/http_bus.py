@@ -14,6 +14,7 @@ from .analytics_api import AnalyticsApi
 from .bus import InMemoryEventBus
 from .metrics import Metrics
 from .models import Event
+from .readmission_api import ReadmissionApi
 
 
 class HttpEventBus(InMemoryEventBus):
@@ -25,6 +26,7 @@ class HttpEventBus(InMemoryEventBus):
         host: str = "127.0.0.1",
         port: int = 3007,
         analytics: AnalyticsApi | None = None,
+        readmission: ReadmissionApi | None = None,
         request_log: Callable[[dict[str, object]], None] | None = None,
     ) -> None:
         super().__init__()
@@ -32,6 +34,7 @@ class HttpEventBus(InMemoryEventBus):
         # Journal d'une ligne par requête (jamais le corps : données de santé) ; muet par défaut.
         self.request_log = request_log or (lambda line: None)
         self.analytics = analytics
+        self.readmission = readmission
         self.registry = registry_factory(self)
         self._server = ThreadingHTTPServer((host, port), self._handler_class())
 
@@ -83,6 +86,16 @@ class HttpEventBus(InMemoryEventBus):
                 status, body = bus.analytics.handle(route, dict(parse_qsl(url.query)), role)  # type: ignore[union-attr]
                 self._send(status, body)
 
+            def _readmission(self) -> None:
+                try:
+                    length = int(self.headers.get("content-length", 0))
+                    body = json.loads(self.rfile.read(length))
+                except ValueError:
+                    self._send(400, {"error": "corps JSON invalide"})
+                    return
+                status, result = bus.readmission.handle(body, self.headers.get("x-user-role"))  # type: ignore[union-attr]
+                self._send(status, result)
+
             def _stream(self) -> None:
                 inbox, close = bus.analytics.open_stream()  # type: ignore[union-attr]
                 self.send_response(200)
@@ -117,6 +130,9 @@ class HttpEventBus(InMemoryEventBus):
 
             def do_POST(self) -> None:
                 self._observe()
+                if self.path == "/readmission" and bus.readmission is not None:
+                    self._readmission()
+                    return
                 if self.path != "/events":
                     self._send(404, {"error": "not found"})
                     return

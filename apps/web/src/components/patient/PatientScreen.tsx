@@ -10,6 +10,7 @@ import { BrowserAudioRecorder } from '@/lib/browser-audio-recorder';
 import { ScribePanel } from '@/components/scribe/ScribePanel';
 import { AccessDenied } from './AccessDenied';
 import { PatientHeader, type PatientTab } from './PatientHeader';
+import { ReadmissionCard } from './ReadmissionCard';
 import { SideColumn } from './SideColumn';
 import { SummaryPanel } from './SummaryPanel';
 import { Timeline } from './Timeline';
@@ -56,7 +57,11 @@ export const PatientScreen = observer(function PatientScreen({
         <div className="record-grid">
           <SummaryPanel vm={vm} />
           <Timeline vm={vm} />
-          <SideColumn overview={vm.overview} />
+          <SideColumn overview={vm.overview}>
+            {session.role === 'medecin' || session.role === 'infirmier' ? (
+              <ReadmissionCard record={vm} patientId={patientId} />
+            ) : null}
+          </SideColumn>
         </div>
       )}
     </>
