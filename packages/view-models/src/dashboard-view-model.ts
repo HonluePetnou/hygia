@@ -1,11 +1,16 @@
 import { makeAutoObservable, runInAction } from 'mobx';
 import type { PatientsGateway } from './gateways.js';
 import type { LoadState } from './load-state.js';
-import type { ConsultationSummary, DashboardData, LocaleSource } from './types.js';
+import type {
+  ConsultationStatus,
+  DashboardData,
+  DocumentStage,
+  LocaleSource,
+} from './types.js';
 
 /** Indicateur chiffré du tableau de bord. */
 export interface Indicator {
-  id: 'patientsToday' | 'pendingAlerts' | 'documentsImported';
+  id: 'patientsToday' | 'pendingAlerts' | 'documentsInProgress' | 'resultsToValidate';
   label: string;
   value: number;
 }
@@ -15,10 +20,44 @@ export interface DashboardAlert {
   id: string;
   patientId: string;
   severity: 'low' | 'moderate' | 'high';
+  severityLabel: string;
   text: string;
 }
 
-/** Tableau de bord : indicateurs, consultations du jour, alertes ouvertes. */
+/** Ligne du tableau des consultations du jour. */
+export interface ConsultationRow {
+  id: string;
+  patientId: string;
+  patientName: string;
+  /** Heure locale `HH:MM`. */
+  time: string;
+  reason: string;
+  status: ConsultationStatus;
+  statusLabel: string;
+}
+
+/** Document en cours avec libellés traduits. */
+export interface DocumentRow {
+  id: string;
+  title: string;
+  source: string;
+  stage: DocumentStage;
+  stageLabel: string;
+  progress: number;
+}
+
+/** Barre de l'histogramme de la semaine. */
+export interface WeekBar {
+  day: string;
+  label: string;
+  value: number;
+  /** Jour de la semaine courant (1 = lundi). */
+  highlighted: boolean;
+}
+
+const pad = (n: number): string => String(n).padStart(2, '0');
+
+/** Tableau de bord : indicateurs, consultations du jour, alertes, documents, activité. */
 export class DashboardViewModel {
   state: LoadState = 'idle';
   data: DashboardData | null = null;
@@ -26,10 +65,11 @@ export class DashboardViewModel {
   constructor(
     private readonly gateway: PatientsGateway,
     private readonly i18n: LocaleSource,
+    private readonly now: () => Date = () => new Date(),
   ) {
-    makeAutoObservable<DashboardViewModel, 'gateway' | 'i18n'>(
+    makeAutoObservable<DashboardViewModel, 'gateway' | 'i18n' | 'now'>(
       this,
-      { gateway: false, i18n: false },
+      { gateway: false, i18n: false, now: false },
       { autoBind: true },
     );
   }
@@ -53,12 +93,42 @@ export class DashboardViewModel {
     return this.i18n.t('dashboard.title');
   }
 
+  /** Salutation « Bonjour, Dr Nana ». */
+  greeting(name: string): string {
+    return this.i18n.t('dashboard.greeting', { nom: name });
+  }
+
+  /** Sous-titre : nombre de consultations et d'alertes à examiner. */
+  get subtitle(): string {
+    return this.i18n.t('dashboard.subtitle', {
+      consultations: this.consultations.length,
+      alerts: this.alerts.length,
+    });
+  }
+
   get errorMessage(): string | null {
     return this.state === 'error' ? this.i18n.t('error.generic') : null;
   }
 
-  get consultations(): ConsultationSummary[] {
-    return this.data?.consultations ?? [];
+  get consultations(): ConsultationRow[] {
+    const { t } = this.i18n;
+    return (this.data?.consultations ?? [])
+      .slice()
+      .sort((a, b) => Date.parse(a.start) - Date.parse(b.start))
+      .map((c) => {
+        const start = new Date(c.start);
+        const key = `encounter.class.${c.reason}`;
+        const translated = t(key);
+        return {
+          id: c.id,
+          patientId: c.patientId,
+          patientName: c.patientName,
+          time: `${pad(start.getUTCHours())}:${pad(start.getUTCMinutes())}`,
+          reason: translated === key ? c.reason : translated,
+          status: c.status,
+          statusLabel: t(`consultation.status.${c.status}`),
+        };
+      });
   }
 
   get alerts(): DashboardAlert[] {
@@ -66,20 +136,45 @@ export class DashboardViewModel {
       id: a.id,
       patientId: a.patientId,
       severity: a.severity,
+      severityLabel: this.i18n.t(`dashboard.severity.${a.severity}`),
       text: this.i18n.t(`summary.alert.${a.kind}`, a.params),
+    }));
+  }
+
+  get documents(): DocumentRow[] {
+    return (this.data?.documentsInProgress ?? []).map((d) => ({
+      ...d,
+      stageLabel: this.i18n.t(`dashboard.stage.${d.stage}`),
+    }));
+  }
+
+  /** Histogramme : un jour par barre, le jour courant en évidence. */
+  get week(): WeekBar[] {
+    const today = this.now().getUTCDay() || 7;
+    return (this.data?.weekActivity ?? []).map((value, index) => ({
+      day: String(index + 1),
+      label: this.i18n.t(`weekday.${index + 1}`),
+      value,
+      highlighted: index + 1 === today,
     }));
   }
 
   get indicators(): Indicator[] {
     const { t } = this.i18n;
-    const patients = new Set(this.consultations.map((c) => c.patientId));
+    const patients = new Set((this.data?.consultations ?? []).map((c) => c.patientId));
+    const inProgress = (this.data?.documentsInProgress ?? []).filter((d) => d.stage !== 'done');
     return [
       { id: 'patientsToday', label: t('dashboard.patientsToday'), value: patients.size },
-      { id: 'pendingAlerts', label: t('dashboard.pendingAlerts'), value: this.alerts.length },
+      { id: 'pendingAlerts', label: t('dashboard.alertsOpen'), value: this.alerts.length },
       {
-        id: 'documentsImported',
-        label: t('dashboard.documentsImported'),
-        value: this.data?.documentsImported ?? 0,
+        id: 'documentsInProgress',
+        label: t('dashboard.documentsInProgress'),
+        value: inProgress.length,
+      },
+      {
+        id: 'resultsToValidate',
+        label: t('dashboard.resultsToValidate'),
+        value: this.data?.resultsToValidate ?? 0,
       },
     ];
   }

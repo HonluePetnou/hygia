@@ -54,7 +54,10 @@ describe('DashboardViewModel', () => {
     await dashboard.load();
     expect(dashboard.state).toBe('ready');
     expect(dashboard.consultations).toHaveLength(1);
-    expect(dashboard.indicators.map((i) => i.value)).toEqual([1, 2, 5]);
+    expect(dashboard.indicators.map((i) => i.value)).toEqual([1, 2, 2, 2]);
+    expect(dashboard.consultations[0]).toMatchObject({ status: 'alert', time: '09:00' });
+    expect(dashboard.documents).toHaveLength(3);
+    expect(dashboard.week).toHaveLength(7);
     expect(dashboard.alerts.some((a) => a.text.includes('Warfarine et Ibuprofène'))).toBe(true);
   });
 
@@ -176,6 +179,45 @@ describe('IngestionViewModel', () => {
       'pending',
       'pending',
     ]);
+  });
+});
+
+describe('accès refusé et bris de glace', () => {
+  const outsider = () =>
+    new InMemoryPatientsGateway(demoDataset, () => '2026-10-28', () => ({
+      userId: 'inconnu',
+      role: 'medecin',
+    }));
+
+  it('passe en « forbidden » hors équipe, puis recharge après le bris de glace', async () => {
+    const record = new PatientRecordViewModel(outsider(), new SessionViewModel());
+    await record.load(FLORENCE_ID);
+    expect(record.state).toBe('forbidden');
+    record.breakGlass.open();
+    expect(record.breakGlass.canSubmit).toBe(false);
+    record.breakGlass.setPrecisions('Admise aux urgences, inconsciente');
+    await record.breakGlass.submit();
+    expect(record.breakGlass.isOpen).toBe(false);
+    expect(record.state).toBe('ready');
+    expect(record.fullName).toBe('Florence Ngo Bassa');
+    record.dispose();
+  });
+
+  it('laisse passer un membre de l’équipe de soins', async () => {
+    const session = new SessionViewModel();
+    const gateway = new InMemoryPatientsGateway(demoDataset, () => '2026-10-28', () => session.identity);
+    const record = new PatientRecordViewModel(gateway, session);
+    await record.load(FLORENCE_ID);
+    expect(record.state).toBe('ready');
+    expect(record.badges.map((b) => b.id)).toContain('anticoagulant');
+    record.dispose();
+  });
+
+  it('recherche par nom ou IPP', async () => {
+    const gateway = patients();
+    expect(await gateway.search('florence')).toHaveLength(1);
+    expect(await gateway.search('HYG-2024-00872')).toHaveLength(1);
+    expect(await gateway.search('')).toHaveLength(8);
   });
 });
 

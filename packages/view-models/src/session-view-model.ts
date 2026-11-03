@@ -24,6 +24,8 @@ const ROLE_KEYS: Record<Role, string> = {
 export interface SessionOptions {
   /** Identifiant utilisateur transmis au broker (par défaut : praticien de démonstration). */
   userId?: string;
+  /** Nom affiché dans les salutations (par défaut : « Dr Nana »). */
+  displayName?: string;
   role?: Role;
   locale?: Locale;
   /** Code attendu à la seconde étape. */
@@ -34,6 +36,7 @@ export interface SessionOptions {
 export class SessionViewModel implements LocaleSource {
   step: SessionStep = 'credentials';
   email = '';
+  displayName: string;
   role: Role;
   locale: Locale;
   /** Clé de libellé de l'erreur courante, absente si tout va bien. */
@@ -44,6 +47,7 @@ export class SessionViewModel implements LocaleSource {
 
   constructor(options: SessionOptions = {}) {
     this.userId = options.userId ?? '00000000-0000-4000-8000-020000000001';
+    this.displayName = options.displayName ?? 'Dr Nana';
     this.role = options.role ?? 'medecin';
     this.locale = options.locale ?? 'fr';
     this.expectedCode = options.expectedCode ?? DEMO_MFA_CODE;

@@ -1,9 +1,12 @@
 import type { Locale } from '@hygia/i18n';
 import type {
+  BreakGlassGrant,
+  BreakGlassRequest,
   ChosenFile,
   CopiloteAnswer,
   DashboardData,
   IngestionResult,
+  PatientOverview,
   PatientSummary,
   Resume,
   TimelineEntry,
@@ -13,10 +16,16 @@ import type {
 export interface PatientsGateway {
   /** Données du tableau de bord. */
   dashboard(): Promise<DashboardData>;
-  /** Fiche d'un patient. */
+  /** Recherche par nom ou IPP (requête vide : tous les patients). */
+  search(query: string): Promise<PatientSummary[]>;
+  /** Fiche d'un patient ; rejette avec `GatewayError` 403 hors équipe de soins. */
   patient(patientId: string): Promise<PatientSummary>;
   /** Chronologie, du plus récent au plus ancien. */
   timeline(patientId: string): Promise<TimelineEntry[]>;
+  /** Constantes, traitements et équipe de soins. */
+  overview(patientId: string): Promise<PatientOverview>;
+  /** Ouvre un accès d'urgence de 4 h (bris de glace, tracé dans l'audit). */
+  openBreakGlass(patientId: string, request: BreakGlassRequest): Promise<BreakGlassGrant>;
   /** Résumé pré-consultation dans la langue demandée. */
   summary(patientId: string, locale: Locale): Promise<Resume>;
 }

@@ -20,6 +20,8 @@ Monorepo initialisé ; tâches 001, 002, 003 (`@hygia/audit`) et 004 (service `d
 
 - [x] 008 — client web `apps/web` : socle Next.js, design system, mise en page, connexion 2FA
 
+- [x] 009 — web : tableau de bord `/`, liste `/patients`, dossier `/patients/[id]` (résumé IA, chronologie filtrable, accès refusé + bris de glace)
+
 ## À faire
 
 - [ ] Tâches suivantes dans `tasks/todo/`

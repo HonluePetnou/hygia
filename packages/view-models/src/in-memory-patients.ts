@@ -1,59 +1,127 @@
 import type { Locale } from '@hygia/i18n';
 import { createTranslator } from '@hygia/i18n';
 import type { PatientsGateway } from './gateways.js';
+import { GatewayError } from './http-client.js';
 import { InMemoryKnowledge, type Dataset } from './in-memory-knowledge.js';
+import {
+  DEMO_WEEK_ACTIVITY,
+  buildDocumentsInProgress,
+  buildOverview,
+  describeEntry,
+} from './in-memory-overview.js';
 import { buildAlerts, buildTimeline } from './in-memory-records.js';
 import type {
+  BreakGlassGrant,
+  BreakGlassRequest,
   ConsultationSummary,
   DashboardData,
+  Identity,
+  PatientOverview,
   PatientSummary,
   Resume,
   ResumeItem,
   TimelineEntry,
 } from './types.js';
 
+const BREAK_GLASS_HOURS = 4;
+
 /** Dépôt en mémoire alimenté par les données fictives de `@hygia/fhir`. */
 export class InMemoryPatientsGateway implements PatientsGateway {
   private readonly knowledge: InMemoryKnowledge;
+  private readonly granted = new Set<string>();
 
   /**
    * @param dataset Jeu de données (en pratique `demoDataset` de `@hygia/fhir`).
    * @param today Date du jour (`YYYY-MM-DD`) pour les consultations du jour.
+   * @param identity Utilisateur courant : s'il est fourni, l'accès à un dossier est réservé
+   *   à l'équipe de soins de l'établissement du patient (sinon 403) ou à un bris de glace.
    */
   constructor(
     private readonly dataset: Dataset,
     private readonly today: () => string = () => new Date().toISOString().slice(0, 10),
+    private readonly identity?: () => Identity,
   ) {
     this.knowledge = new InMemoryKnowledge(dataset);
   }
 
   dashboard(): Promise<DashboardData> {
     const today = this.today();
+    const alerts = buildAlerts(this.dataset);
     const consultations: ConsultationSummary[] = this.dataset.encounters
       .filter((e) => e.start.startsWith(today))
       .map((e) => {
         const patientId = e.subject.reference.split('/')[1] ?? '';
-        return { id: e.id, patientId, patientName: this.nameOf(patientId), start: e.start };
+        const flagged = alerts.some((a) => a.patientId === patientId);
+        return {
+          id: e.id,
+          patientId,
+          patientName: this.nameOf(patientId),
+          start: e.start,
+          reason: e.encounterClass,
+          status: flagged ? 'alert' : 'done',
+        };
       });
     return Promise.resolve({
       consultations,
-      alerts: buildAlerts(this.dataset),
+      alerts,
       documentsImported: this.dataset.documents.length,
+      documentsInProgress: buildDocumentsInProgress(this.dataset),
+      resultsToValidate: this.dataset.observations.length,
+      weekActivity: [...DEMO_WEEK_ACTIVITY],
     });
   }
 
+  search(query: string): Promise<PatientSummary[]> {
+    const needle = query.trim().toLowerCase();
+    const found = this.dataset.patients.filter(
+      (p) =>
+        needle === '' ||
+        p.ipp.toLowerCase().includes(needle) ||
+        `${p.givenName} ${p.familyName}`.toLowerCase().includes(needle),
+    );
+    return Promise.resolve(found.map(({ id, ipp, familyName, givenName, birthDate }) => ({
+      id,
+      ipp,
+      familyName,
+      givenName,
+      birthDate,
+    })));
+  }
+
   patient(patientId: string): Promise<PatientSummary> {
+    const denied = this.denial(patientId);
+    if (denied) return Promise.reject(denied);
     const found = this.dataset.patients.find((p) => p.id === patientId);
-    if (!found) return Promise.reject(new Error(`Patient introuvable : ${patientId}`));
+    if (!found) return Promise.reject(new GatewayError(404, `Patient introuvable : ${patientId}`));
     const { id, ipp, familyName, givenName, birthDate } = found;
     return Promise.resolve({ id, ipp, familyName, givenName, birthDate });
   }
 
+  overview(patientId: string): Promise<PatientOverview> {
+    const denied = this.denial(patientId);
+    return denied ? Promise.reject(denied) : Promise.resolve(buildOverview(this.dataset, patientId));
+  }
+
   timeline(patientId: string): Promise<TimelineEntry[]> {
-    return Promise.resolve(buildTimeline(this.dataset, patientId));
+    const denied = this.denial(patientId);
+    if (denied) return Promise.reject(denied);
+    return Promise.resolve(
+      buildTimeline(this.dataset, patientId).map((e) => describeEntry(this.dataset, e)),
+    );
+  }
+
+  openBreakGlass(patientId: string, request: BreakGlassRequest): Promise<BreakGlassGrant> {
+    if (request.motif.trim() === '' || request.precisions.trim() === '') {
+      return Promise.reject(new GatewayError(400, 'motif et précisions obligatoires'));
+    }
+    this.granted.add(patientId);
+    const expiresAt = new Date(Date.now() + BREAK_GLASS_HOURS * 3_600_000).toISOString();
+    return Promise.resolve({ patientId, expiresAt });
   }
 
   summary(patientId: string, locale: Locale): Promise<Resume> {
+    const denied = this.denial(patientId);
+    if (denied) return Promise.reject(denied);
     const t = createTranslator(locale);
     const item = (texte: string, term: string): ResumeItem[] => [
       { texte, sources: this.knowledge.search(patientId, term, 1) },
@@ -101,6 +169,20 @@ export class InMemoryPatientsGateway implements PatientsGateway {
         item(t(`summary.alert.${a.kind}`, a.params), String(Object.values(a.params)[0])),
       ),
     });
+  }
+
+  /** Erreur 403 si l'utilisateur n'est ni de l'équipe du patient ni en bris de glace. */
+  private denial(patientId: string): GatewayError | null {
+    if (!this.identity || this.granted.has(patientId)) return null;
+    const { userId } = this.identity();
+    const organization = this.dataset.patients.find((p) => p.id === patientId)
+      ?.managingOrganization.reference;
+    const inTeam = this.dataset.careTeams.some(
+      (c) =>
+        c.managingOrganization.reference === organization &&
+        c.participants.some((p) => p.reference === `Practitioner/${userId}`),
+    );
+    return inTeam ? null : new GatewayError(403, `Accès refusé : ${patientId}`);
   }
 
   private nameOf(patientId: string): string {

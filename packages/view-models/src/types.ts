@@ -23,6 +23,10 @@ export interface TimelineEntry {
   /** Ressource d'origine (`Type/uuid`). */
   resource: { reference: string };
   label: string;
+  /** Détail affiché sous le titre (absent si le service ne le fournit pas). */
+  detail?: string;
+  /** Auteur et lieu (absent si inconnu). */
+  author?: string;
 }
 
 /** Source citée à l'appui d'une réponse ou d'une ligne de résumé. */
@@ -70,12 +74,32 @@ export interface AlertSummary {
   raisedAt: string;
 }
 
+/** Statut d'une consultation du jour. */
+export type ConsultationStatus = 'done' | 'inProgress' | 'alert' | 'upcoming';
+
 /** Consultation affichée sur le tableau de bord. */
 export interface ConsultationSummary {
   id: string;
   patientId: string;
   patientName: string;
   start: string;
+  /** Motif : classe de rencontre (`ambulatory`, `inpatient`, `emergency`) ou texte libre. */
+  reason: string;
+  status: ConsultationStatus;
+}
+
+/** Étape de traitement d'un document en cours. */
+export type DocumentStage = 'ocr' | 'extraction' | 'done';
+
+/** Document en cours de traitement dans la chaîne d'ingestion. */
+export interface DocumentInProgress {
+  id: string;
+  title: string;
+  /** Canal d'arrivée (WhatsApp, upload web, API FHIR…). */
+  source: string;
+  stage: DocumentStage;
+  /** Avancement de 0 à 100. */
+  progress: number;
 }
 
 /** Données brutes du tableau de bord. */
@@ -83,6 +107,12 @@ export interface DashboardData {
   consultations: ConsultationSummary[];
   alerts: AlertSummary[];
   documentsImported: number;
+  /** Documents en cours de traitement (chaîne tubes et filtres). */
+  documentsInProgress: DocumentInProgress[];
+  /** Résultats d'examens en attente de validation par un soignant. */
+  resultsToValidate: number;
+  /** Consultations par jour de la semaine, du lundi au dimanche. */
+  weekActivity: number[];
 }
 
 /** Fiche patient minimale affichée par les clients. */
@@ -92,6 +122,55 @@ export interface PatientSummary {
   familyName: string;
   givenName: string;
   birthDate: string;
+}
+
+/** Médicament en cours affiché dans la colonne de droite du dossier. */
+export interface TreatmentSummary {
+  label: string;
+  /** Posologie lisible (ex. « 5 mg · 1×/j »). */
+  dosage: string;
+  /** Concerné par une alerte d'interaction. */
+  flagged: boolean;
+}
+
+/** Constante vitale ou mesure récente. */
+export interface VitalSummary {
+  label: string;
+  value: string;
+  unit: string;
+}
+
+/** Membre de l'équipe de soins. */
+export interface CareTeamMember {
+  id: string;
+  name: string;
+  role: string;
+}
+
+/** Données complémentaires du dossier : en-tête et colonne de droite. */
+export interface PatientOverview {
+  gender: 'female' | 'male' | 'other' | 'unknown';
+  /** Libellés des allergies (badge d'alerte). */
+  allergies: string[];
+  anticoagulant: boolean;
+  version: number;
+  vitals: VitalSummary[];
+  treatments: TreatmentSummary[];
+  careTeam: CareTeamMember[];
+}
+
+/** Demande d'accès d'urgence (bris de glace). */
+export interface BreakGlassRequest {
+  /** Motif choisi dans la liste. */
+  motif: string;
+  /** Précisions obligatoires. */
+  precisions: string;
+}
+
+/** Accès exceptionnel accordé. */
+export interface BreakGlassGrant {
+  patientId: string;
+  expiresAt: string;
 }
 
 /** Étapes de la chaîne d'ingestion. */
