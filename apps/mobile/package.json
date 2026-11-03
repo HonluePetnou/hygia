@@ -1,0 +1,41 @@
+{
+  "name": "mobile",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Client mobile HYGIA hors ligne (Expo, SQLite, file d'envoi)",
+  "main": "expo-router/entry",
+  "scripts": {
+    "dev": "expo start",
+    "build": "expo export",
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@expo-google-fonts/plus-jakarta-sans": "^0.4.2",
+    "@hygia/fhir": "workspace:*",
+    "@hygia/i18n": "workspace:*",
+    "@hygia/sync-core": "workspace:*",
+    "@hygia/types": "workspace:*",
+    "@hygia/view-models": "workspace:*",
+    "expo": "~58.0.22",
+    "expo-constants": "*",
+    "expo-font": "*",
+    "expo-linking": "*",
+    "expo-router": "~58.0.29",
+    "expo-sqlite": "*",
+    "expo-status-bar": "*",
+    "mobx": "^6.16.1",
+    "mobx-react-lite": "^4.1.1",
+    "react": "19.3.0",
+    "react-native": "0.88.1",
+    "react-native-safe-area-context": "~5.10.1",
+    "react-native-screens": "*"
+  },
+  "devDependencies": {
+    "@types/node": "^22.20.5",
+    "@types/react": "^19.3.0",
+    "typescript": "^5.9.3",
+    "vitest": "^5.1.0"
+  }
+}

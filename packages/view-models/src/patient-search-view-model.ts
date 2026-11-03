@@ -3,6 +3,12 @@ import type { PatientsGateway } from './gateways.js';
 import type { LoadState } from './load-state.js';
 import type { LocaleSource, PatientSummary } from './types.js';
 
+/**
+ * Accès minimal requis par la recherche : le web la branche sur le service Dossiers, le mobile
+ * sur sa base SQLite locale (même vue-modèle, donnée locale ou distante).
+ */
+export type PatientSearchGateway = Pick<PatientsGateway, 'search'>;
+
 /** Liste des patients avec recherche par nom ou IPP. */
 export class PatientSearchViewModel {
   state: LoadState = 'idle';
@@ -13,7 +19,7 @@ export class PatientSearchViewModel {
   private sequence = 0;
 
   constructor(
-    private readonly gateway: PatientsGateway,
+    private readonly gateway: PatientSearchGateway,
     private readonly i18n: LocaleSource,
   ) {
     makeAutoObservable<PatientSearchViewModel, 'gateway' | 'i18n' | 'sequence'>(
