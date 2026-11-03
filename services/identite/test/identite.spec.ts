@@ -70,6 +70,11 @@ describe('service Identité', () => {
 
   const bearer = (token: string) => ({ authorization: `Bearer ${token}` });
 
+  it('expose /health et /metrics sans jeton', async () => {
+    expect((await http().get('/health').expect(200)).body).toEqual({ status: 'ok', service: 'identite' });
+    expect((await http().get('/metrics').expect(200)).body).toMatchObject({ service: 'identite', errors: 0 });
+  });
+
   it('un compte de démonstration par rôle, mots de passe hachés', async () => {
     const roles = new Set(DEMO_SEEDS.map((seed) => seed.role));
     expect([...roles].sort()).toEqual(

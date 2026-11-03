@@ -22,6 +22,7 @@
   "dependencies": {
     "@hygia/auth": "workspace:*",
     "@hygia/fhir": "workspace:*",
+    "@hygia/observability": "workspace:*",
     "@hygia/types": "workspace:*"
   },
   "devDependencies": {

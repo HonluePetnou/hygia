@@ -16,7 +16,15 @@ export const AppShell = observer(function AppShell({ children }: { children: Rea
   const analystElsewhere = session.role === 'analyste' && !pathname.startsWith('/epidemiologie');
   // L'auditeur n'a que la section Conformité : tout autre écran le ramène au journal.
   const auditorElsewhere = session.role === 'auditeur' && !pathname.startsWith('/audit');
-  const redirectTo = analystElsewhere ? '/epidemiologie' : auditorElsewhere ? '/audit' : null;
+  // L'administrateur système n'a que la supervision : aucun accès aux données de santé.
+  const adminElsewhere = session.role === 'admin' && !pathname.startsWith('/supervision');
+  const redirectTo = analystElsewhere
+    ? '/epidemiologie'
+    : auditorElsewhere
+      ? '/audit'
+      : adminElsewhere
+        ? '/supervision'
+        : null;
 
   useEffect(() => {
     if (!session.isAuthenticated) router.replace('/connexion');

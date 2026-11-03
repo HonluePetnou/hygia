@@ -3,8 +3,7 @@ import { All, Controller, Inject, Req, Res } from '@nestjs/common';
 import { bearerToken, type TokenVerifier } from '@hygia/auth';
 import type { Request, Response } from 'express';
 import { RateLimiter } from '../limit/rate-limiter.js';
-import { ServiceRegistry } from '../registry/service-registry.js';
-import { ProxyService } from './proxy.service.js';
+import { Dispatcher } from './dispatcher.js';
 
 export const RATE_LIMITER = Symbol('RATE_LIMITER');
 /** Jeton d'injection de `TokenVerifier`. */
@@ -20,8 +19,7 @@ const PREFIX = '/api/';
 @Controller()
 export class BrokerController {
   constructor(
-    private readonly registry: ServiceRegistry,
-    private readonly proxy: ProxyService,
+    private readonly dispatcher: Dispatcher,
     @Inject(RATE_LIMITER) private readonly limiter: RateLimiter,
     @Inject(TOKEN_VERIFIER) private readonly verifier: TokenVerifier,
   ) {}
@@ -67,13 +65,15 @@ export class BrokerController {
     delete req.headers['x-user-role'];
     // Rôle vérifié, transmis aux services de la branche analytique (qui ne lisent pas le JWT).
     if (role !== undefined && ANALYST_ROUTE.test(route)) req.headers['x-user-role'] = role;
-    const target = this.registry.resolve(name);
-    if (target === undefined) {
+    if (!this.dispatcher.knows(name)) {
       res.status(404).json({ statusCode: 404, message: `Service inconnu : ${name}`, correlationId });
       return;
     }
-    this.proxy.forward(req, res, target, path, correlationId, (reason) => {
-      res.status(503).json({ statusCode: 503, message: `Service indisponible : ${name}`, reason, correlationId });
-    });
+    try {
+      await this.dispatcher.dispatch(name, req, res, path, correlationId);
+    } catch (error) {
+      if (!(error instanceof RangeError) || res.headersSent) throw error;
+      res.status(413).json({ statusCode: 413, message: error.message, correlationId });
+    }
   }
 }

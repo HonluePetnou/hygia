@@ -138,6 +138,45 @@ describe('service IA clinique', () => {
     await other.close();
   });
 
+  it('mode dégradé : modèle déclaré indisponible par le broker → recherche simple, passages cités, sans erreur', async () => {
+    const res = await ask('Florence prend-elle de l’ibuprofène ?').set('x-hygia-fault', 'llm-unavailable').expect(200);
+    expect(res.body.degraded).toBe(true);
+    expect(res.body.answer).toContain('Mode dégradé : recherche simple');
+    expect(res.body.sources.length).toBeGreaterThan(0);
+    for (const source of res.body.sources) expect(res.body.answer).toContain(`[${source.n}] ${source.extrait}`);
+    const normal = await ask('Florence prend-elle de l’ibuprofène ?').expect(200);
+    expect(normal.body.degraded).toBeUndefined();
+  });
+
+  it('mode dégradé : le modèle lève une erreur → recherche simple au lieu d’un 500 ; sans passage, aucune source', async () => {
+    const module = await Test.createTestingModule({ imports: [AppModule] })
+      .overrideProvider(CLINICAL_LANGUAGE_MODEL)
+      .useValue({ generate: async () => Promise.reject(new Error('Bedrock indisponible')) })
+      .overrideProvider(TOKEN_VERIFIER)
+      .useValue(verifier)
+      .compile();
+    const other = module.createNestApplication();
+    await other.init();
+    const post = (question: string) =>
+      request(other.getHttpServer()).post(`/copilote/${FLORENCE_ID}`).set(nana).send({ question });
+    const res = await post('ibuprofène').expect(200);
+    expect(res.body).toMatchObject({ degraded: true });
+    expect(res.body.sources.length).toBeGreaterThan(0);
+    const none = await post('zzzz qqqq').expect(200);
+    expect(none.body.sources).toEqual([]);
+    await other.close();
+  });
+
+  it('expose /health et /metrics (requêtes, erreurs, p50/p95)', async () => {
+    await ask('ibuprofène').expect(200);
+    expect((await http().get('/health').expect(200)).body).toEqual({ status: 'ok', service: 'ia-clinique' });
+    const metrics = (await http().get('/metrics').expect(200)).body;
+    expect(metrics).toMatchObject({ service: 'ia-clinique', requests: 1, errors: 0 });
+    expect(metrics.latency).toEqual(expect.objectContaining({ p50Ms: expect.any(Number), p95Ms: expect.any(Number) }));
+    const res = await http().get('/health').set('x-correlation-id', 'corr-1').expect(200);
+    expect(res.headers['x-correlation-id']).toBe('corr-1');
+  });
+
   it('audite chaque question (question_copilote) sans écrire la question', async () => {
     await ask('ibuprofène').expect(200);
     await ask('capitale du Japon').expect(200);

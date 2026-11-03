@@ -3,6 +3,7 @@ import {
   Body,
   Controller,
   Get,
+  Headers,
   HttpCode,
   Inject,
   Param,
@@ -19,6 +20,12 @@ import { CopiloteService } from './copilote.service.js';
 import type { CopiloteAnswer } from './copilote.types.js';
 import { WORD_DELAY_MS, streamAnswer } from './sse.js';
 
+/**
+ * En-tête posé par le broker (qui supprime celui du client) quand une panne du modèle de langage
+ * est simulée (RF27) ; le copilote passe alors en mode dégradé.
+ */
+const FAULT_HEADER = 'x-hygia-fault';
+const LLM_UNAVAILABLE = 'llm-unavailable';
 const MAX_QUESTION_LENGTH = 1000;
 
 function parseQuestion(value: unknown): string {
@@ -53,8 +60,9 @@ export class CopiloteController {
     @CurrentUser() user: AuthenticatedUser,
     @Param('patientId') patientId: string,
     @Body() body: { question?: unknown } | undefined,
+    @Headers(FAULT_HEADER) fault?: string,
   ): Promise<CopiloteAnswer> {
-    return this.service.ask(user, patientId, parseQuestion(body?.question));
+    return this.service.ask(user, patientId, parseQuestion(body?.question), { modelUnavailable: fault === LLM_UNAVAILABLE });
   }
 
   @Get(':patientId/flux')
@@ -64,8 +72,9 @@ export class CopiloteController {
     @Param('patientId') patientId: string,
     @Query('q') q: unknown,
     @Res() response: Response,
+    @Headers(FAULT_HEADER) fault?: string,
   ): Promise<void> {
-    const result = await this.service.ask(user, patientId, parseQuestion(q));
+    const result = await this.service.ask(user, patientId, parseQuestion(q), { modelUnavailable: fault === LLM_UNAVAILABLE });
     await streamAnswer(response, result, this.wordDelayMs);
   }
 }

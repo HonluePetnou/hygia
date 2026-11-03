@@ -16,6 +16,7 @@ module.exports = {
     '^@hygia/audit$': '<rootDir>/../audit/src/index.ts',
     '^@hygia/fhir$': '<rootDir>/../../packages/fhir/src/index.ts',
     '^@hygia/i18n$': '<rootDir>/../../packages/i18n/src/index.ts',
+    '^@hygia/observability$': '<rootDir>/../../packages/observability/src/index.ts',
     '^@hygia/types$': '<rootDir>/../../packages/types/src/index.ts',
     '^(\\.{1,2}/.*)\\.js$': '$1',
   },

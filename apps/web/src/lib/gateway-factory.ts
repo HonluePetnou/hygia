@@ -5,16 +5,19 @@ import {
   HttpCopiloteGateway,
   HttpEpidemiologyGateway,
   HttpPatientsGateway,
+  HttpSupervisionGateway,
   InMemoryAuditGateway,
   InMemoryCopiloteGateway,
   InMemoryEpidemiologyGateway,
   InMemoryPatientsGateway,
+  InMemorySupervisionGateway,
   type AuditGateway,
   type AuthGateway,
   type CopiloteGateway,
   type EpidemiologyGateway,
   type Identity,
   type PatientsGateway,
+  type SupervisionGateway,
 } from '@hygia/view-models';
 
 /** Variables publiques lues par le client (lues littéralement pour que Next.js les inline). */
@@ -84,4 +87,10 @@ export function createCopiloteGateway(env: GatewayEnv, identity: () => Identity)
 export function createAuditGateway(env: GatewayEnv, identity: () => Identity): AuditGateway {
   if (env.NEXT_PUBLIC_DEMO_OFFLINE === '1') return new InMemoryAuditGateway();
   return new HttpAuditGateway(serviceUrl(env, 'audit'), identity);
+}
+
+/** Choisit la supervision : simulée si `NEXT_PUBLIC_DEMO_OFFLINE=1`, sinon les routes `/api/supervision` du broker (rôle admin). */
+export function createSupervisionGateway(env: GatewayEnv, identity: () => Identity): SupervisionGateway {
+  if (env.NEXT_PUBLIC_DEMO_OFFLINE === '1') return new InMemorySupervisionGateway();
+  return new HttpSupervisionGateway(serviceUrl(env, 'supervision'), identity);
 }

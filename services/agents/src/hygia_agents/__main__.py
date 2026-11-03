@@ -1,4 +1,5 @@
 """Serveur HTTP local : `PYTHONPATH=src python3 -m hygia_agents`."""
+import json
 import os
 import threading
 import time
@@ -16,7 +17,8 @@ def main() -> None:
     leases = localstack_lease_store(endpoint) if endpoint else InMemoryLeaseStore()
     coordinator = Coordinator(leases, os.environ.get("AGENTS_INSTANCE_ID", str(uuid.uuid4())))
     server = HttpEventBus(default_registry, port=int(os.environ.get("AGENTS_PORT", "3007")),
-                          analytics=AnalyticsApi(store))
+                          analytics=AnalyticsApi(store),
+                          request_log=lambda line: print(json.dumps(line), flush=True))
     veille = VeilleAgent(store, coordinator, server.registry.issues.append)
     server.registry.register(veille)
     if os.environ.get("AGENTS_DEMO_DATA", "1") == "1":

@@ -67,6 +67,13 @@ describe('service Dossiers', () => {
 
   const http = () => request(app.getHttpServer());
 
+  it('expose /health et /metrics sans jeton', async () => {
+    expect((await http().get('/health').expect(200)).body).toEqual({ status: 'ok', service: 'dossiers' });
+    const metrics = (await http().get('/metrics').expect(200)).body;
+    expect(metrics).toMatchObject({ service: 'dossiers', requests: 0, errors: 0 });
+    expect(metrics.latency).toEqual(expect.objectContaining({ p50Ms: expect.any(Number), p95Ms: expect.any(Number) }));
+  });
+
   it('401 sans jeton, avec un faux jeton, un jeton d’une autre clé ou des en-têtes simulés', async () => {
     await http().get(`/patients/${FLORENCE_ID}`).expect(401);
     await http().get('/patients').set({ authorization: 'Bearer faux.jeton.ici' }).expect(401);

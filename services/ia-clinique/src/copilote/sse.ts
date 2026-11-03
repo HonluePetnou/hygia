@@ -35,7 +35,7 @@ export async function streamAnswer(
     await pause(delayMs);
   }
   if (closed) return;
-  response.write(frame('sources', { language: result.language, sources: result.sources }));
+  response.write(frame('sources', { language: result.language, sources: result.sources, degraded: result.degraded === true }));
   response.write(frame('done', {}));
   response.end();
 }

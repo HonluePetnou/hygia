@@ -29,7 +29,12 @@ export class CopiloteService {
   ) {}
 
   /** Répond à une question sur le dossier ; la question est auditée (RF24). */
-  async ask(user: AuthenticatedUser, patientId: string, question: string): Promise<CopiloteAnswer> {
+  async ask(
+    user: AuthenticatedUser,
+    patientId: string,
+    question: string,
+    options: { modelUnavailable?: boolean } = {},
+  ): Promise<CopiloteAnswer> {
     this.policy.require(user, patientId);
     this.audit.append({
       actor: user.id,
@@ -44,7 +49,14 @@ export class CopiloteService {
     const passages = this.index.search(patientId, question, MAX_PASSAGES);
     if (passages.length === 0) return this.unanswered(language);
 
-    const answer = await this.model.generate({ question, passages, language });
+    // Panne simulée (broker) ou réelle du modèle : recherche simple, jamais une erreur.
+    if (options.modelUnavailable === true) return degradedAnswer(passages, language);
+    let answer: string;
+    try {
+      answer = await this.model.generate({ question, passages, language });
+    } catch {
+      return degradedAnswer(passages, language);
+    }
     const sources = citedSources(answer, passages);
     // Une réponse sans aucune source valide n'est jamais renvoyée.
     return sources.length === 0 ? this.unanswered(language) : { answer, language, sources };
@@ -53,6 +65,17 @@ export class CopiloteService {
   private unanswered(language: 'fr' | 'en'): CopiloteAnswer {
     return { answer: createTranslator(language)('copilot.noSourceAnswer'), language, sources: [] };
   }
+}
+
+/**
+ * Mode dégradé : sans modèle, le copilote renvoie les passages trouvés tels quels, numérotés
+ * et cités ; rien n'est généré, donc rien n'est inventé.
+ */
+function degradedAnswer(passages: readonly Passage[], language: 'fr' | 'en'): CopiloteAnswer {
+  const sources = passages.map((passage, position) => toSource(position + 1, passage));
+  const lines = sources.map((source) => `[${source.n}] ${source.extrait}`);
+  const answer = [createTranslator(language)('copilot.degradedMode'), ...lines].join('\n');
+  return { answer, language, sources, degraded: true };
 }
 
 /** Sources dont le marqueur `[n]` apparaît réellement dans la réponse, dans l'ordre des numéros. */

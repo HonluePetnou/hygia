@@ -114,6 +114,16 @@ describe('API HTTP', () => {
     expect([res.status, body.total, body.items[0]?.action]).toEqual([200, 1, 'bris_de_glace']);
   });
 
+  it('expose /health et /metrics sans jeton et propage x-correlation-id', async () => {
+    const { api } = build();
+    const url = await start(api);
+    const health = await fetch(`${url}/health`, { headers: { 'x-correlation-id': 'corr-9' } });
+    expect([health.status, health.headers.get('x-correlation-id')]).toEqual([200, 'corr-9']);
+    await fetch(`${url}/events`);
+    const metrics = (await (await fetch(`${url}/metrics`)).json()) as { service: string; requests: number; errors: number };
+    expect(metrics).toMatchObject({ service: 'audit', requests: 1, errors: 0 });
+  });
+
   it('refuse un médecin et une requête sans jeton', async () => {
     const url = await start(build().api);
     expect((await fetch(`${url}/events`, auth('doc'))).status).toBe(403);

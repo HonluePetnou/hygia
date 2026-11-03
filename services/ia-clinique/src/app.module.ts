@@ -1,7 +1,8 @@
-import { Module } from '@nestjs/common';
+import { Module, type MiddlewareConsumer, type NestModule } from '@nestjs/common';
 import { remoteVerifier } from '@hygia/auth';
 import { AuditLog, InMemoryAuditStore } from '@hygia/audit';
 import { demoDataset } from '@hygia/fhir';
+import { createObservability } from '@hygia/observability';
 import { AccessPolicy } from './access/access-policy.js';
 import { CLINICAL_DIRECTORY, DemoClinicalDirectory } from './access/clinical-directory.js';
 import { JwtAuthGuard, TOKEN_VERIFIER } from './auth/jwt-auth.guard.js';
@@ -33,4 +34,11 @@ import { ResumeService } from './resume/resume.service.js';
     { provide: AUDIT_LOG, useFactory: () => new AuditLog(new InMemoryAuditStore()) },
   ],
 })
-export class AppModule {}
+export class AppModule implements NestModule {
+  /** `/health`, `/metrics` et journal `x-correlation-id`. */
+  configure(consumer: MiddlewareConsumer): void {
+    const quiet = process.env['NODE_ENV'] === 'test';
+    const { middleware } = createObservability({ service: 'ia-clinique', ...(quiet ? { log: () => undefined } : {}) });
+    consumer.apply(middleware).forRoutes('*path');
+  }
+}

@@ -16,6 +16,8 @@ export interface CopiloteAnswer {
   answer: string;
   language: Language;
   sources: CopiloteSource[];
+  /** `true` en « mode dégradé : recherche simple » (modèle de langage indisponible). */
+  degraded?: boolean;
 }
 
 const EXCERPT_LENGTH = 200;

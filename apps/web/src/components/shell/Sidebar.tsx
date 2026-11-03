@@ -9,6 +9,7 @@ import {
   Map,
   Plus,
   ScrollText,
+  ServerCog,
   ShieldCheck,
   Sparkles,
   Users,
@@ -49,6 +50,14 @@ const AUDITOR_SECTIONS: readonly NavSection[] = [
   },
 ];
 
+/** Profil administrateur système : supervision et pannes seulement (aucune donnée de santé). */
+const ADMIN_SECTIONS: readonly NavSection[] = [
+  {
+    titleKey: 'nav.section.compliance',
+    items: [{ href: '/supervision', labelKey: 'nav.supervision', Icon: ServerCog }],
+  },
+];
+
 const SECTIONS: readonly NavSection[] = [
   {
     titleKey: 'nav.section.clinic',
@@ -74,19 +83,21 @@ export const Sidebar = observer(function Sidebar() {
   const { t, email, roleLabel, role } = useSession();
   const isAnalyst = role === 'analyste';
   const isAuditor = role === 'auditeur';
-  const sections = isAnalyst ? ANALYST_SECTIONS : isAuditor ? AUDITOR_SECTIONS : SECTIONS;
+  const isAdmin = role === 'admin';
+  const hasAlerts = !isAnalyst && !isAuditor && !isAdmin;
+  const sections = isAnalyst ? ANALYST_SECTIONS : isAuditor ? AUDITOR_SECTIONS : isAdmin ? ADMIN_SECTIONS : SECTIONS;
   const pathname = usePathname();
   const gateway = useGateway();
   const openAlerts = useViewModel(
     () => new OpenAlertsViewModel(gateway),
     (model) => {
-      if (!isAnalyst && !isAuditor) void model.refresh();
+      if (hasAlerts) void model.refresh();
     },
   );
   // Le compteur est relu à chaque changement de page (une décision change le nombre d'alertes ouvertes).
   useEffect(() => {
-    if (!isAnalyst && !isAuditor) void openAlerts.refresh();
-  }, [pathname, isAnalyst, isAuditor]);
+    if (hasAlerts) void openAlerts.refresh();
+  }, [pathname, hasAlerts]);
   const isActive = (href: string) =>
     href === '/' ? pathname === '/' : pathname === href || pathname.startsWith(`${href}/`);
 

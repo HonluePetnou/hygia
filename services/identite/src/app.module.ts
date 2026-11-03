@@ -1,4 +1,5 @@
-import { Module } from '@nestjs/common';
+import { Module, type MiddlewareConsumer, type NestModule } from '@nestjs/common';
+import { createObservability } from '@hygia/observability';
 import { TokenIssuer, localVerifier } from '@hygia/auth';
 import { AccountsController } from './admin/accounts.controller.js';
 import { AdminGuard } from './admin/admin.guard.js';
@@ -58,4 +59,11 @@ import { CLOCK, SystemClock, type Clock } from './time/clock.js';
     },
   ],
 })
-export class AppModule {}
+export class AppModule implements NestModule {
+  /** `/health`, `/metrics` et journal `x-correlation-id`. */
+  configure(consumer: MiddlewareConsumer): void {
+    const quiet = process.env['NODE_ENV'] === 'test';
+    const { middleware } = createObservability({ service: 'identite', ...(quiet ? { log: () => undefined } : {}) });
+    consumer.apply(middleware).forRoutes('*path');
+  }
+}

@@ -10,11 +10,26 @@ export const SERVICE_NAMES = [
   'agents',
 ] as const;
 
+/** Zone de disponibilité : `a` = eu-west-3a, `b` = eu-west-3b. */
+export type Zone = 'a' | 'b';
+
+/** Instance d'un service, étiquetée par sa zone. */
+export interface ServiceInstance {
+  /** Identifiant stable, ex. `dossiers-a`. */
+  id: string;
+  service: string;
+  zone: Zone;
+  url: URL;
+}
+
 /** Configuration validée du broker. */
 export interface Env {
   /** Port d'écoute (`BROKER_PORT`, défaut 3000). */
   port: number;
-  /** Adresse de base de chaque service déclaré (`BROKER_SERVICE_<NOM>_URL`). */
+  /**
+   * Adresses de chaque service déclaré (`BROKER_SERVICE_<NOM>_URL`) : une URL, ou plusieurs
+   * séparées par des virgules, chacune éventuellement préfixée de sa zone (`a=http://…,b=http://…`).
+   */
   services: Record<string, string>;
   /** Délai maximal avant la réponse du service, en ms (`BROKER_TIMEOUT_MS`, défaut 5000). */
   timeoutMs: number;
@@ -24,6 +39,10 @@ export interface Env {
   rateWindowMs: number;
   /** URL du JWKS du service Identité (`BROKER_JWKS_URL`, sinon déduite de `identite`). */
   jwksUrl: string;
+  /** Échecs consécutifs avant ouverture du disjoncteur (`BROKER_BREAKER_THRESHOLD`, défaut 3). */
+  breakerThreshold: number;
+  /** Durée d'ouverture du disjoncteur avant un nouvel essai, en ms (`BROKER_BREAKER_COOLDOWN_MS`, défaut 5000). */
+  breakerCooldownMs: number;
   /** Origine web autorisée par CORS (`WEB_ORIGIN`). */
   webOrigin: string;
 }
@@ -46,6 +65,25 @@ export function serviceEnvKey(name: string): string {
 }
 
 /**
+ * Décode la valeur d'un service : `url`, `url,url` ou `zone=url,zone=url`. Sans étiquette, la
+ * première instance est en zone a, la seconde en zone b.
+ *
+ * @throws Error si une URL est invalide.
+ */
+export function parseInstances(service: string, raw: string): ServiceInstance[] {
+  const zones: Zone[] = ['a', 'b'];
+  return raw.split(',').map((entry, position) => {
+    const labelled = /^([ab])=(.+)$/.exec(entry.trim());
+    const zone = (labelled?.[1] as Zone | undefined) ?? zones[position % 2] ?? 'a';
+    const address = labelled?.[2] ?? entry.trim();
+    if (!URL.canParse(address)) {
+      throw new Error(`${serviceEnvKey(service)} invalide : « ${address} » (URL absolue attendue)`);
+    }
+    return { id: `${service}-${zone}${position >= 2 ? position : ''}`, service, zone, url: new URL(address) };
+  });
+}
+
+/**
  * Valide les variables d'environnement au démarrage.
  *
  * @param source Variables à lire (par défaut `process.env`).
@@ -57,10 +95,11 @@ export function loadEnv(source: Source = process.env): Env {
     const key = serviceEnvKey(name);
     const raw = source[key];
     if (raw === undefined || raw === '') continue;
-    if (!URL.canParse(raw)) throw new Error(`${key} invalide : « ${raw} » (URL absolue attendue)`);
+    parseInstances(name, raw);
     services[name] = raw;
   }
-  const jwksUrl = source['BROKER_JWKS_URL'] || `${(services['identite'] ?? 'http://localhost:3004').replace(/\/+$/, '')}/.well-known/jwks.json`;
+  const identite = services['identite']?.split(',')[0]?.replace(/^[ab]=/, '');
+  const jwksUrl = source['BROKER_JWKS_URL'] || `${(identite ?? 'http://localhost:3004').replace(/\/+$/, '')}/.well-known/jwks.json`;
   if (!URL.canParse(jwksUrl)) throw new Error(`BROKER_JWKS_URL invalide : « ${jwksUrl} » (URL absolue attendue)`);
   return {
     jwksUrl,
@@ -69,6 +108,8 @@ export function loadEnv(source: Source = process.env): Env {
     timeoutMs: integer(source, 'BROKER_TIMEOUT_MS', 5000),
     rateLimit: integer(source, 'BROKER_RATE_LIMIT', 300),
     rateWindowMs: integer(source, 'BROKER_RATE_WINDOW_MS', 60000),
+    breakerThreshold: integer(source, 'BROKER_BREAKER_THRESHOLD', 3),
+    breakerCooldownMs: integer(source, 'BROKER_BREAKER_COOLDOWN_MS', 5000),
     webOrigin: source['WEB_ORIGIN'] || 'http://localhost:3100',
   };
 }

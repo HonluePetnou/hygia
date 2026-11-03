@@ -1,6 +1,7 @@
 import { timingSafeEqual } from 'node:crypto';
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import { bearerToken, type TokenClaims, type TokenVerifier } from '@hygia/auth';
+import { createObservability, type ObservabilityMiddleware, type RequestLog } from '@hygia/observability';
 import { ROLES, type Role } from '@hygia/types';
 import type { AuditLog } from './audit-log.js';
 import type { ChainVerifier } from './chain-verifier.js';
@@ -32,6 +33,8 @@ export interface AuditApiOptions {
   now: () => Date;
   /** Secret des écritures des autres services (`x-internal-key`) ; sans lui, la route est fermée. */
   internalKey?: string | undefined;
+  /** Destination du journal des requêtes (`x-correlation-id`) ; sans elle, rien n'est journalisé. */
+  requestLog?: ((line: RequestLog) => void) | undefined;
 }
 
 function json(res: ServerResponse, status: number, body: unknown): void {
@@ -55,13 +58,27 @@ function positiveInt(value: string | null, name: string): number | undefined {
  * propre dossier) ; écriture réservée aux autres services par la route interne `/internal/events`.
  */
 export class AuditApi {
-  constructor(private readonly options: AuditApiOptions) {}
+  private readonly observability: ObservabilityMiddleware;
 
-  /** Traite une requête ; ne lève jamais. */
-  async handle(req: IncomingMessage, res: ServerResponse): Promise<void> {
+  constructor(private readonly options: AuditApiOptions) {
+    this.observability = createObservability({
+      service: 'audit',
+      log: options.requestLog ?? (() => undefined),
+    }).middleware;
+  }
+
+  /** Traite une requête (`/health` et `/metrics` compris) ; ne lève jamais. */
+  handle(req: IncomingMessage, res: ServerResponse): Promise<void> {
+    let routed: Promise<void> = Promise.resolve();
+    this.observability(req, res, () => {
+      routed = this.route(req, res);
+    });
+    return routed;
+  }
+
+  private async route(req: IncomingMessage, res: ServerResponse): Promise<void> {
     try {
       const url = new URL(req.url ?? '/', 'http://audit.local');
-      if (url.pathname === '/health') return json(res, 200, { status: 'ok' });
       if (req.method === 'POST' && url.pathname === '/internal/events') {
         return await this.append(req, res);
       }

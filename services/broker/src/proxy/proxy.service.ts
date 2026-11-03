@@ -13,6 +13,14 @@ const HOP_BY_HOP = [
   'proxy-authenticate',
 ];
 
+/** Erreurs réseau où la requête n'a certainement pas atteint le service : rejouable même sans idempotence. */
+const NOT_DELIVERED = new Set(['ECONNREFUSED', 'ENOTFOUND', 'EHOSTUNREACH', 'ENETUNREACH']);
+
+/** Issue d'une tentative : réponse commencée (`ok`) ou échec avant toute réponse. */
+export type ForwardResult =
+  | { ok: true; status: number }
+  | { ok: false; reason: string; /** La requête n'a pas atteint le service. */ notDelivered: boolean };
+
 function cleaned(headers: IncomingHttpHeaders, correlationId: string): OutgoingHttpHeaders {
   const out: OutgoingHttpHeaders = { ...headers };
   for (const h of HOP_BY_HOP) delete out[h];
@@ -25,10 +33,12 @@ export class ProxyService {
   constructor(private readonly timeoutMs: number) {}
 
   /**
-   * @param target Adresse de base du service.
+   * @param target Adresse de base de l'instance.
    * @param path Chemin (avec requête) à appeler sur le service.
    * @param correlationId Identifiant propagé dans `x-correlation-id`.
-   * @param onUnavailable Appelé si le service ne répond pas avant le délai (avant tout envoi).
+   * @param body Corps déjà lu (permet de rejouer la requête) ; sinon le corps est transmis en flux.
+   * @returns Résolu dès que la réponse commence, ou en échec si le service ne répond pas
+   * avant le délai (rien n'a alors été écrit sur `res`, qui reste utilisable pour une autre tentative).
    */
   forward(
     req: Request,
@@ -36,37 +46,42 @@ export class ProxyService {
     target: URL,
     path: string,
     correlationId: string,
-    onUnavailable: (reason: string) => void,
-  ): void {
-    const headers = cleaned(req.headers, correlationId);
-    delete headers['host'];
-    const send = target.protocol === 'https:' ? httpsRequest : httpRequest;
-    const upstream = send(
-      {
-        hostname: target.hostname,
-        port: target.port,
-        method: req.method,
-        path: `${target.pathname.replace(/\/+$/, '')}${path}`,
-        headers,
-      },
-      (upstreamRes) => {
+    body?: Buffer,
+  ): Promise<ForwardResult> {
+    return new Promise((resolve) => {
+      const headers = cleaned(req.headers, correlationId);
+      delete headers['host'];
+      const send = target.protocol === 'https:' ? httpsRequest : httpRequest;
+      const upstream = send(
+        {
+          hostname: target.hostname,
+          port: target.port,
+          method: req.method,
+          path: `${target.pathname.replace(/\/+$/, '')}${path}`,
+          headers,
+        },
+        (upstreamRes) => {
+          clearTimeout(timer);
+          res.writeHead(upstreamRes.statusCode ?? 502, cleaned(upstreamRes.headers, correlationId));
+          res.flushHeaders();
+          upstreamRes.pipe(res);
+          upstreamRes.on('error', () => res.destroy());
+          resolve({ ok: true, status: upstreamRes.statusCode ?? 502 });
+        },
+      );
+      const timer = setTimeout(() => upstream.destroy(new Error('délai dépassé')), this.timeoutMs);
+      upstream.on('error', (error: NodeJS.ErrnoException) => {
         clearTimeout(timer);
-        res.writeHead(upstreamRes.statusCode ?? 502, cleaned(upstreamRes.headers, correlationId));
-        res.flushHeaders();
-        upstreamRes.pipe(res);
-        upstreamRes.on('error', () => res.destroy());
-      },
-    );
-    const timer = setTimeout(() => upstream.destroy(new Error('délai dépassé')), this.timeoutMs);
-    upstream.on('error', (error) => {
-      clearTimeout(timer);
-      if (!res.headersSent) onUnavailable(error.message);
-      else res.destroy();
+        if (!res.headersSent) {
+          resolve({ ok: false, reason: error.message, notDelivered: NOT_DELIVERED.has(error.code ?? '') });
+        } else res.destroy();
+      });
+      res.on('close', () => {
+        clearTimeout(timer);
+        if (!res.writableFinished) upstream.destroy();
+      });
+      if (body === undefined) req.pipe(upstream);
+      else upstream.end(body);
     });
-    res.on('close', () => {
-      clearTimeout(timer);
-      if (!res.writableFinished) upstream.destroy();
-    });
-    req.pipe(upstream);
   }
 }

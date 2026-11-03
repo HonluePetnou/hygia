@@ -1,17 +1,16 @@
-import { SERVICE_NAMES } from '../config/env.js';
+import { SERVICE_NAMES, parseInstances, type ServiceInstance } from '../config/env.js';
 
-/** Registre de services par nom : transparence de localisation (section 7.2). */
+/** Registre de services par nom : transparence de localisation (section 7.2), plusieurs instances par service. */
 export class ServiceRegistry {
-  private readonly urls: Map<string, string>;
+  private readonly byService = new Map<string, ServiceInstance[]>();
 
   constructor(services: Record<string, string>) {
-    this.urls = new Map(Object.entries(services));
+    for (const [name, raw] of Object.entries(services)) this.byService.set(name, parseInstances(name, raw));
   }
 
-  /** Adresse de base du service, ou `undefined` s'il est inconnu ou non déclaré. */
-  resolve(name: string): URL | undefined {
-    if (!(SERVICE_NAMES as readonly string[]).includes(name)) return undefined;
-    const url = this.urls.get(name);
-    return url === undefined ? undefined : new URL(url);
+  /** Instances déclarées du service ; vide s'il est inconnu ou non déclaré. */
+  instances(name: string): ServiceInstance[] {
+    if (!(SERVICE_NAMES as readonly string[]).includes(name)) return [];
+    return this.byService.get(name) ?? [];
   }
 }

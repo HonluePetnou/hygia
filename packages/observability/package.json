@@ -1,0 +1,25 @@
+{
+  "name": "@hygia/observability",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Observabilité des services HYGIA : /health, /metrics (requêtes, erreurs, p50/p95) et journal x-correlation-id",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "@types/node": "^22.20.5",
+    "vitest": "^5.1.0"
+  }
+}

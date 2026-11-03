@@ -30,6 +30,7 @@ const api = new AuditApi({
   now,
   verifier: remoteVerifier(env.jwksUrl),
   internalKey: env.internalKey,
+  requestLog: (line) => console.log(JSON.stringify(line)),
 });
 createServer((req, res) => {
   res.setHeader('access-control-allow-origin', process.env['WEB_ORIGIN'] ?? 'http://localhost:3100');

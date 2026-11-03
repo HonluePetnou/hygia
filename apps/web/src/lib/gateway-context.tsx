@@ -7,12 +7,14 @@ import type {
   EpidemiologyGateway,
   IngestionGateway,
   PatientsGateway,
+  SupervisionGateway,
 } from '@hygia/view-models';
 import {
   createAuditGateway,
   createCopiloteGateway,
   createEpidemiologyGateway,
   createPatientsGateway,
+  createSupervisionGateway,
   type GatewayEnv,
 } from './gateway-factory';
 import { ApiIngestionGateway } from './ingestion-api';
@@ -24,6 +26,7 @@ interface Gateways {
   ingestion: IngestionGateway;
   epidemiology: EpidemiologyGateway;
   audit: AuditGateway;
+  supervision: SupervisionGateway;
 }
 
 const GatewayContext = createContext<Gateways | null>(null);
@@ -40,6 +43,8 @@ export interface GatewayProviderProps {
   epidemiology?: EpidemiologyGateway;
   /** Journal d'audit fourni de l'extérieur (tests). */
   audit?: AuditGateway;
+  /** Supervision fournie de l'extérieur (tests). */
+  supervision?: SupervisionGateway;
 }
 
 /** Fournit les dépôts (patients, copilote, ingestion) à tout l'arbre authentifié. */
@@ -50,6 +55,7 @@ export function GatewayProvider({
   ingestion,
   epidemiology,
   audit,
+  supervision,
 }: GatewayProviderProps) {
   const session = useSession();
   const [value] = useState<Gateways>(() => {
@@ -64,6 +70,7 @@ export function GatewayProvider({
       ingestion: ingestion ?? new ApiIngestionGateway(),
       epidemiology: epidemiology ?? createEpidemiologyGateway(env, identity),
       audit: audit ?? createAuditGateway(env, identity),
+      supervision: supervision ?? createSupervisionGateway(env, identity),
     };
   });
   return <GatewayContext.Provider value={value}>{children}</GatewayContext.Provider>;
@@ -98,4 +105,9 @@ export function useIngestionGateway(): IngestionGateway {
 /** Journal d'audit courant ; échoue hors d'un `GatewayProvider`. */
 export function useAuditGateway(): AuditGateway {
   return useGateways().audit;
+}
+
+/** Supervision courante ; échoue hors d'un `GatewayProvider`. */
+export function useSupervisionGateway(): SupervisionGateway {
+  return useGateways().supervision;
 }

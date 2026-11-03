@@ -3,6 +3,8 @@ from __future__ import annotations
 
 import json
 import queue
+import time
+import uuid
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from typing import Callable
 from urllib.parse import parse_qsl, urlsplit
@@ -10,11 +12,12 @@ from urllib.parse import parse_qsl, urlsplit
 from .agent import AgentRegistry
 from .analytics_api import AnalyticsApi
 from .bus import InMemoryEventBus
+from .metrics import Metrics
 from .models import Event
 
 
 class HttpEventBus(InMemoryEventBus):
-    """Bus en mémoire exposé en HTTP : `POST /events`, `GET /issues`, `GET /health`."""
+    """Bus en mémoire exposé en HTTP : `POST /events`, `GET /issues`, `GET /health`, `GET /metrics`."""
 
     def __init__(
         self,
@@ -22,8 +25,12 @@ class HttpEventBus(InMemoryEventBus):
         host: str = "127.0.0.1",
         port: int = 3007,
         analytics: AnalyticsApi | None = None,
+        request_log: Callable[[dict[str, object]], None] | None = None,
     ) -> None:
         super().__init__()
+        self.metrics = Metrics("agents")
+        # Journal d'une ligne par requête (jamais le corps : données de santé) ; muet par défaut.
+        self.request_log = request_log or (lambda line: None)
         self.analytics = analytics
         self.registry = registry_factory(self)
         self._server = ThreadingHTTPServer((host, port), self._handler_class())
@@ -43,9 +50,24 @@ class HttpEventBus(InMemoryEventBus):
         bus = self
 
         class RequestHandler(BaseHTTPRequestHandler):
+            def _observe(self) -> None:
+                """Début de requête : chrono et identifiant de corrélation (reçu ou généré)."""
+                self._started = time.monotonic()
+                self._correlation = self.headers.get("x-correlation-id") or str(uuid.uuid4())
+
             def _send(self, status: int, body: object) -> None:
                 data = json.dumps(body, ensure_ascii=False).encode()
+                path = urlsplit(self.path).path
+                duration = (time.monotonic() - getattr(self, "_started", time.monotonic())) * 1000
+                if path not in ("/health", "/metrics"):
+                    bus.metrics.record(status, duration)
+                bus.request_log({
+                    "level": "error" if status >= 500 else "info", "service": "agents",
+                    "correlationId": getattr(self, "_correlation", ""), "method": self.command,
+                    "path": path, "status": status, "durationMs": round(duration, 2),
+                })
                 self.send_response(status)
+                self.send_header("x-correlation-id", getattr(self, "_correlation", ""))
                 self.send_header("content-type", "application/json; charset=utf-8")
                 self.send_header("content-length", str(len(data)))
                 self.end_headers()
@@ -81,16 +103,20 @@ class HttpEventBus(InMemoryEventBus):
                     close()
 
             def do_GET(self) -> None:
+                self._observe()
                 if bus.analytics is not None and urlsplit(self.path).path.startswith("/analyse"):
                     self._analytics()
                 elif self.path == "/health":
-                    self._send(200, {"status": "ok"})
+                    self._send(200, {"status": "ok", "service": "agents"})
+                elif self.path == "/metrics":
+                    self._send(200, bus.metrics.snapshot())
                 elif self.path == "/issues":
                     self._send(200, [i.to_json() for i in bus.registry.issues])
                 else:
                     self._send(404, {"error": "not found"})
 
             def do_POST(self) -> None:
+                self._observe()
                 if self.path != "/events":
                     self._send(404, {"error": "not found"})
                     return

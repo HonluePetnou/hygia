@@ -122,6 +122,27 @@ class RegistryTest(unittest.TestCase):
 
 
 class HttpBusTest(unittest.TestCase):
+    def test_health_metrics_et_correlation_id(self):
+        lines = []
+        server = HttpEventBus(lambda bus: default_registry(bus), port=0, request_log=lines.append)
+        thread = threading.Thread(target=server.serve_forever, daemon=True)
+        thread.start()
+        try:
+            base = f"http://127.0.0.1:{server.port}"
+            req = urllib.request.Request(f"{base}/issues", headers={"x-correlation-id": "corr-7"})
+            with urllib.request.urlopen(req) as res:
+                self.assertEqual(res.headers["x-correlation-id"], "corr-7")
+            with urllib.request.urlopen(f"{base}/health") as res:
+                self.assertEqual(json.load(res), {"status": "ok", "service": "agents"})
+            with urllib.request.urlopen(f"{base}/metrics") as res:
+                metrics = json.load(res)
+            self.assertEqual((metrics["service"], metrics["requests"], metrics["errors"]), ("agents", 1, 0))
+            self.assertIn("p95Ms", metrics["latency"])
+            self.assertEqual(lines[0]["correlationId"], "corr-7")
+            self.assertEqual(lines[0]["path"], "/issues")
+        finally:
+            server.shutdown()
+
     def test_post_events_renvoie_les_alertes(self):
         server = HttpEventBus(lambda bus: default_registry(bus), port=0)
         thread = threading.Thread(target=server.serve_forever, daemon=True)

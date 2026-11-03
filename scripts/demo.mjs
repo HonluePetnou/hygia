@@ -36,10 +36,24 @@ if (dockerAvailable()) {
   env.NEXT_PUBLIC_DEMO_OFFLINE = '1';
 }
 
+// `DEMO_TWO_INSTANCES=1` : deuxième instance d'ia-clinique (port 3013, zone b) pour les expériences de
+// pannes de `/supervision` (couper la zone a, le broker bascule sur la zone b). Les autres services
+// gardent leur état en mémoire : une seule instance chacun.
+const twoInstances = process.env.DEMO_TWO_INSTANCES === '1' && env.NEXT_PUBLIC_DEMO_OFFLINE !== '1';
+if (twoInstances && process.env.BROKER_SERVICE_IA_CLINIQUE_URL === undefined) {
+  env.BROKER_SERVICE_IA_CLINIQUE_URL = 'a=http://localhost:3003,b=http://localhost:3013';
+}
+
 const filters = ['identite', 'dossiers', 'ia-clinique', '@hygia/audit', 'broker', 'web'];
 const children = filters.map((name) =>
   spawn('pnpm', ['--filter', name, 'dev'], { stdio: 'inherit', env }),
 );
+
+if (twoInstances) {
+  children.push(
+    spawn('pnpm', ['--filter', 'ia-clinique', 'dev'], { stdio: 'inherit', env: { ...env, IA_CLINIQUE_PORT: '3013' } }),
+  );
+}
 
 console.log(`\n  HYGIA est en cours de démarrage (quelques secondes).`);
 console.log(`  URL à ouvrir : ${WEB_URL}`);

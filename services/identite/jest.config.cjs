@@ -13,6 +13,7 @@ module.exports = {
   moduleNameMapper: {
     '^@hygia/auth$': '<rootDir>/../../packages/auth/src/index.ts',
     '^@hygia/fhir$': '<rootDir>/../../packages/fhir/src/index.ts',
+    '^@hygia/observability$': '<rootDir>/../../packages/observability/src/index.ts',
     '^@hygia/types$': '<rootDir>/../../packages/types/src/index.ts',
     '^(\\.{1,2}/.*)\\.js$': '$1',
   },
