@@ -106,6 +106,25 @@ pnpm dev                 # lance les applications et services
 
 Vérifier LocalStack : `curl http://localhost:4566/_localstack/health`.
 
+## Lancer la démo
+
+Prérequis : Node 22+ et pnpm 10+ (Docker est facultatif).
+
+```bash
+pnpm install
+pnpm demo
+```
+
+`pnpm demo` lance `docker compose up -d` si Docker est disponible, sinon bascule en mode hors ligne
+(`NEXT_PUBLIC_DEMO_OFFLINE=1`, données en mémoire). Il démarre ensuite les services `dossiers` (port 3001),
+`ia-clinique` (port 3003) et le web, puis affiche l'URL à ouvrir : **http://localhost:3100**, et le
+**code 2FA de démo : `481516`**. Ctrl+C arrête tout. `DEMO_NO_DOCKER=1 pnpm demo` force le mode hors ligne.
+
+Le scénario pas à pas est décrit dans [`docs/demo.md`](docs/demo.md).
+
+`pnpm package:usb` produit `dist-usb/` (cahier des charges, archive du code, `OUTILS.md`, `demo.md`) ;
+l'archive contient les fichiers commités du dépôt.
+
 ## Exigences (MoSCoW)
 
 28 exigences, détaillées en section 3 du cahier.
