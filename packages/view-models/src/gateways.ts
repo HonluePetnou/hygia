@@ -1,5 +1,6 @@
 import type { Locale } from '@hygia/i18n';
 import type { SearchResponse } from '@hygia/fhir';
+import type { AlertDecisionKind, AlertDetailData, AlertItem, AlertTab } from './alert-types.js';
 import type {
   AuthSession,
   LoginChallenge,
@@ -51,6 +52,12 @@ export interface PatientsGateway {
   mergePatients(keptId: string, mergedId: string, request: MergeRequest): Promise<MergeOutcome>;
   /** Annule une fusion. */
   undoMerge(mergeId: string): Promise<MergeOutcome>;
+  /** Alertes des agents (toutes, ou celles d'un onglet), de la plus récente à la plus ancienne. */
+  alerts(tab?: AlertTab): Promise<AlertItem[]>;
+  /** Détail d'une alerte et précision de son agent. */
+  alert(alertId: string): Promise<AlertDetailData>;
+  /** Enregistre la décision du soignant (justification obligatoire en cas de rejet) ; ne modifie jamais le dossier. */
+  decideAlert(alertId: string, decision: AlertDecisionKind, justification?: string): Promise<AlertDetailData>;
 }
 
 /** Accès au copilote IA. */

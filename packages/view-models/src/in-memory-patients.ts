@@ -1,7 +1,9 @@
 import { RuleBasedQueryInterpreter, runSearch, type PatientFile, type SearchResponse } from '@hygia/fhir';
 import type { Locale } from '@hygia/i18n';
 import { createTranslator } from '@hygia/i18n';
+import type { AlertDecisionKind, AlertDetailData, AlertItem, AlertTab } from './alert-types.js';
 import type { PatientsGateway } from './gateways.js';
+import { InMemoryAlerts } from './in-memory-alerts.js';
 import { GatewayError } from './http-client.js';
 import { InMemoryDuplicates, toSummary } from './in-memory-duplicates.js';
 import { InMemoryKnowledge, type Dataset } from './in-memory-knowledge.js';
@@ -37,6 +39,7 @@ export class InMemoryPatientsGateway implements PatientsGateway {
   private readonly knowledge: InMemoryKnowledge;
   private readonly granted = new Set<string>();
   private readonly duplicateStore = new InMemoryDuplicates(() => this.dataset.patients);
+  private readonly alertStore: InMemoryAlerts;
 
   /**
    * @param dataset Jeu de données (en pratique `demoDataset` de `@hygia/fhir`).
@@ -50,6 +53,7 @@ export class InMemoryPatientsGateway implements PatientsGateway {
     private readonly identity?: () => Identity,
   ) {
     this.knowledge = new InMemoryKnowledge(dataset);
+    this.alertStore = new InMemoryAlerts(dataset.patients);
   }
 
   dashboard(): Promise<DashboardData> {
@@ -186,6 +190,18 @@ export class InMemoryPatientsGateway implements PatientsGateway {
 
   undoMerge(mergeId: string): Promise<MergeOutcome> {
     return this.attempt(() => this.duplicateStore.undo(mergeId));
+  }
+
+  alerts(tab?: AlertTab): Promise<AlertItem[]> {
+    return this.attempt(() => this.alertStore.list(tab));
+  }
+
+  alert(alertId: string): Promise<AlertDetailData> {
+    return this.attempt(() => this.alertStore.get(alertId));
+  }
+
+  decideAlert(alertId: string, decision: AlertDecisionKind, justification?: string): Promise<AlertDetailData> {
+    return this.attempt(() => this.alertStore.decide(alertId, decision, justification));
   }
 
   private attempt<T>(action: () => T): Promise<T> {

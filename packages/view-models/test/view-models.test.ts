@@ -54,11 +54,12 @@ describe('DashboardViewModel', () => {
     await dashboard.load();
     expect(dashboard.state).toBe('ready');
     expect(dashboard.consultations).toHaveLength(1);
-    expect(dashboard.indicators.map((i) => i.value)).toEqual([1, 2, 2, 3]);
+    expect(dashboard.indicators.map((i) => i.value)).toEqual([1, 4, 2, 3]);
     expect(dashboard.consultations[0]).toMatchObject({ status: 'alert', time: '09:00' });
     expect(dashboard.documents).toHaveLength(3);
     expect(dashboard.week).toHaveLength(7);
-    expect(dashboard.alerts.some((a) => a.text.includes('Warfarine et Ibuprofène'))).toBe(true);
+    expect(dashboard.alerts).toHaveLength(4);
+    expect(dashboard.alerts.some((a) => a.text.includes('warfarine × ibuprofène'))).toBe(true);
   });
 
   it('passe en erreur si la passerelle échoue', async () => {

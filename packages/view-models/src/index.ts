@@ -1,4 +1,8 @@
 export type * from './types.js';
+export type * from './alert-types.js';
+export { AlertsViewModel, ALERT_TABS } from './alerts-view-model.js';
+export type { AlertRow, AlertDetailView } from './alerts-view-model.js';
+export { OpenAlertsViewModel } from './open-alerts-view-model.js';
 export type { PatientsGateway, CopiloteGateway, IngestionGateway, AuthGateway } from './gateways.js';
 export { HttpAuthGateway } from './http-auth-gateway.js';
 export { InMemoryAuthGateway } from './in-memory-auth-gateway.js';

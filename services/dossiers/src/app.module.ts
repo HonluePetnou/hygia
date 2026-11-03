@@ -3,6 +3,11 @@ import { remoteVerifier } from '@hygia/auth';
 import { AuditLog, InMemoryAuditStore } from '@hygia/audit';
 import { RuleBasedQueryInterpreter, demoDataset } from '@hygia/fhir';
 import { AccessPolicy } from './access/access-policy.js';
+import { InMemoryAlertEventPublisher, ALERT_EVENTS } from './alertes/alert-events.js';
+import { ALERT_REPOSITORY, InMemoryAlertRepository } from './alertes/alert-repository.js';
+import { AlertesController } from './alertes/alertes.controller.js';
+import { AlertesService } from './alertes/alertes.service.js';
+import { demoAlerts } from './alertes/demo-alerts.js';
 import { CLOCK, SystemClock, type Clock } from './access/clock.js';
 import { JwtAuthGuard, TOKEN_VERIFIER } from './auth/jwt-auth.guard.js';
 import { loadEnv } from './config/env.js';
@@ -25,8 +30,18 @@ import { VersionsService } from './versions/versions.service.js';
 
 /** Module racine : dépôt et audit en mémoire (remplaçables par Prisma / DynamoDB). */
 @Module({
-  controllers: [PatientsController, VersionsController, DocumentsController, DoublonsController, RechercheController],
+  controllers: [
+    PatientsController,
+    VersionsController,
+    DocumentsController,
+    DoublonsController,
+    RechercheController,
+    AlertesController,
+  ],
   providers: [
+    AlertesService,
+    { provide: ALERT_REPOSITORY, useFactory: () => new InMemoryAlertRepository(demoAlerts()) },
+    { provide: ALERT_EVENTS, useFactory: () => new InMemoryAlertEventPublisher() },
     PatientsService,
     DocumentsService,
     DuplicatesService,

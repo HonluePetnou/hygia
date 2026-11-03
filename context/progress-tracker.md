@@ -4,7 +4,7 @@ _Dernière mise à jour : 2026-11-03_
 
 ## État actuel
 
-Monorepo initialisé ; tâches 001, 002, 003 (`@hygia/audit`) et 004 (service `dossiers`) 005 (`@hygia/ingestion`) et 006 (`ia-clinique`) et 007 (`view-models`) et 013 (service Identité) et 014 (historique des versions) et 015 (doublons et fusion) et 016 (recherche en langage naturel) terminées.
+Monorepo initialisé ; tâches 001, 002, 003 (`@hygia/audit`) et 004 (service `dossiers`) 005 (`@hygia/ingestion`) et 006 (`ia-clinique`) et 007 (`view-models`) et 013 (service Identité) et 014 (historique des versions) et 015 (doublons et fusion) et 016 (recherche en langage naturel) et 017 (agents) et 018 (alertes IA) terminées.
 
 ## Fait
 
@@ -33,6 +33,7 @@ Monorepo initialisé ; tâches 001, 002, 003 (`@hygia/audit`) et 004 (service `d
 - [x] 015 — doublons d'identité : score documenté (`services/dossiers/src/doublons/similarity.ts`, seuil `DOSSIERS_SEUIL_DOUBLONS`, défaut 0,85), `GET /doublons`, `POST /doublons/:id/ignorer`, `POST /patients/:a/fusion/:b`, `POST /fusions/:id/annuler` (audités) ; dataset : 9e patient « BASSA NGO Florence » (≈ 98 %) ; web : bandeaux sur `/patients`, écran `/patients/doublons/[id]`. Paires ignorées et fusions en mémoire du service ; non testé au navigateur.
 - [x] 016 — `POST /recherche` (requête libre fr/en → filtres via `QueryInterpreter` à règles dans `@hygia/fhir`, ou filtres fournis), audité ; web : `/patients` avec badge « Langage naturel », puces supprimables, tableau et pagination, barre supérieure → `/patients?q=`. Aucun patient diabétique dans le jeu fictif ; « + Filtre » et export CSV non faits ; non testé au navigateur.
 - [x] 017 — `services/agents` (Python, stdlib) : bus mémoire + HTTP (`POST /events`), registre d'agents, pharmacovigilance, qualité, tri ; alertes expliquées au format `DetectedIssue`. Non branché à `pnpm demo`, les services ne publient pas encore d'événements.
+- [x] 018 — alertes IA : `GET /alertes?statut=`, `GET /alertes/:id`, `GET /alertes/precision`, `POST /alertes/:id/decision` (rejet sans justification refusé, audité, « notifier » publie `alerte.notification`), `POST /alertes` (dépôt par un agent, rôle `admin`) ; précision par agent sur 30 jours ; web `/alertes`, pastille de la barre latérale et carte du tableau de bord sur les alertes ouvertes. Diffuseur d'événements en mémoire (pas de consommateur Notification), agents Python pas encore branchés sur `POST /alertes`, 4 alertes de démo toutes sur Florence, non testé au navigateur.
 - [ ] Tâches suivantes dans `tasks/todo/`
 
 ## Décisions / blocages

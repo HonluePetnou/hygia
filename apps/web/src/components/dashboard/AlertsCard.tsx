@@ -20,7 +20,7 @@ export const AlertsCard = observer(function AlertsCard({ alerts }: { alerts: Das
         {alerts.map((alert) => (
           <li key={alert.id} className={`alert-item severity-${alert.severity}`}>
             <span className="muted">{alert.severityLabel}</span>
-            <Link href={`/patients/${alert.patientId}`}>{alert.text}</Link>
+            <Link href="/alertes">{alert.text}</Link>
           </li>
         ))}
       </ul>

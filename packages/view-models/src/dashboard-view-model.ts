@@ -1,4 +1,5 @@
 import { makeAutoObservable, runInAction } from 'mobx';
+import type { AlertItem } from './alert-types.js';
 import type { PatientsGateway } from './gateways.js';
 import type { LoadState } from './load-state.js';
 import type {
@@ -61,6 +62,8 @@ const pad = (n: number): string => String(n).padStart(2, '0');
 export class DashboardViewModel {
   state: LoadState = 'idle';
   data: DashboardData | null = null;
+  /** Alertes IA ouvertes du service Dossiers (source de la carte et du compteur). */
+  openAlerts: AlertItem[] = [];
 
   constructor(
     private readonly gateway: PatientsGateway,
@@ -77,9 +80,13 @@ export class DashboardViewModel {
   async load(): Promise<void> {
     this.state = 'loading';
     try {
-      const data = await this.gateway.dashboard();
+      const [data, openAlerts] = await Promise.all([
+        this.gateway.dashboard(),
+        this.gateway.alerts('ouvertes').catch((): AlertItem[] => []),
+      ]);
       runInAction(() => {
         this.data = data;
+        this.openAlerts = openAlerts;
         this.state = 'ready';
       });
     } catch {
@@ -132,12 +139,12 @@ export class DashboardViewModel {
   }
 
   get alerts(): DashboardAlert[] {
-    return (this.data?.alerts ?? []).map((a) => ({
+    return this.openAlerts.map((a) => ({
       id: a.id,
       patientId: a.patientId,
       severity: a.severity,
       severityLabel: this.i18n.t(`dashboard.severity.${a.severity}`),
-      text: this.i18n.t(`summary.alert.${a.kind}`, a.params),
+      text: a.title,
     }));
   }
 

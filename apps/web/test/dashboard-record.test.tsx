@@ -44,7 +44,7 @@ describe('tableau de bord', () => {
     ]) {
       expect(screen.getByText(label)).toBeVisible();
     }
-    expect(within(screen.getByTestId('indicator-pendingAlerts')).getByText('2')).toBeVisible();
+    expect(within(screen.getByTestId('indicator-pendingAlerts')).getByText('4')).toBeVisible();
 
     const table = screen.getByRole('table');
     expect(within(table).getByText('Florence Ngo Bassa')).toBeVisible();

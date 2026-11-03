@@ -13,9 +13,13 @@ import {
   Users,
   type LucideIcon,
 } from 'lucide-react';
+import { useEffect } from 'react';
 import { observer } from 'mobx-react-lite';
+import { OpenAlertsViewModel } from '@hygia/view-models';
 import { Avatar } from '@/components/ui';
+import { useGateway } from '@/lib/gateway-context';
 import { useSession } from '@/lib/session-context';
+import { useViewModel } from '@/lib/use-view-model';
 
 interface NavItem {
   href: string;
@@ -52,6 +56,15 @@ const SECTIONS: readonly NavSection[] = [
 export const Sidebar = observer(function Sidebar() {
   const { t, email, roleLabel } = useSession();
   const pathname = usePathname();
+  const gateway = useGateway();
+  const openAlerts = useViewModel(
+    () => new OpenAlertsViewModel(gateway),
+    (model) => void model.refresh(),
+  );
+  // Le compteur est relu à chaque changement de page (une décision change le nombre d'alertes ouvertes).
+  useEffect(() => {
+    void openAlerts.refresh();
+  }, [pathname]);
   const isActive = (href: string) =>
     href === '/' ? pathname === '/' : pathname === href || pathname.startsWith(`${href}/`);
 
@@ -78,6 +91,15 @@ export const Sidebar = observer(function Sidebar() {
                   >
                     <Icon size={18} strokeWidth={1.75} aria-hidden="true" />
                     {t(labelKey)}
+                    {href === '/alertes' && openAlerts.count > 0 ? (
+                      <span
+                        className="nav-count"
+                        aria-label={t('alerts.tab.open', { count: openAlerts.count })}
+                        data-testid="nav-alerts-count"
+                      >
+                        {openAlerts.count}
+                      </span>
+                    ) : null}
                   </Link>
                 </li>
               ))}

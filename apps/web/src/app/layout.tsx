@@ -5,6 +5,7 @@ import { SessionProvider } from '@/lib/session-context';
 import './globals.css';
 import './screens.css';
 import './copilot-import.css';
+import './alertes.css';
 
 const jakarta = Plus_Jakarta_Sans({
   subsets: ['latin'],

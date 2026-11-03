@@ -1,5 +1,6 @@
 import type { SearchResponse } from '@hygia/fhir';
 import type { Locale } from '@hygia/i18n';
+import type { AlertDecisionKind, AlertDetailData, AlertItem, AlertTab } from './alert-types.js';
 import type { CopiloteGateway, IngestionGateway, PatientsGateway } from './gateways.js';
 import { GatewayError, HttpClient, authHeaders } from './http-client.js';
 import { readSse } from './sse-reader.js';
@@ -117,6 +118,21 @@ export class HttpPatientsGateway implements PatientsGateway {
 
   undoMerge(mergeId: string): Promise<MergeOutcome> {
     return this.dossiers.post(`/fusions/${encodeURIComponent(mergeId)}/annuler`, {});
+  }
+
+  alerts(tab?: AlertTab): Promise<AlertItem[]> {
+    return this.dossiers.get(tab === undefined ? '/alertes' : `/alertes?statut=${tab}`);
+  }
+
+  alert(alertId: string): Promise<AlertDetailData> {
+    return this.dossiers.get(`/alertes/${encodeURIComponent(alertId)}`);
+  }
+
+  decideAlert(alertId: string, decision: AlertDecisionKind, justification?: string): Promise<AlertDetailData> {
+    return this.dossiers.post(`/alertes/${encodeURIComponent(alertId)}/decision`, {
+      decision,
+      ...(justification === undefined ? {} : { justification }),
+    });
   }
 }
 
