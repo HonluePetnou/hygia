@@ -1,0 +1,11 @@
+{
+  "name": "@hygia/agents",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "build": "python3 -m compileall -q src",
+    "lint": "python3 -m compileall -q src",
+    "typecheck": "python3 -m compileall -q src tests",
+    "test": "python3 -m unittest discover -s tests"
+  }
+}
