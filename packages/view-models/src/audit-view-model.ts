@@ -1,4 +1,5 @@
 import { makeAutoObservable, runInAction } from 'mobx';
+import { localParts } from '@hygia/i18n';
 import type { Role } from '@hygia/types';
 import type { AuditGateway } from './audit-gateway.js';
 import {
@@ -66,11 +67,11 @@ export function abbreviateHash(hash: string): string {
   return hash.length <= 8 ? hash : `${hash.slice(0, 4)}…${hash.slice(-3)}`;
 }
 
-/** `02/11 10:41:07` en UTC (le journal est horodaté en UTC). */
+/** `02/11 10:41:07` : journal horodaté en UTC, affiché à l'heure du Cameroun. */
 function formatStamp(iso: string): string {
-  const d = new Date(iso);
+  const d = localParts(iso);
   const p = (n: number) => String(n).padStart(2, '0');
-  return `${p(d.getUTCDate())}/${p(d.getUTCMonth() + 1)} ${p(d.getUTCHours())}:${p(d.getUTCMinutes())}:${p(d.getUTCSeconds())}`;
+  return `${p(d.day)}/${p(d.month)} ${p(d.hours)}:${p(d.minutes)}:${p(d.seconds)}`;
 }
 
 /** Écran « Journal d'audit » (maquette 09) : indicateurs, chaînage, filtres, tableau paginé, export. */
@@ -159,8 +160,8 @@ export class AuditViewModel {
     const summary = this.summary;
     if (summary === null || summary.verifiedAt === undefined) return t('audit.chain.unknown');
     if (!summary.chainIntact) return t('audit.chain.broken', { index: summary.brokenAt ?? 0 });
-    const d = new Date(summary.verifiedAt);
-    const time = `${String(d.getUTCHours()).padStart(2, '0')}:${String(d.getUTCMinutes()).padStart(2, '0')}`;
+    const d = localParts(summary.verifiedAt);
+    const time = `${String(d.hours).padStart(2, '0')}:${String(d.minutes).padStart(2, '0')}`;
     return t('audit.chain.ok', { time });
   }
 

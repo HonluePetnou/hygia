@@ -23,13 +23,13 @@ export function demoAlerts(): AlertRecord[] {
       title: 'Interaction majeure : warfarine × ibuprofène — risque hémorragique',
       reasoning: steps([
         'Nouvelle prescription reçue : ibuprofène 400 mg × 3/j, 5 jours (photo WhatsApp, 28/10).',
-        'Traitement actif trouvé dans le dossier : warfarine 5 mg/j depuis 2021, INR cible 2–3.',
+        'Traitement actif trouvé dans le dossier : warfarine 5 mg/j depuis mai 2022, INR cible 2–3.',
         'Règle d’interaction appliquée : AINS + antivitamine K, majoration du risque hémorragique.',
         'Contexte patient pris en compte : 71 ans, dernier INR à 2,8 : gravité relevée à « critique ».',
       ]),
       sources: [
         source(1, 'Ordonnance WhatsApp · 28/10', 'Ibuprofène 400 mg : 1 cp × 3/j pendant 5 jours'),
-        source(2, 'CR cardio · 12/09', 'Warfarine 5 mg/j, INR cible 2–3'),
+        source(2, 'CR cardio · 15/01', 'Warfarine 5 mg/j, INR cible 2–3'),
         source(3, 'Bilan INR · 14/10', 'INR 2,8'),
       ],
       proposal:

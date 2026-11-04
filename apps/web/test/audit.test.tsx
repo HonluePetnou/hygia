@@ -27,7 +27,7 @@ describe('écran Journal d’audit', () => {
   it('affiche le badge, les indicateurs, le chaînage et le tableau', async () => {
     setup();
     expect(await screen.findByRole('heading', { level: 1, name: 'Journal d’audit' })).toBeVisible();
-    expect(screen.getByRole('status')).toHaveTextContent('Chaîne intègre · vérifiée à 03:00');
+    expect(screen.getByRole('status')).toHaveTextContent('Chaîne intègre · vérifiée à 04:00');
     expect(screen.getByTestId('audit-events')).toHaveTextContent('7');
     expect(screen.getByTestId('audit-breakGlass')).toHaveTextContent('1');
     expect(screen.getByTestId('audit-breaks')).toHaveTextContent('0');
