@@ -39,6 +39,12 @@ const env = {
   BROKER_SERVICE_SYNCHRONISATION_URL:
     process.env.BROKER_SERVICE_SYNCHRONISATION_URL ?? 'http://localhost:3009',
   NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3000',
+  // Journal d'audit réparti : Dossiers transmet chaque accès au service Audit (route interne à clé),
+  // qui alimente `/audit` (DPO) et « Qui a vu mon dossier ? » (portail). Clé de démonstration.
+  AUDIT_URL: process.env.AUDIT_URL ?? 'http://localhost:3005',
+  AUDIT_INTERNAL_KEY: process.env.AUDIT_INTERNAL_KEY ?? 'demo-audit-key',
+  // Journal vide au démarrage : il se remplit des accès réels de la démo (pas d'entrées fictives).
+  AUDIT_SEED: process.env.AUDIT_SEED ?? '0',
   // Jour des données fictives (consultation de Florence), le même que `DEMO_TODAY` du web.
   DOSSIERS_DATE_DEMO: process.env.DOSSIERS_DATE_DEMO ?? '2026-10-28',
 };

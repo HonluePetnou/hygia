@@ -64,11 +64,10 @@ et la carte épidémiologique et le risque de réadmission sont indisponibles.
 9. **Carte épidémiologique** : se reconnecter avec le compte analyste, ouvrir `/epidemiologie`. La carte du Cameroun montre
    les cas par district et le foyer simulé ; la veille est calculée par l'instance élue (bail de coordinateur).
 10. **Qui a vu mon dossier ?** : se reconnecter avec Florence, ouvrir `/portail`. L'historique des accès montre la consultation
-    de Dr Nana et un bris de glace ; les consentements se gèrent depuis le même écran.
-    **Limite connue** : le portail et `/audit` lisent le journal du service Audit, qui contient les 5 entrées fictives
-    créées à son démarrage ; Dossiers tient son propre journal chaîné (accès réels de la démo, dont le bris de glace de
-    Dr Kamga, visibles dans l'onglet « Accès au dossier » du dossier, compte de l'équipe) et ne le transmet pas encore au
-    service Audit (route `POST /internal/events` prévue, non branchée).
+    de Dr Nana et le bris de glace de Dr Kamga (avec son motif) ; les consentements se gèrent depuis le même écran.
+    Ce sont les accès réels de la démo : Dossiers garde son propre journal chaîné (identifiants des acteurs) et transmet
+    chaque entrée au service Audit (`POST /internal/events`, clé `AUDIT_INTERNAL_KEY`), avec le nom de l'acteur et un
+    motif lisible. Le journal d'Audit démarre vide (`AUDIT_SEED=0` dans `pnpm demo`) : faire les étapes 3 à 8 avant.
 11. **Journal d'audit** : se reconnecter avec le compte DPO, ouvrir `/audit`. Chaque entrée porte l'acteur, l'action, le motif,
     une estampille de Lamport et le hachage de l'entrée précédente ; la vérification de la chaîne est affichée.
 12. **Supervision et pannes** : se reconnecter avec le compte administrateur, ouvrir `/supervision`. Pour montrer la bascule

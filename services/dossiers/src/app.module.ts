@@ -11,8 +11,9 @@ import { AlertesService } from './alertes/alertes.service.js';
 import { demoAlerts } from './alertes/demo-alerts.js';
 import { CLOCK, SystemClock, type Clock } from './access/clock.js';
 import { JwtAuthGuard, TOKEN_VERIFIER } from './auth/jwt-auth.guard.js';
-import { loadEnv } from './config/env.js';
+import { loadEnv, type Env } from './config/env.js';
 import { ENV } from './config/env-token.js';
+import { ForwardingAuditStore } from './audit/forwarding-audit-store.js';
 import { ConsentsController, InternalConsentsController } from './consents/consents.controller.js';
 import { CONSENT_REPOSITORY, InMemoryConsentRepository } from './consents/consent-repository.js';
 import { ConsentsService } from './consents/consents.service.js';
@@ -88,7 +89,24 @@ import { TableauDeBordController } from './tableau-de-bord/tableau-de-bord.contr
     { provide: TOKEN_VERIFIER, useFactory: () => remoteVerifier(loadEnv().jwksUrl) },
     { provide: CLOCK, useClass: SystemClock },
     { provide: PATIENT_REPOSITORY, useFactory: () => new InMemoryPatientRepository(demoDataset) },
-    { provide: AUDIT_LOG, useFactory: () => new AuditLog(new InMemoryAuditStore()) },
+    {
+      provide: AUDIT_LOG,
+      useFactory: (env: Env) => {
+        if (env.audit === undefined) return new AuditLog(new InMemoryAuditStore());
+        // Noms des acteurs connus de Dossiers (praticiens, patients) pour le journal du service Audit.
+        const names = new Map<string, string>([
+          ...demoDataset.practitioners.map((p): [string, string] => [p.id, p.name]),
+          ...demoDataset.patients.map((p): [string, string] => [
+            p.id,
+            `${p.givenName} ${p.familyName}`,
+          ]),
+        ]);
+        return new AuditLog(
+          new ForwardingAuditStore({ ...env.audit, resolveActor: (id) => names.get(id) }),
+        );
+      },
+      inject: [ENV],
+    },
   ],
 })
 export class AppModule implements NestModule {

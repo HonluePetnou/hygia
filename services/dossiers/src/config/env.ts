@@ -15,6 +15,11 @@ export interface Env {
    * données fictives pendant la démonstration ; absent, c'est la date du jour.
    */
   dashboardDate?: string;
+  /**
+   * Transmission du journal au service Audit (`AUDIT_URL` + `AUDIT_INTERNAL_KEY`) ; absente, le
+   * journal reste local à Dossiers (tests, mode isolé).
+   */
+  audit?: { url: string; key: string };
 }
 
 const DEFAULT_AGENTS_URL = 'http://localhost:3007';
@@ -48,12 +53,21 @@ export function loadEnv(source: Record<string, string | undefined> = process.env
   if (dashboardDate !== undefined && !/^\d{4}-\d{2}-\d{2}$/.test(dashboardDate)) {
     throw new Error(`DOSSIERS_DATE_DEMO invalide : « ${dashboardDate} » (AAAA-MM-JJ attendu)`);
   }
+  const auditUrl = source['AUDIT_URL'] || undefined;
+  const auditKey = source['AUDIT_INTERNAL_KEY'] || undefined;
+  if (auditUrl !== undefined && !URL.canParse(auditUrl)) {
+    throw new Error(`AUDIT_URL invalide : « ${auditUrl} » (URL absolue attendue)`);
+  }
+  if (auditUrl !== undefined && auditKey === undefined) {
+    throw new Error('AUDIT_URL fournie sans AUDIT_INTERNAL_KEY (clé des écritures internes)');
+  }
   const base = {
     jwksUrl,
     duplicateThreshold,
     agentsUrl,
     internalKey,
     ...(dashboardDate ? { dashboardDate } : {}),
+    ...(auditUrl && auditKey ? { audit: { url: auditUrl.replace(/\/$/, ''), key: auditKey } } : {}),
   };
   const raw = source['DOSSIERS_PORT'];
   if (raw === undefined || raw === '') return { port: 3001, ...base };

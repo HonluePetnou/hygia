@@ -62,7 +62,8 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-/i;
 const initialsOf = (name: string) =>
   name
     .split(/[\s.-]+/)
-    .filter(Boolean)
+    // Les titres (« Dr Paul Kamga ») ne comptent pas : PK, pas DP.
+    .filter((word) => word !== '' && !/^(dr|pr)$/i.test(word))
     .slice(0, 2)
     .map((w) => w[0]?.toUpperCase() ?? '')
     .join('');
