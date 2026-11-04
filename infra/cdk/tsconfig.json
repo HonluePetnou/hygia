@@ -1,0 +1,12 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "outDir": "dist",
+    "rootDir": ".",
+    "noEmit": true,
+    "types": ["node"],
+    // Les types d'aws-cdk-lib ne sont pas écrits pour cette option (Vpc → IVpc refusé).
+    "exactOptionalPropertyTypes": false
+  },
+  "include": ["bin", "lib", "test"]
+}
