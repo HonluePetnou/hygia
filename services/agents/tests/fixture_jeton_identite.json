@@ -1,0 +1,17 @@
+{
+  "jwks": {
+    "keys": [
+      {
+        "kty": "EC",
+        "x": "_PGCrQpCQjIWWq5Jv24F4GsHQ02tuqViLou2Gj2nc2c",
+        "y": "FIxaOTsTyQsqyOO-TP5OvNj_OE06jxwx7KjJcqbGFRs",
+        "crv": "P-256",
+        "kid": "hygia-identite-1",
+        "alg": "ES256",
+        "use": "sig"
+      }
+    ]
+  },
+  "token": "eyJhbGciOiJFUzI1NiIsImtpZCI6Imh5Z2lhLWlkZW50aXRlLTEifQ.eyJyb2xlIjoiYW5hbHlzdGUiLCJ0ZWFtcyI6W10sImVtZXJnZW5jeSI6W10sInN1YiI6IjAwMDAwMDAwLTAwMDAtNDAwMC04MDAwLTAyMDAwMDAwMDAwMSIsImlhdCI6MTc5Mzg2OTIwMCwiZXhwIjoxNzkzODcxMDAwfQ.LDuSe0iMuc_cCAGjBHhBPc3pL0PaVKiqi7VELhL7y7iFBFRntkFaMHjPIese4PzdRae6WqYWw2OfOCPjDGORbg",
+  "now": 1793869200
+}
