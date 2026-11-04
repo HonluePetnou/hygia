@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, type ReactNode } from 'react';
+import { useEffect, useRef, type ReactNode } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { observer } from 'mobx-react-lite';
 import { useSession } from '@/lib/session-context';
@@ -38,9 +38,22 @@ export const AppShell = observer(function AppShell({ children }: { children: Rea
           ? '/administration'
           : null;
 
+  // Une session a-t-elle existé dans cette page ? Si oui, son absence vient d'une déconnexion.
+  const hadSession = useRef(session.isAuthenticated);
+  if (session.isAuthenticated) hadSession.current = true;
+
   useEffect(() => {
-    if (!session.isAuthenticated) router.replace('/connexion');
-  }, [session.isAuthenticated, router]);
+    // La session vit dans la page : un lien direct (ou un rechargement) passe par la connexion, qui
+    // ramène ensuite à la page demandée (`suite`). Après une déconnexion, le compte suivant ne doit
+    // pas atterrir sur la page du précédent : retour simple à la connexion.
+    if (!session.isAuthenticated) {
+      router.replace(
+        hadSession.current || pathname === '/'
+          ? '/connexion'
+          : `/connexion?suite=${encodeURIComponent(pathname)}`,
+      );
+    }
+  }, [session.isAuthenticated, pathname, router]);
 
   useEffect(() => {
     if (session.isAuthenticated && redirectTo !== null) router.replace(redirectTo);

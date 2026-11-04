@@ -12,6 +12,14 @@ import { CodeForm } from './CodeForm';
 import { CredentialsForm } from './CredentialsForm';
 import { Stepper } from './Stepper';
 
+/** Page demandée avant la connexion (`?suite=`), seulement si elle est interne au site. */
+function nextPage(): string {
+  const suite = new URLSearchParams(window.location.search).get('suite');
+  return suite !== null && suite.startsWith('/') && !suite.startsWith('//') && !suite.startsWith('/\\')
+    ? suite
+    : '/';
+}
+
 /** Écran de connexion en deux colonnes : marque à gauche, deux étapes à droite. */
 export const LoginScreen = observer(function LoginScreen() {
   const session = useSession();
@@ -19,7 +27,7 @@ export const LoginScreen = observer(function LoginScreen() {
   const { t } = session;
 
   useEffect(() => {
-    if (session.isAuthenticated) router.replace('/');
+    if (session.isAuthenticated) router.replace(nextPage());
   }, [session.isAuthenticated, router]);
 
   return (
