@@ -26,7 +26,9 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="fr" className={jakarta.variable}>
+    // Des extensions de navigateur ajoutent des attributs à <html> avant l'hydratation
+    // (« webcrx »…) : on ignore ces seuls écarts d'attributs, sans masquer ceux des enfants.
+    <html lang="fr" className={jakarta.variable} suppressHydrationWarning>
       <body>
         <SessionProvider>{children}</SessionProvider>
       </body>
