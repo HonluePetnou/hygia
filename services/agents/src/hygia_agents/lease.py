@@ -111,9 +111,7 @@ class DynamoDbLeaseStore(LeaseStore):
 
 
 def localstack_lease_store(endpoint: str = "http://localhost:4566") -> DynamoDbLeaseStore:
-    """Baux sur le DynamoDB de LocalStack (nécessite `boto3`, absent des tests)."""
-    import boto3  # import tardif : dépendance optionnelle
+    """Baux sur le DynamoDB de LocalStack (ou d'AWS), sans dépendance : client HTTP signé SigV4."""
+    from .dynamodb_http import DynamoDbHttpClient
 
-    client = boto3.client("dynamodb", endpoint_url=endpoint, region_name="eu-west-3",
-                          aws_access_key_id="test", aws_secret_access_key="test")
-    return DynamoDbLeaseStore(client)
+    return DynamoDbLeaseStore(DynamoDbHttpClient.from_environment(endpoint))

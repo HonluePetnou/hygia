@@ -36,6 +36,8 @@ import { RechercheController } from './recherche/recherche.controller.js';
 import { QUERY_INTERPRETER, SearchService } from './recherche/search.service.js';
 import { DOCUMENT_STORE } from './versions/document-store.js';
 import { InMemoryDocumentStore } from './versions/in-memory-document-store.js';
+import { S3ClientOperations } from './versions/s3-client-operations.js';
+import { S3DocumentStore } from './versions/s3-document-store.js';
 import { VersionsController } from './versions/versions.controller.js';
 import { VersionsService } from './versions/versions.service.js';
 import { SyntheseController } from './synthese/synthese.controller.js';
@@ -83,7 +85,15 @@ import { TableauDeBordController } from './tableau-de-bord/tableau-de-bord.contr
     MergeService,
     { provide: DUPLICATE_THRESHOLD, useFactory: () => loadEnv().duplicateThreshold },
     VersionsService,
-    { provide: DOCUMENT_STORE, useFactory: () => new InMemoryDocumentStore() },
+    {
+      provide: DOCUMENT_STORE,
+      // DOSSIERS_S3_BUCKET : versions immuables sur S3 versionné (LocalStack ou AWS).
+      useFactory: (env: Env) =>
+        env.documentsS3
+          ? new S3DocumentStore(new S3ClientOperations(env.documentsS3))
+          : new InMemoryDocumentStore(),
+      inject: [ENV],
+    },
     AccessPolicy,
     JwtAuthGuard,
     { provide: TOKEN_VERIFIER, useFactory: () => remoteVerifier(loadEnv().jwksUrl) },

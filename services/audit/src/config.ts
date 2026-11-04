@@ -10,6 +10,11 @@ export interface AuditEnv {
   tickMs: number;
   /** Charge des entrées de démonstration (`AUDIT_SEED=0` pour désactiver). */
   seed: boolean;
+  /**
+   * Journal WORM sur S3 Object Lock (`AUDIT_S3_BUCKET`, `AWS_REGION`, `AWS_ENDPOINT_URL` pour
+   * LocalStack) ; absent : journal en mémoire.
+   */
+  s3?: { bucket: string; region: string; endpoint?: string };
 }
 
 type Source = Record<string, string | undefined>;
@@ -36,5 +41,14 @@ export function loadAuditEnv(source: Source = process.env): AuditEnv {
     internalKey: source['AUDIT_INTERNAL_KEY'] || undefined,
     tickMs: integer(source, 'AUDIT_TICK_MS', 60_000, 86_400_000),
     seed: source['AUDIT_SEED'] !== '0',
+    ...(source['AUDIT_S3_BUCKET']
+      ? {
+          s3: {
+            bucket: source['AUDIT_S3_BUCKET'],
+            region: source['AWS_REGION'] || 'eu-west-3',
+            ...(source['AWS_ENDPOINT_URL'] ? { endpoint: source['AWS_ENDPOINT_URL'] } : {}),
+          },
+        }
+      : {}),
   };
 }

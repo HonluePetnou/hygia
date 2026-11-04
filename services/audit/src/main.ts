@@ -3,14 +3,25 @@ import { remoteVerifier } from '@hygia/auth';
 import { AuditApi } from './audit-api.js';
 import { AuditLog } from './audit-log.js';
 import { InMemoryAuditStore } from './audit-store.js';
+import { S3ObjectLockAuditStore } from './s3-audit-store.js';
+import { S3ClientObjectLockOperations, s3Client } from './s3-client-operations.js';
 import { ChainVerifier } from './chain-verifier.js';
 import { loadAuditEnv } from './config.js';
 import { seedDemoEntries } from './seed.js';
 
 const env = loadAuditEnv();
 const now = () => new Date();
-const log = new AuditLog(new InMemoryAuditStore(), undefined, now);
-if (env.seed) seedDemoEntries(log);
+// AUDIT_S3_BUCKET : journal WORM sur S3 Object Lock (relu au démarrage) ; sinon en mémoire.
+const store = env.s3
+  ? await S3ObjectLockAuditStore.open(
+      new S3ClientObjectLockOperations(s3Client(env.s3), env.s3.bucket),
+      now,
+    )
+  : new InMemoryAuditStore();
+const log = new AuditLog(store, undefined, now);
+if (env.s3) console.log(`[audit] journal WORM sur S3 (${env.s3.bucket}) : ${store.all().length} entrée(s)`);
+// Entrées fictives seulement sur un journal vide : jamais de doublon dans un journal durable.
+if (env.seed && store.all().length === 0) seedDemoEntries(log);
 
 const chain = new ChainVerifier(
   log,

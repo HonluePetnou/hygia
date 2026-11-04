@@ -12,11 +12,12 @@
     "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "3.1162.0",
     "@hygia/audit": "workspace:*",
     "@hygia/auth": "workspace:*",
-    "@hygia/observability": "workspace:*",
     "@hygia/fhir": "workspace:*",
     "@hygia/i18n": "workspace:*",
+    "@hygia/observability": "workspace:*",
     "@hygia/types": "workspace:*",
     "@nestjs/common": "^12.3.2",
     "@nestjs/core": "^12.3.2",
