@@ -264,6 +264,11 @@ export const en: Record<MessageKey, string> = {
   'breakGlass.error': 'Emergency access failed. Check the details and try again.',
 
   'copilot.scope': 'Search limited to the record of {name}',
+  'copilot.pick.intro':
+    'Choose a patient: the copilot answers from their record, with sources.',
+  'copilot.pick.search': 'Search for a patient (name or patient ID)',
+  'copilot.pick.open': 'Open the copilot',
+  'copilot.pick.empty': 'No patient of your care team matches.',
   'copilot.languageNote': 'Answers in the language of the question',
   'copilot.answeredIn.fr': 'Répondu en français',
   'copilot.answeredIn.en': 'Answered in English',

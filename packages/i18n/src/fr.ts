@@ -263,6 +263,11 @@ export const fr = {
   'breakGlass.error': 'L’accès d’urgence a échoué. Vérifiez les précisions et réessayez.',
 
   'copilot.scope': 'Recherche limitée au dossier de {name}',
+  'copilot.pick.intro':
+    'Choisissez un patient : le copilote répond à partir de son dossier, sources à l’appui.',
+  'copilot.pick.search': 'Rechercher un patient (nom ou IPP)',
+  'copilot.pick.open': 'Ouvrir le copilote',
+  'copilot.pick.empty': 'Aucun patient de votre équipe de soins ne correspond.',
   'copilot.languageNote': 'Répond dans la langue de la question',
   'copilot.answeredIn.fr': 'Répondu en français',
   'copilot.answeredIn.en': 'Answered in English',
