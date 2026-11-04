@@ -95,13 +95,16 @@ export class DataStack extends Stack {
       objectLockDefaultRetention: s3.ObjectLockRetention.compliance(Duration.days(3650)),
     });
 
+    // Même nom, même clé (`pk`) et même expiration (`expires_at`) que le code des agents
+    // (services/agents/src/hygia_agents/lease.py) et que LocalStack (infra/localstack/init.sh).
     this.leasesTable = new dynamodb.Table(this, 'Baux', {
-      partitionKey: { name: 'lease', type: dynamodb.AttributeType.STRING },
+      tableName: 'hygia-baux',
+      partitionKey: { name: 'pk', type: dynamodb.AttributeType.STRING },
       billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
       encryption: dynamodb.TableEncryption.CUSTOMER_MANAGED,
       encryptionKey: this.clinicalKey,
       pointInTimeRecoverySpecification: { pointInTimeRecoveryEnabled: true },
-      timeToLiveAttribute: 'expiresAt',
+      timeToLiveAttribute: 'expires_at',
       removalPolicy: RemovalPolicy.DESTROY,
     });
   }

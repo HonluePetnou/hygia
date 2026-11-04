@@ -59,6 +59,14 @@ describe('architecture HYGIA (synthèse hors ligne)', () => {
     });
   });
 
+  it('table des baux identique à celle du code des agents (hygia-baux, clé pk, expiration expires_at)', () => {
+    t.donnees.hasResourceProperties('AWS::DynamoDB::Table', {
+      TableName: 'hygia-baux',
+      KeySchema: [{ AttributeName: 'pk', KeyType: 'HASH' }],
+      TimeToLiveSpecification: { AttributeName: 'expires_at', Enabled: true },
+    });
+  });
+
   it('trois clés KMS distinctes (clinique, analytique, audit), rotation activée', () => {
     t.donnees.resourceCountIs('AWS::KMS::Key', 3);
     t.donnees.allResourcesProperties('AWS::KMS::Key', { EnableKeyRotation: true });
