@@ -53,6 +53,9 @@ if (twoInstances && process.env.BROKER_SERVICE_IA_CLINIQUE_URL === undefined) {
   env.BROKER_SERVICE_IA_CLINIQUE_URL = 'a=http://localhost:3003,b=http://localhost:3013';
 }
 
+// Sous Windows, `pnpm` est un script `.cmd` : Node ne peut le lancer qu'à travers un shell.
+const shell = process.platform === 'win32';
+
 const filters = [
   'identite',
   'dossiers',
@@ -64,7 +67,7 @@ const filters = [
   'web',
 ];
 const children = filters.map((name) =>
-  spawn('pnpm', ['--filter', name, 'dev'], { stdio: 'inherit', env }),
+  spawn('pnpm', ['--filter', name, 'dev'], { stdio: 'inherit', env, shell }),
 );
 
 /** Interpréteur Python 3 disponible (`python3`, ou `python` sous Windows), sinon `undefined`. */
@@ -95,6 +98,7 @@ if (python === undefined) {
 if (twoInstances) {
   children.push(
     spawn('pnpm', ['--filter', 'ia-clinique', 'dev'], {
+      shell,
       stdio: 'inherit',
       env: { ...env, IA_CLINIQUE_PORT: '3013' },
     }),
