@@ -55,6 +55,36 @@ describe('PortalViewModel', () => {
     expect(vm.rows.some((r) => r.kind === 'add')).toBe(true);
   });
 
+  it('initiales des noms transmis par Dossiers, sans le titre « Dr »', async () => {
+    const event = {
+      index: 0,
+      lamport: 1,
+      timestamp: '2026-11-04T09:00:00.000Z',
+      actor: 'Dr Paul Kamga',
+      role: 'medecin' as const,
+      action: 'bris_de_glace' as const,
+      resourceType: 'Patient',
+      resourceId: FLORENCE_ID,
+      patientId: FLORENCE_ID,
+      reason: 'Urgence vitale',
+      previousHash: '',
+      hash: 'h0',
+    };
+    const session = new SessionViewModel({
+      userId: FLORENCE_ID,
+      displayName: 'Florence Ngo Bassa',
+      role: 'patient',
+    });
+    const vm = new PortalViewModel(
+      new InMemoryPortalGateway('fr'),
+      new InMemoryAuditGateway([event]),
+      session,
+    );
+    await vm.load();
+    expect(vm.rows[0]?.actor).toBe('Dr Paul Kamga');
+    expect(vm.rows[0]?.initials).toBe('PK');
+  });
+
   it('révoque puis redonne un consentement, mais jamais celui des soins', async () => {
     const { vm } = build();
     await vm.load();

@@ -5,12 +5,21 @@ Le script affiche l'URL à ouvrir, **http://localhost:3100**.
 
 ## Deux modes
 
-|           | Avec Docker (mode services)                                       | Sans Docker (mode hors ligne)                                     |
+|           | Mode services (par défaut, le vrai, réparti)                      | Mode hors ligne                                                   |
 | --------- | ----------------------------------------------------------------- | ----------------------------------------------------------------- |
-| Lancement | `pnpm demo`                                                       | `DEMO_NO_DOCKER=1 pnpm demo`, ou automatique si Docker est absent |
+| Lancement | `pnpm demo`                                                       | `DEMO_MODE=offline pnpm demo` (PowerShell : `$env:DEMO_MODE="offline"; pnpm demo`) |
 | Données   | Services répartis derrière le broker                              | Données en mémoire dans le web                                    |
 | Connexion | Comptes ci-dessous, mot de passe `Hygia-demo-2026`, **TOTP réel** | Tout mot de passe, code 2FA **`481516`**                          |
 | Code 2FA  | `pnpm --filter identite code` (code de secours : `DEMO-0001`)     | `481516`                                                          |
+
+Docker n'est **pas** nécessaire : les services gardent leurs données en mémoire. `DEMO_INFRA=1 pnpm demo` lance en plus
+`docker compose` (PostgreSQL, LocalStack), que les services n'utilisent pas encore ; un échec n'arrête pas la démo.
+Au premier lancement, `pnpm demo` compile les paquets internes (`@hygia/*`) : une à deux minutes. `Ctrl+C` arrête tout
+(sous Windows aussi : l'arbre de processus est arrêté, les ports sont libérés).
+
+La session web vit dans la page : recharger ou taper une URL renvoie à la connexion, qui ramène ensuite à la page
+demandée. Pour changer de compte, « Se déconnecter » (le portail patient n'a pas ce bouton : revenir à
+http://localhost:3100).
 
 Services lancés en mode services : broker (3000), dossiers (3001), ia-clinique (3003), identité (3004),
 audit (3005), agents Python (3007), notification (3008), synchronisation (3009), web (3100).
@@ -41,15 +50,24 @@ et la carte épidémiologique et le risque de réadmission sont indisponibles.
    La réponse arrive mot à mot et cite l'ordonnance ; cliquer une source ouvre le panneau du passage.
 5. **Question en anglais** : « What did the echocardiography show? ». La réponse est en anglais, le badge « Répondu en… »
    apparaît si la langue diffère de l'interface, et le compte rendu du 03/06 (FEVG 45 %) est cité.
-6. **Import de l'ordonnance** : `/import`, déposer un fichier. Les 5 étapes de la chaîne s'enchaînent, les entités extraites
-   sont à valider ou à rejeter par le soignant (rien n'est enregistré sans validation).
+6. **Import de l'ordonnance** : `/import`, déposer **`services/ingestion/fixtures/ordonnance-florence.png`** (et aucun autre
+   fichier : l'OCR de démonstration ne connaît que ce nom ; tout autre document part en file de lettres mortes à l'étape
+   OCR, et un PDF sans signature `%PDF` est refusé dès la réception). Les 5 étapes de la chaîne s'enchaînent, les 5 entités
+   extraites (ibuprofène ATC M01AE01, lombalgie CIM-10 M54.5, posologie, deux dates) sont à valider ou à rejeter par le
+   soignant (rien n'est enregistré sans validation). Copier ce fichier sur le bureau avant la démo.
 7. **Alertes IA** : `/alertes`, ouvrir l'alerte de pharmacovigilance, lire le raisonnement et ses sources, l'accepter ou la rejeter.
-8. **Bris de glace** : se reconnecter avec Dr Paul Kamga (hors équipe). Le dossier de Florence affiche « accès refusé » ;
-   le bouton « Accès d'urgence » ouvre la fenêtre de bris de glace (motif obligatoire, 4 h, DPO prévenue).
+8. **Bris de glace** : se déconnecter, puis ouvrir directement le dossier de Florence
+   **http://localhost:3100/patients/00000000-0000-4000-8000-030000000001** (Dr Kamga n'a pas Florence dans sa liste ni
+   dans la recherche : il n'est pas de son équipe). La connexion s'affiche ; se connecter avec Dr Paul Kamga : on revient
+   sur le dossier, qui affiche « Accès refusé ». Le bouton « Accès d'urgence » ouvre la fenêtre de bris de glace (motif
+   obligatoire, précisions, 4 h, DPO prévenue) ; le dossier s'ouvre. Préparer ce lien dans un onglet ou un marque-page.
 9. **Carte épidémiologique** : se reconnecter avec le compte analyste, ouvrir `/epidemiologie`. La carte du Cameroun montre
    les cas par district et le foyer simulé ; la veille est calculée par l'instance élue (bail de coordinateur).
 10. **Qui a vu mon dossier ?** : se reconnecter avec Florence, ouvrir `/portail`. L'historique des accès montre la consultation
-    de Dr Nana et le bris de glace de Dr Kamga ; les consentements se gèrent depuis le même écran.
+    de Dr Nana et le bris de glace de Dr Kamga (avec son motif) ; les consentements se gèrent depuis le même écran.
+    Ce sont les accès réels de la démo : Dossiers garde son propre journal chaîné (identifiants des acteurs) et transmet
+    chaque entrée au service Audit (`POST /internal/events`, clé `AUDIT_INTERNAL_KEY`), avec le nom de l'acteur et un
+    motif lisible. Le journal d'Audit démarre vide (`AUDIT_SEED=0` dans `pnpm demo`) : faire les étapes 3 à 8 avant.
 11. **Journal d'audit** : se reconnecter avec le compte DPO, ouvrir `/audit`. Chaque entrée porte l'acteur, l'action, le motif,
     une estampille de Lamport et le hachage de l'entrée précédente ; la vérification de la chaîne est affichée.
 12. **Supervision et pannes** : se reconnecter avec le compte administrateur, ouvrir `/supervision`. Pour montrer la bascule

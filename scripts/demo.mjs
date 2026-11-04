@@ -9,10 +9,19 @@ const DEMO_EMAIL = 'aicha.nana@hd-bonassama.cm';
 const DEMO_PASSWORD = 'Hygia-demo-2026';
 const WEB_URL = 'http://localhost:3100';
 
-/** Indique si Docker (daemon compris) est utilisable ; `DEMO_NO_DOCKER=1` force le mode hors ligne. */
+/** Indique si Docker (daemon compris) est utilisable. */
 function dockerAvailable() {
-  if (process.env.DEMO_NO_DOCKER === '1') return false;
   return spawnSync('docker', ['info'], { stdio: 'ignore' }).status === 0;
+}
+
+// `DEMO_MODE=services` force le mode réparti, `DEMO_MODE=offline` (ou `DEMO_NO_DOCKER=1`) le mode hors
+// ligne. Sans précision : mode services. Les services gardent leurs données en mémoire et n'ont pas
+// besoin de Docker (PostgreSQL et LocalStack ne sont lus par aucun service pour l'instant).
+const demoMode =
+  process.env.DEMO_MODE === 'offline' || process.env.DEMO_NO_DOCKER === '1' ? 'offline' : 'services';
+if (process.env.DEMO_MODE !== undefined && !['services', 'offline'].includes(process.env.DEMO_MODE)) {
+  console.error(`DEMO_MODE inconnu : « ${process.env.DEMO_MODE} » (attendu : services ou offline).`);
+  process.exit(1);
 }
 
 const env = {
@@ -30,19 +39,28 @@ const env = {
   BROKER_SERVICE_SYNCHRONISATION_URL:
     process.env.BROKER_SERVICE_SYNCHRONISATION_URL ?? 'http://localhost:3009',
   NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3000',
+  // Journal d'audit réparti : Dossiers transmet chaque accès au service Audit (route interne à clé),
+  // qui alimente `/audit` (DPO) et « Qui a vu mon dossier ? » (portail). Clé de démonstration.
+  AUDIT_URL: process.env.AUDIT_URL ?? 'http://localhost:3005',
+  AUDIT_INTERNAL_KEY: process.env.AUDIT_INTERNAL_KEY ?? 'demo-audit-key',
+  // Journal vide au démarrage : il se remplit des accès réels de la démo (pas d'entrées fictives).
+  AUDIT_SEED: process.env.AUDIT_SEED ?? '0',
   // Jour des données fictives (consultation de Florence), le même que `DEMO_TODAY` du web.
   DOSSIERS_DATE_DEMO: process.env.DOSSIERS_DATE_DEMO ?? '2026-10-28',
 };
-if (dockerAvailable()) {
-  console.log('Docker détecté : docker compose up -d');
+if (demoMode === 'offline') {
+  console.log('Mode hors ligne demandé (NEXT_PUBLIC_DEMO_OFFLINE=1).');
+  env.NEXT_PUBLIC_DEMO_OFFLINE = '1';
+} else if (process.env.DEMO_INFRA !== '1') {
+  console.log('Mode services (infrastructure Docker non lancée ; DEMO_INFRA=1 pour docker compose).');
+} else if (dockerAvailable()) {
+  console.log('DEMO_INFRA=1 : docker compose up -d');
   const up = spawnSync('docker', ['compose', 'up', '-d'], { stdio: 'inherit' });
   if (up.status !== 0) {
-    console.warn('docker compose a échoué : bascule en mode hors ligne.');
-    env.NEXT_PUBLIC_DEMO_OFFLINE = '1';
+    console.warn('docker compose a échoué : la démo continue en mode services, sans infrastructure Docker.');
   }
 } else {
-  console.log('Docker indisponible : mode hors ligne (NEXT_PUBLIC_DEMO_OFFLINE=1).');
-  env.NEXT_PUBLIC_DEMO_OFFLINE = '1';
+  console.warn('DEMO_INFRA=1 mais Docker indisponible : la démo continue en mode services.');
 }
 
 // `DEMO_TWO_INSTANCES=1` : deuxième instance d'ia-clinique (port 3013, zone b) pour les expériences de
@@ -66,6 +84,20 @@ const filters = [
   'broker',
   'web',
 ];
+
+// Les dépendances internes (`@hygia/auth`, `@hygia/ingestion`…) exposent `dist/` : sur un dépôt
+// fraîchement cloné, rien n'est compilé et les services échouent (« Cannot find module »).
+// `<service>^...` = toutes ses dépendances internes, sans lui-même ; turbo garde un cache.
+console.log('Compilation des dépendances internes des services…');
+const build = spawnSync(
+  'pnpm',
+  ['turbo', 'run', 'build', ...filters.map((name) => `--filter=${name}^...`)],
+  { stdio: 'inherit', shell },
+);
+if (build.status !== 0) {
+  console.error('La compilation des dépendances internes a échoué : démo arrêtée.');
+  process.exit(build.status ?? 1);
+}
 const children = filters.map((name) =>
   spawn('pnpm', ['--filter', name, 'dev'], { stdio: 'inherit', env, shell }),
 );
@@ -120,7 +152,16 @@ let stopping = false;
 function stop() {
   if (stopping) return;
   stopping = true;
-  for (const child of children) child.kill('SIGTERM');
+  for (const child of children) {
+    if (child.exitCode !== null || child.pid === undefined) continue;
+    // Sous Windows, `kill` n'arrête que le shell : `taskkill /T` arrête aussi les processus enfants
+    // (sinon `next dev` et les services restent sur leurs ports, EADDRINUSE au lancement suivant).
+    if (process.platform === 'win32') {
+      spawnSync('taskkill', ['/pid', String(child.pid), '/T', '/F'], { stdio: 'ignore' });
+    } else {
+      child.kill('SIGTERM');
+    }
+  }
 }
 process.on('SIGINT', stop);
 process.on('SIGTERM', stop);
