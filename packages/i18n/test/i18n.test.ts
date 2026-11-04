@@ -1,7 +1,58 @@
 import { describe, expect, it } from 'vitest';
-import { createTranslator, en, formatDate, formatDateTime, fr } from '../src/index.js';
+import {
+  DISPLAY_TIME_ZONE,
+  createTranslator,
+  en,
+  formatDate,
+  formatDateTime,
+  fr,
+  localParts,
+} from '../src/index.js';
 
 const normalize = (s: string): string => s.replace(/[  ]/g, ' ');
+
+describe('heure affichée (Cameroun, UTC+1)', () => {
+  it('découpe un horodatage UTC en heure locale du Cameroun', () => {
+    expect(DISPLAY_TIME_ZONE).toBe('Africa/Douala');
+    expect(localParts('2026-11-04T23:30:05Z')).toEqual({
+      year: 2026,
+      month: 11,
+      day: 5,
+      hours: 0,
+      minutes: 30,
+      seconds: 5,
+    });
+  });
+});
+
+describe('accords au pluriel', () => {
+  it('français : 0 et 1 au singulier, 2 et plus au pluriel', () => {
+    const t = createTranslator('fr');
+    expect(t('dashboard.subtitle', { consultations: 1, alerts: 1 })).toBe(
+      '1 consultation prévue · 1 alerte IA à examiner',
+    );
+    expect(t('dashboard.subtitle', { consultations: 3, alerts: 4 })).toBe(
+      '3 consultations prévues · 4 alertes IA à examiner',
+    );
+    expect(t('copilot.passagesFound', { count: 1 })).toBe('1 passage retrouvé');
+    expect(t('copilot.passagesFound', { count: 0 })).toBe('0 passage retrouvé');
+    expect(t('epidemiology.map.summary', { cases: 14, regions: 1 })).toBe(
+      '14 cas notifiés · 1 région',
+    );
+    expect(t('audit.indicator.events.note', { total: 1 })).toBe('1 entrée au total');
+  });
+
+  it('anglais : seul 1 est au singulier', () => {
+    const t = createTranslator('en');
+    expect(t('copilot.passagesFound', { count: 1 })).toMatch(/^1 passage\b(?!s)/);
+    expect(t('copilot.passagesFound', { count: 0 })).toMatch(/^0 passages/);
+    expect(t('epidemiology.map.summary', { cases: 1, regions: 2 })).toMatch(/1 case\b.*2 regions/);
+  });
+
+  it('forme absente si le paramètre manque', () => {
+    expect(createTranslator('fr')('copilot.passagesFound')).toBe('{count} {count:passage retrouvé|passages retrouvés}');
+  });
+});
 
 describe('createTranslator', () => {
   it('traduit dans les deux langues', () => {

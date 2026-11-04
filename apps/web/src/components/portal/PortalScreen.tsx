@@ -1,6 +1,6 @@
 'use client';
 
-import { Plus } from 'lucide-react';
+import { LogOut, Plus } from 'lucide-react';
 import { observer } from 'mobx-react-lite';
 import { PortalViewModel } from '@hygia/view-models';
 import { Avatar, Badge } from '@/components/ui';
@@ -64,6 +64,10 @@ export const PortalScreen = observer(function PortalScreen() {
           </button>
         </div>
         <Avatar name={session.displayName} />
+        <button type="button" className="portal-signout" onClick={session.signOut}>
+          <LogOut size={16} strokeWidth={1.75} aria-hidden="true" />
+          {t('shell.signOut')}
+        </button>
       </header>
       <main className="portal-main">
         {vm.noticeKey !== null ? (

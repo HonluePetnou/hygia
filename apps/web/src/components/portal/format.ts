@@ -1,4 +1,4 @@
-import type { Locale } from '@hygia/i18n';
+import { DISPLAY_TIME_ZONE, type Locale } from '@hygia/i18n';
 
 /** `Mardi 3 novembre · 10:00` : jour long puis heure, en UTC (horodatages du service). */
 export function formatAppointment(iso: string, locale: Locale): string {
@@ -18,19 +18,19 @@ export function formatAppointment(iso: string, locale: Locale): string {
   return `${day.charAt(0).toUpperCase()}${day.slice(1)} · ${time}`;
 }
 
-/** `28 oct. · 16:12` : date courte puis heure, en UTC. */
+/** `28 oct. · 16:12` : date courte puis heure d'un accès, à l'heure du Cameroun. */
 export function formatWhen(iso: string, locale: Locale): string {
   const date = new Date(iso);
   const day = new Intl.DateTimeFormat(locale, {
     day: 'numeric',
     month: 'short',
-    timeZone: 'UTC',
+    timeZone: DISPLAY_TIME_ZONE,
   }).format(date);
   const time = new Intl.DateTimeFormat(locale, {
     hour: '2-digit',
     minute: '2-digit',
     hour12: false,
-    timeZone: 'UTC',
+    timeZone: DISPLAY_TIME_ZONE,
   }).format(date);
   return `${day} · ${time}`;
 }

@@ -9,6 +9,8 @@ export default defineConfig({
   },
   test: {
     environment: 'jsdom',
+    // Saisie clavier simulée (recherche, scribe) : plus de 5 s quand turbo lance tout en parallèle.
+    testTimeout: 15_000,
     globals: true,
     setupFiles: ['./test/setup.ts'],
     include: ['test/**/*.test.{ts,tsx}'],

@@ -14,7 +14,8 @@ describe('AuditViewModel', () => {
     await vm.load();
     expect(vm.state).toBe('ready');
     expect(vm.summary).toMatchObject({ eventsToday: 7, breakGlassToday: 1, chainBreaks: 0 });
-    expect(vm.chainLabel).toBe('Chaîne intègre · vérifiée à 03:00');
+    // Vérifiée à 03:00 UTC : affichée à l'heure du Cameroun (UTC+1).
+    expect(vm.chainLabel).toBe('Chaîne intègre · vérifiée à 04:00');
     expect(vm.chain).toHaveLength(3);
     expect(vm.chain.at(-1)?.latest).toBe(true);
     expect(vm.rows[0]?.lamport).toBe(48196);

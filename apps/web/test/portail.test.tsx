@@ -30,6 +30,16 @@ function setup(portal = new InMemoryPortalGateway(), audit = new InMemoryAuditGa
 }
 
 describe('portail patient (maquette 13)', () => {
+  it('permet de se déconnecter depuis le portail', async () => {
+    const user = userEvent.setup();
+    const { session } = setup();
+    await session.submitCredentials('florence.ngo@patient.hygia.local', 'Hygia-demo-2026');
+    await session.submitCode('481516');
+    expect(session.isAuthenticated).toBe(true);
+    await user.click(await screen.findByRole('button', { name: 'Se déconnecter' }));
+    expect(session.isAuthenticated).toBe(false);
+  });
+
   it('affiche le bandeau, le prochain rendez-vous et le journal avec le bris de glace en orange', async () => {
     const user = userEvent.setup();
     setup();

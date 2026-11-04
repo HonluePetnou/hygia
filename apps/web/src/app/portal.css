@@ -18,6 +18,16 @@
 .portal-top .brand-logo {
   color: var(--ink);
 }
+.portal-signout {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 0;
+  background: none;
+  color: var(--ink);
+  font: inherit;
+  cursor: pointer;
+}
 .portal-nav {
   display: flex;
   gap: 24px;
