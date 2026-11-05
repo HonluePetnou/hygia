@@ -1,7 +1,7 @@
 import tseslint from 'typescript-eslint';
 
 export default tseslint.config(
-  { ignores: ['**/dist/**', '**/node_modules/**', '**/.next/**', 'worktrees/**'] },
+  { ignores: ['**/dist/**', '**/node_modules/**', '**/.next/**', '**/cdk.out/**', 'worktrees/**'] },
   ...tseslint.configs.recommended,
   {
     rules: {
