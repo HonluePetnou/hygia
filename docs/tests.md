@@ -42,8 +42,9 @@ Commande : `pnpm turbo run lint typecheck test` (intégration continue : `.githu
 
 Lint et typecheck : 63 tâches sur 63 vertes.
 
-Tests ajoutés dans les demandes de fusion en attente : persistance PostgreSQL (+6, PR #4), jeton du service
-Agents (+8, PR #5), infrastructure CDK (+10, PR #6), LocalStack (+4, PR #7).
+Tests ajoutés ensuite, fusionnés le 5 novembre : persistance PostgreSQL (+6, PR #4), jeton du service
+Agents (+8, PR #5), infrastructure CDK (+10, PR #6), LocalStack (+4, PR #7). Les tests d'intégration
+PostgreSQL et LocalStack ne tournent qu'avec `DOSSIERS_TEST_DATABASE_URL` et `HYGIA_LOCALSTACK_URL`.
 
 ## 3. Vérifications de bout en bout (4–5 novembre 2026, mode services, Windows)
 
