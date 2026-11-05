@@ -64,7 +64,11 @@ if (demoMode === 'offline') {
   } else {
     console.warn('PostgreSQL indisponible : Dossiers garde ses données en mémoire.');
   }
-  const localstack = spawnSync('docker', ['compose', 'up', '-d', 'localstack'], { stdio: 'inherit' });
+  // --wait : prêt (ressources créées par init.sh) avant le contrôle de santé qui active les
+  // adaptateurs AWS plus bas ; sans lui, LocalStack est encore « starting » et rien n'est activé.
+  const localstack = spawnSync('docker', ['compose', 'up', '-d', '--wait', 'localstack'], {
+    stdio: 'inherit',
+  });
   if (localstack.status !== 0) console.warn('LocalStack indisponible : la démo continue sans.');
 } else {
   console.warn('DEMO_INFRA=1 mais Docker indisponible : la démo continue en mode services.');
