@@ -1,122 +1,29 @@
-// Schéma PostgreSQL du service Dossiers (non requis par les tests : ils utilisent le dépôt en
-// mémoire). Le service possède ses données ; aucune table n'est partagée avec un autre service.
+// Schéma PostgreSQL du service Dossiers. Le service possède ses données ; aucune table n'est
+// partagée avec un autre service. Les ressources FHIR sont stockées entières en JSONB (comme les
+// serveurs FHIR courants), indexées par patient : voir docs/adr/0002-persistance-dossiers.md.
+// URL de connexion : prisma.config.ts (DOSSIERS_DATABASE_URL).
 
 generator client {
-  provider = "prisma-client-js"
+  provider     = "prisma-client"
+  output       = "../src/generated/prisma"
+  moduleFormat = "esm"
 }
 
 datasource db {
   provider = "postgresql"
-  url      = env("DOSSIERS_DATABASE_URL")
 }
 
-model Patient {
-  id             String   @id @db.Uuid
-  version        Int      @default(1)
-  ipp            String   @unique
-  familyName     String
-  givenName      String
-  gender         String
-  birthDate      DateTime @db.Date
-  organizationId String   @db.Uuid
-  encounters     Encounter[]
-  observations   Observation[]
-  documents      DocumentReference[]
-  medications    MedicationRequest[]
-  teams          CareTeamPatient[]
-  breakGlasses   BreakGlassGrant[]
-}
+/// Ressource FHIR (Patient, Encounter, Observation, DocumentReference…), versionnée.
+model FhirResource {
+  resourceType String   @map("resource_type")
+  id           String
+  /// Patient concerné ; null pour les ressources partagées (établissements, praticiens, équipes).
+  patientId    String?  @map("patient_id")
+  version      Int
+  body         Json     @db.JsonB
+  updatedAt    DateTime @updatedAt @map("updated_at")
 
-model CareTeam {
-  id       String            @id @db.Uuid
-  version  Int               @default(1)
-  name     String
-  members  CareTeamMember[]
-  patients CareTeamPatient[]
-}
-
-model CareTeamMember {
-  careTeamId     String   @db.Uuid
-  practitionerId String   @db.Uuid
-  careTeam       CareTeam @relation(fields: [careTeamId], references: [id])
-
-  @@id([careTeamId, practitionerId])
-}
-
-model CareTeamPatient {
-  careTeamId String   @db.Uuid
-  patientId  String   @db.Uuid
-  careTeam   CareTeam @relation(fields: [careTeamId], references: [id])
-  patient    Patient  @relation(fields: [patientId], references: [id])
-
-  @@id([careTeamId, patientId])
-}
-
-model Encounter {
-  id             String   @id @db.Uuid
-  version        Int      @default(1)
-  patientId      String   @db.Uuid
-  practitionerId String   @db.Uuid
-  encounterClass String
-  start          DateTime
-  end            DateTime?
-  patient        Patient  @relation(fields: [patientId], references: [id])
-
-  @@index([patientId, start])
-}
-
-model Observation {
-  id            String   @id @db.Uuid
-  version       Int      @default(1)
-  patientId     String   @db.Uuid
-  code          String
-  display       String
-  value         Float
-  unit          String
-  effectiveDate DateTime
-  patient       Patient  @relation(fields: [patientId], references: [id])
-
-  @@index([patientId, effectiveDate])
-}
-
-model DocumentReference {
-  id               String   @id @db.Uuid
-  version          Int      @default(1)
-  patientId        String   @db.Uuid
-  documentType     String
-  title            String
-  language         String
-  date             DateTime
-  processingStatus String
-  patient          Patient  @relation(fields: [patientId], references: [id])
-
-  @@index([patientId, date])
-}
-
-model MedicationRequest {
-  id            String   @id @db.Uuid
-  version       Int      @default(1)
-  patientId     String   @db.Uuid
-  requesterId   String   @db.Uuid
-  atcCode       String
-  display       String
-  doseValue     Float
-  doseUnit      String
-  timesPerDay   Int
-  authoredOn    DateTime
-  patient       Patient  @relation(fields: [patientId], references: [id])
-
-  @@index([patientId, authoredOn])
-}
-
-model BreakGlassGrant {
-  id        String   @id @default(uuid()) @db.Uuid
-  userId    String
-  patientId String   @db.Uuid
-  reason    String
-  openedAt  DateTime @default(now())
-  expiresAt DateTime
-  patient   Patient  @relation(fields: [patientId], references: [id])
-
-  @@index([userId, patientId])
+  @@id([resourceType, id])
+  @@index([patientId])
+  @@map("fhir_resource")
 }
