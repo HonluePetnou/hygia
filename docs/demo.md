@@ -12,8 +12,10 @@ Le script affiche l'URL à ouvrir, **http://localhost:3100**.
 | Connexion | Comptes ci-dessous, mot de passe `Hygia-demo-2026`, **TOTP réel** | Tout mot de passe, code 2FA **`481516`**                          |
 | Code 2FA  | `pnpm --filter identite code` (code de secours : `DEMO-0001`)     | `481516`                                                          |
 
-Docker n'est **pas** nécessaire : les services gardent leurs données en mémoire. `DEMO_INFRA=1 pnpm demo` lance en plus
-`docker compose` (PostgreSQL, LocalStack), que les services n'utilisent pas encore ; un échec n'arrête pas la démo.
+Docker n'est **pas** nécessaire : sans lui, les services gardent leurs données en mémoire. `DEMO_INFRA=1 pnpm demo`
+(PowerShell : `$env:DEMO_INFRA="1"; pnpm demo`) démarre en plus PostgreSQL (port 54320) et LocalStack : les dossiers
+patients deviennent **durables** (base `dossiers`, migrations appliquées au lancement) et survivent à un redémarrage.
+Un échec de Docker n'arrête pas la démo : Dossiers repasse en mémoire.
 Au premier lancement, `pnpm demo` compile les paquets internes (`@hygia/*`) : une à deux minutes. `Ctrl+C` arrête tout
 (sous Windows aussi : l'arbre de processus est arrêté, les ports sont libérés).
 

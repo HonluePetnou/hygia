@@ -14,6 +14,8 @@ import { JwtAuthGuard, TOKEN_VERIFIER } from './auth/jwt-auth.guard.js';
 import { loadEnv, type Env } from './config/env.js';
 import { ENV } from './config/env-token.js';
 import { ForwardingAuditStore } from './audit/forwarding-audit-store.js';
+import { PersistentPatientRepository } from './persistence/persistent-patient-repository.js';
+import { PrismaResourceStore } from './persistence/prisma-resource-store.js';
 import { ConsentsController, InternalConsentsController } from './consents/consents.controller.js';
 import { CONSENT_REPOSITORY, InMemoryConsentRepository } from './consents/consent-repository.js';
 import { ConsentsService } from './consents/consents.service.js';
@@ -98,7 +100,18 @@ import { TableauDeBordController } from './tableau-de-bord/tableau-de-bord.contr
     JwtAuthGuard,
     { provide: TOKEN_VERIFIER, useFactory: () => remoteVerifier(loadEnv().jwksUrl) },
     { provide: CLOCK, useClass: SystemClock },
-    { provide: PATIENT_REPOSITORY, useFactory: () => new InMemoryPatientRepository(demoDataset) },
+    {
+      provide: PATIENT_REPOSITORY,
+      // Avec DOSSIERS_DATABASE_URL : données durables (PostgreSQL), relues au démarrage.
+      useFactory: async (env: Env) =>
+        env.databaseUrl === undefined
+          ? new InMemoryPatientRepository(demoDataset)
+          : PersistentPatientRepository.open(
+              new PrismaResourceStore(env.databaseUrl),
+              demoDataset,
+            ),
+      inject: [ENV],
+    },
     {
       provide: AUDIT_LOG,
       useFactory: (env: Env) => {

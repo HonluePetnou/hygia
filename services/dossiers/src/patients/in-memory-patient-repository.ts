@@ -53,6 +53,19 @@ export class InMemoryPatientRepository implements PatientRepository {
     load<Condition>(this.conditions, data.conditions);
   }
 
+  /** État courant complet (ressources modifiables à jour + données partagées), pour la persistance. */
+  snapshot(): DemoDataset {
+    return {
+      ...this.data,
+      patients: [...this.patients.values()],
+      documents: [...this.documents.values()],
+      encounters: [...this.encounters.values()],
+      observations: [...this.observations.values()],
+      medicationRequests: [...this.medicationRequests.values()],
+      conditions: [...this.conditions.values()],
+    } as unknown as DemoDataset;
+  }
+
   addConsultation(
     patientId: string,
     practitionerId: string,

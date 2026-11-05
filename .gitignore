@@ -1,6 +1,8 @@
 node_modules/
 dist/
 dist-usb/
+# Client Prisma généré (`prisma generate` dans build, dev, typecheck et test)
+services/*/src/generated/
 .next/
 .expo/
 cdk.out/
