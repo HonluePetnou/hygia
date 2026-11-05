@@ -81,6 +81,22 @@ if (twoInstances && process.env.BROKER_SERVICE_IA_CLINIQUE_URL === undefined) {
 // Sous Windows, `pnpm` est un script `.cmd` : Node ne peut le lancer qu'à travers un shell.
 const shell = process.platform === 'win32';
 
+// AWS simulé (DEMO_INFRA=1, LocalStack prêt) : journal d'audit WORM sur S3 Object Lock, versions
+// des dossiers sur S3 versionné, baux du coordinateur des agents sur DynamoDB.
+const localstack = spawnSync(
+  'docker',
+  ['inspect', '--format', '{{.State.Health.Status}}', 'hygia-localstack'],
+  { encoding: 'utf8' },
+);
+if (env.NEXT_PUBLIC_DEMO_OFFLINE !== '1' && localstack.stdout?.trim() === 'healthy') {
+  env.AWS_ENDPOINT_URL ??= 'http://localhost:4566';
+  env.AWS_REGION ??= 'eu-west-3';
+  env.AUDIT_S3_BUCKET ??= 'hygia-audit';
+  env.DOSSIERS_S3_BUCKET ??= 'hygia-documents';
+  env.AGENTS_DYNAMODB_URL ??= env.AWS_ENDPOINT_URL;
+  console.log('LocalStack prêt : audit sur S3 Object Lock, versions sur S3, baux sur DynamoDB.');
+}
+
 const filters = [
   'identite',
   'dossiers',

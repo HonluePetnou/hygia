@@ -109,5 +109,8 @@ curl -s -H "authorization: Bearer $T" $B/dossiers/patients/$F/acces | jq
 
 - Modèle de langage : implémentation `mock` derrière `ClinicalLanguageModel` (Bedrock ensuite) ; il ne répond qu'à partir des passages retrouvés.
 - Bus d'événements, files et flux : en mémoire ou HTTP local (pas encore de SQS, EventBridge ni Kinesis).
+- AWS simulé par LocalStack, avec `DEMO_INFRA=1` : journal d'audit **WORM sur S3 Object Lock** (mode conformité,
+  suppression refusée, relu au redémarrage), versions des dossiers sur **S3 versionné**, baux du coordinateur des
+  agents sur **DynamoDB**. Activé automatiquement quand le conteneur `hygia-localstack` est prêt ; sinon, en mémoire.
 - Données : en mémoire, rien n'est conservé après l'arrêt.
 - Transcription du scribe et canaux WhatsApp/SMS : simulés (affichés dans la console du service Notification).

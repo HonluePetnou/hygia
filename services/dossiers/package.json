@@ -13,6 +13,7 @@
     "db:migrate": "prisma migrate deploy"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "3.1162.0",
     "@hygia/audit": "workspace:*",
     "@hygia/auth": "workspace:*",
     "@hygia/fhir": "workspace:*",
