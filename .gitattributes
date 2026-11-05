@@ -1,0 +1,4 @@
+# Scripts exécutés dans des conteneurs Linux (LocalStack, PostgreSQL) : fins de ligne LF même sous
+# Windows (core.autocrlf), sinon « #!/bin/bash\r » est introuvable et le script ne tourne pas.
+*.sh text eol=lf
+*.sql text eol=lf

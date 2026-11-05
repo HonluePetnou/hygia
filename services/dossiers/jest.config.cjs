@@ -5,6 +5,8 @@
  */
 module.exports = {
   testEnvironment: 'node',
+  // Démarrage Nest + requêtes HTTP : plus de 5 s quand turbo lance tout en parallèle.
+  testTimeout: 15000,
   rootDir: '.',
   testRegex: 'test/.*\\.spec\\.ts$',
   extensionsToTreatAsEsm: ['.ts'],

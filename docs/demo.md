@@ -73,7 +73,13 @@ et la carte épidémiologique et le risque de réadmission sont indisponibles.
 11. **Journal d'audit** : se reconnecter avec le compte DPO, ouvrir `/audit`. Chaque entrée porte l'acteur, l'action, le motif,
     une estampille de Lamport et le hachage de l'entrée précédente ; la vérification de la chaîne est affichée.
 12. **Supervision et pannes** : se reconnecter avec le compte administrateur, ouvrir `/supervision`. Pour montrer la bascule
-    d'une zone à l'autre, lancer la démo avec `DEMO_TWO_INSTANCES=1 pnpm demo` (deux instances d'ia-clinique).
+    d'une zone à l'autre, lancer la démo avec `DEMO_TWO_INSTANCES=1 pnpm demo` (deux instances d'ia-clinique) :
+    « Couper une zone de disponibilité », puis poser une question au copilote : elle passe par la zone b (vérifié).
+
+**Scribe (facultatif)** : il exige le consentement « Enregistrement des consultations », **désactivé par défaut**.
+D'abord, avec Florence, l'activer dans `/portail` (Mes consentements) ; ensuite, avec Dr Nana, dossier de Florence →
+« Dicter » : brouillon structuré (motif, examen, constantes codées LOINC) à valider ; l'audio est supprimé après.
+Sans ce consentement, « Dicter » est refusé (comportement voulu).
 
 ## Journal des accès par l'API (mode services)
 
@@ -109,5 +115,8 @@ curl -s -H "authorization: Bearer $T" $B/dossiers/patients/$F/acces | jq
 
 - Modèle de langage : implémentation `mock` derrière `ClinicalLanguageModel` (Bedrock ensuite) ; il ne répond qu'à partir des passages retrouvés.
 - Bus d'événements, files et flux : en mémoire ou HTTP local (pas encore de SQS, EventBridge ni Kinesis).
+- AWS simulé par LocalStack, avec `DEMO_INFRA=1` : journal d'audit **WORM sur S3 Object Lock** (mode conformité,
+  suppression refusée, relu au redémarrage), versions des dossiers sur **S3 versionné**, baux du coordinateur des
+  agents sur **DynamoDB**. Activé automatiquement quand le conteneur `hygia-localstack` est prêt ; sinon, en mémoire.
 - Données : en mémoire, rien n'est conservé après l'arrêt.
 - Transcription du scribe et canaux WhatsApp/SMS : simulés (affichés dans la console du service Notification).
