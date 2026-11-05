@@ -5,11 +5,12 @@
 import { spawnSync } from 'node:child_process';
 import { existsSync, mkdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join, resolve } from 'node:path';
+import { dirname, join, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { Marked } from 'marked';
 
 const DOCUMENTS = [
+  ['docs/manuel-presentation.md', 'HYGIA - Manuel de presentation (ecran par ecran).pdf'],
   ['docs/architecture.md', 'HYGIA - Dossier d architecture.pdf'],
   ['docs/tests.md', 'HYGIA - Plan et rapport de tests.pdf'],
   ['docs/guide-utilisateur.md', 'HYGIA - Guide utilisateur.pdf'],
@@ -69,11 +70,16 @@ const STYLE = `
   pre.mermaid { background: none; border: none; text-align: center; }
   pre.mermaid svg { max-width: 100%; height: auto; }
   blockquote { border-left: 3px solid #0f766e; margin-left: 0; padding-left: 10pt; color: #475569; }
+  /* Captures d'écran : dans la largeur, et une page pleine au plus (captures de page entière). */
+  img { display: block; max-width: 100%; max-height: 235mm; width: auto; height: auto; margin: 6pt auto;
+        border: 1px solid #cbd5e1; border-radius: 4pt; break-inside: avoid; }
+  hr { border: none; border-top: 1px solid #e2e8f0; margin: 14pt 0; }
   .pied { position: fixed; bottom: -12mm; left: 0; right: 0; font-size: 8pt; color: #94a3b8; text-align: center; }
 `;
 
-function page(title, body, mermaidUrl) {
-  return `<!doctype html><html lang="fr"><head><meta charset="utf-8"><title>${escapeHtml(title)}</title>
+function page(title, body, mermaidUrl, baseUrl) {
+  // <base> : les images relatives (captures/…, maquettes/…) se lisent depuis le dossier du document.
+  return `<!doctype html><html lang="fr"><head><meta charset="utf-8"><base href="${baseUrl}"><title>${escapeHtml(title)}</title>
 <style>${STYLE}</style></head><body>
 ${body}
 <div class="pied">HYGIA · Groupe G2 · ENSPD GIT 5 · Architecture logicielle et objets répartis</div>
@@ -96,7 +102,8 @@ for (const [source, name] of DOCUMENTS) {
   const markdown = readFileSync(source, 'utf8');
   const title = (markdown.match(/^#\s+(.+)$/m)?.[1] ?? name).trim();
   const html = join(work, `${name}.html`);
-  writeFileSync(html, page(title, marked.parse(markdown), mermaidUrl));
+  const baseUrl = `${pathToFileURL(dirname(resolve(source))).href}/`;
+  writeFileSync(html, page(title, marked.parse(markdown), mermaidUrl, baseUrl));
   const pdf = resolve(OUT, name);
   rmSync(pdf, { force: true });
   spawnSync(

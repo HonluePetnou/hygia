@@ -1,3 +1,4 @@
+import { localParts } from '@hygia/i18n';
 import type { Role } from '@hygia/types';
 import type { AdminAccount, AdminTeam } from './administration-types.js';
 import { ROLE_KEYS } from './session-view-model.js';
@@ -26,16 +27,16 @@ export interface TeamCard {
   patientIds: string[];
 }
 
-/** `03/11/2026 08:12` (français) ou `2026-11-03 08:12` (anglais), en UTC ; sans connexion : « Jamais ». */
+/** `03/11/2026 09:12` (français) ou `2026-11-03 09:12` (anglais), à l'heure du Cameroun ; sans connexion : « Jamais ». */
 export function formatLastLogin(iso: string | null, i18n: LocaleSource): string {
   if (iso === null) return i18n.t('administration.neverLoggedIn');
-  const d = new Date(iso);
+  const d = localParts(iso);
   const p = (n: number) => String(n).padStart(2, '0');
-  const time = `${p(d.getUTCHours())}:${p(d.getUTCMinutes())}`;
+  const time = `${p(d.hours)}:${p(d.minutes)}`;
   const date =
     i18n.locale === 'fr'
-      ? `${p(d.getUTCDate())}/${p(d.getUTCMonth() + 1)}/${d.getUTCFullYear()}`
-      : `${d.getUTCFullYear()}-${p(d.getUTCMonth() + 1)}-${p(d.getUTCDate())}`;
+      ? `${p(d.day)}/${p(d.month)}/${d.year}`
+      : `${d.year}-${p(d.month)}-${p(d.day)}`;
   return `${date} ${time}`;
 }
 

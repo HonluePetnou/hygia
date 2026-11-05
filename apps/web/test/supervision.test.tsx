@@ -45,7 +45,8 @@ describe('écran Supervision', () => {
     setup();
     await screen.findByTestId('service-dossiers');
     await user.click(screen.getByRole('button', { name: 'Lancer : Couper une zone de disponibilité' }));
-    const banner = await screen.findByRole('status', { name: 'Zone eu-west-3a coupée depuis 10:14' });
+    // 10:14 UTC, affiché à l'heure du Cameroun (UTC+1).
+    const banner = await screen.findByRole('status', { name: 'Zone eu-west-3a coupée depuis 11:14' });
     expect(banner).toHaveTextContent('0 erreur côté utilisateur');
     expect(screen.getByText('Exercice de panne en cours')).toBeVisible();
     expect(within(screen.getByTestId('service-dossiers')).getByText('3a')).toHaveAttribute('data-up', 'false');

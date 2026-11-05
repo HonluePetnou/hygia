@@ -29,7 +29,7 @@ describe('SupervisionViewModel', () => {
     await vm.toggle('zone-cut');
     expect(vm.experiments.find((e) => e.id === 'zone-cut')?.active).toBe(true);
     expect(vm.banner).toEqual({
-      title: 'Zone eu-west-3a coupée depuis 10:14',
+      title: 'Zone eu-west-3a coupée depuis 11:14', // 10:14 UTC, heure du Cameroun
       detail: 'Trafic redirigé vers l’autre zone · 3 requêtes basculées · 0 erreur côté utilisateur',
     });
     expect(vm.cards.every((c) => c.zones[0]?.up === false && c.zones[1]?.up === true)).toBe(true);
@@ -37,7 +37,7 @@ describe('SupervisionViewModel', () => {
     expect(vm.banner).toBeNull();
     await vm.toggle('llm-down');
     await vm.toggle('latency');
-    expect(vm.banner?.title).toBe('Modèle de langage indisponible depuis 10:14');
+    expect(vm.banner?.title).toBe('Modèle de langage indisponible depuis 11:14');
     expect(vm.banner?.detail).toContain('mode dégradé : recherche simple');
     await vm.stopExercise();
     expect(vm.experiments.every((e) => !e.active)).toBe(true);
