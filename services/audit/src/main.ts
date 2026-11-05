@@ -2,8 +2,7 @@ import { createServer } from 'node:http';
 import { remoteVerifier } from '@hygia/auth';
 import { AuditApi } from './audit-api.js';
 import { AuditLog } from './audit-log.js';
-import { InMemoryAuditStore } from './audit-store.js';
-import { S3ObjectLockAuditStore } from './s3-audit-store.js';
+import { openAuditStore } from './open-store.js';
 import { S3ClientObjectLockOperations, s3Client } from './s3-client-operations.js';
 import { ChainVerifier } from './chain-verifier.js';
 import { loadAuditEnv } from './config.js';
@@ -11,15 +10,16 @@ import { seedDemoEntries } from './seed.js';
 
 const env = loadAuditEnv();
 const now = () => new Date();
-// AUDIT_S3_BUCKET : journal WORM sur S3 Object Lock (relu au démarrage) ; sinon en mémoire.
-const store = env.s3
-  ? await S3ObjectLockAuditStore.open(
-      new S3ClientObjectLockOperations(s3Client(env.s3), env.s3.bucket),
-      now,
-    )
-  : new InMemoryAuditStore();
+// AUDIT_S3_BUCKET : journal WORM sur S3 Object Lock (relu au démarrage) ; sinon, ou si S3 est
+// injoignable, en mémoire.
+const { store, durable } = await openAuditStore(
+  env.s3 ? new S3ClientObjectLockOperations(s3Client(env.s3), env.s3.bucket) : undefined,
+  now,
+);
 const log = new AuditLog(store, undefined, now);
-if (env.s3) console.log(`[audit] journal WORM sur S3 (${env.s3.bucket}) : ${store.all().length} entrée(s)`);
+if (durable && env.s3) {
+  console.log(`[audit] journal WORM sur S3 (${env.s3.bucket}) : ${store.all().length} entrée(s)`);
+}
 // Entrées fictives seulement sur un journal vide : jamais de doublon dans un journal durable.
 if (env.seed && store.all().length === 0) seedDemoEntries(log);
 
