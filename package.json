@@ -16,11 +16,14 @@
     "format:check": "prettier --check .",
     "demo": "node scripts/demo.mjs",
     "package:usb": "node scripts/package-usb.mjs",
+    "docs:pdf": "node scripts/docs-pdf.mjs",
     "infra:up": "docker compose up -d",
     "infra:down": "docker compose down"
   },
   "devDependencies": {
     "eslint": "^10.14.0",
+    "marked": "18.1.3",
+    "mermaid": "12.3.0",
     "prettier": "^3.3.3",
     "turbo": "^2.3.3",
     "typescript": "^5.7.2",
