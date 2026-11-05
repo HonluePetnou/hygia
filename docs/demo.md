@@ -71,7 +71,13 @@ et la carte épidémiologique et le risque de réadmission sont indisponibles.
 11. **Journal d'audit** : se reconnecter avec le compte DPO, ouvrir `/audit`. Chaque entrée porte l'acteur, l'action, le motif,
     une estampille de Lamport et le hachage de l'entrée précédente ; la vérification de la chaîne est affichée.
 12. **Supervision et pannes** : se reconnecter avec le compte administrateur, ouvrir `/supervision`. Pour montrer la bascule
-    d'une zone à l'autre, lancer la démo avec `DEMO_TWO_INSTANCES=1 pnpm demo` (deux instances d'ia-clinique).
+    d'une zone à l'autre, lancer la démo avec `DEMO_TWO_INSTANCES=1 pnpm demo` (deux instances d'ia-clinique) :
+    « Couper une zone de disponibilité », puis poser une question au copilote : elle passe par la zone b (vérifié).
+
+**Scribe (facultatif)** : il exige le consentement « Enregistrement des consultations », **désactivé par défaut**.
+D'abord, avec Florence, l'activer dans `/portail` (Mes consentements) ; ensuite, avec Dr Nana, dossier de Florence →
+« Dicter » : brouillon structuré (motif, examen, constantes codées LOINC) à valider ; l'audio est supprimé après.
+Sans ce consentement, « Dicter » est refusé (comportement voulu).
 
 ## Journal des accès par l'API (mode services)
 
