@@ -52,7 +52,7 @@ describe('écran Administration', () => {
     expect(within(nana).getByLabelText('Rôle de Dr Aïcha Nana')).toHaveValue('medecin');
     expect(nana).toHaveTextContent('Cardiologie');
     expect(nana).toHaveTextContent('Activée');
-    expect(nana).toHaveTextContent('03/11/2026 08:12');
+    expect(nana).toHaveTextContent('03/11/2026 09:12'); // 08:12 UTC, heure du Cameroun
     expect(screen.getByText('Dr Paul Kamga', { selector: 'strong' }).closest('tr')).toHaveTextContent('Non configurée');
     expect(screen.getByRole('heading', { name: 'Équipes de soins' })).toBeVisible();
     expect(screen.getByText('Session : 30 minutes')).toBeVisible();

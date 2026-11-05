@@ -26,7 +26,8 @@ describe('AdministrationViewModel', () => {
       roleLabel: 'Médecin',
       teamNames: ['Cardiologie'],
       mfaEnrolled: true,
-      lastLoginLabel: '03/11/2026 08:12',
+      // 08:12 UTC, affiché à l'heure du Cameroun (UTC+1).
+      lastLoginLabel: '03/11/2026 09:12',
     });
     expect(vm.rows.find((r) => r.name === 'Dr Paul Kamga')).toMatchObject({ mfaEnrolled: false, lastLoginLabel: 'Jamais' });
     expect(vm.policy).toEqual({ mfaRequired: true, sessionMinutes: 30, breakGlassHours: 4, passwordLength: 12 });

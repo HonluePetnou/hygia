@@ -1,3 +1,4 @@
+import { localParts } from '@hygia/i18n';
 import { makeAutoObservable, runInAction } from 'mobx';
 import { GatewayError } from './http-client.js';
 import type { LoadState } from './load-state.js';
@@ -58,10 +59,11 @@ export function formatLatency(ms: number, locale: 'fr' | 'en'): string {
   return `${locale === 'fr' ? seconds.replace('.', ',') : seconds} s`;
 }
 
+/** Heure d'un événement (début d'expérience), à l'heure du Cameroun. */
 function clock(iso: string): string {
-  const d = new Date(iso);
+  const d = localParts(iso);
   const p = (n: number) => String(n).padStart(2, '0');
-  return `${p(d.getUTCHours())}:${p(d.getUTCMinutes())}`;
+  return `${p(d.hours)}:${p(d.minutes)}`;
 }
 
 /** Écran « Supervision » (maquette 10) : services, latence p95 et expériences de pannes (admin). */
