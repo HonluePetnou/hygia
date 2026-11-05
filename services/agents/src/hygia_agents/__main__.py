@@ -6,6 +6,7 @@ import time
 import uuid
 
 from . import AnalyticsApi, CaseStore, Coordinator, InMemoryLeaseStore, VeilleAgent, default_registry
+from .auth import TokenVerifier
 from .http_bus import HttpEventBus
 from .lease import localstack_lease_store
 from .outbreak_data import demo_events
@@ -23,7 +24,9 @@ def main() -> None:
                           readmission=ReadmissionApi(ReadmissionModel.trained(), HttpConsentGate(
                               os.environ.get("DOSSIERS_URL", "http://localhost:3001"),
                               os.environ.get("DOSSIERS_INTERNAL_KEY", "demo-dossiers-key"))),
-                          request_log=lambda line: print(json.dumps(line), flush=True))
+                          request_log=lambda line: print(json.dumps(line), flush=True),
+                          verifier=TokenVerifier.remote(os.environ.get(
+                              "IDENTITE_JWKS_URL", "http://localhost:3004/.well-known/jwks.json")))
     veille = VeilleAgent(store, coordinator, server.registry.issues.append)
     server.registry.register(veille)
     if os.environ.get("AGENTS_DEMO_DATA", "1") == "1":

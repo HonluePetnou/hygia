@@ -12,8 +12,10 @@ Le script affiche l'URL à ouvrir, **http://localhost:3100**.
 | Connexion | Comptes ci-dessous, mot de passe `Hygia-demo-2026`, **TOTP réel** | Tout mot de passe, code 2FA **`481516`**                          |
 | Code 2FA  | `pnpm --filter identite code` (code de secours : `DEMO-0001`)     | `481516`                                                          |
 
-Docker n'est **pas** nécessaire : les services gardent leurs données en mémoire. `DEMO_INFRA=1 pnpm demo` lance en plus
-`docker compose` (PostgreSQL, LocalStack), que les services n'utilisent pas encore ; un échec n'arrête pas la démo.
+Docker n'est **pas** nécessaire : sans lui, les services gardent leurs données en mémoire. `DEMO_INFRA=1 pnpm demo`
+(PowerShell : `$env:DEMO_INFRA="1"; pnpm demo`) démarre en plus PostgreSQL (port 54320) et LocalStack : les dossiers
+patients deviennent **durables** (base `dossiers`, migrations appliquées au lancement) et survivent à un redémarrage.
+Un échec de Docker n'arrête pas la démo : Dossiers repasse en mémoire.
 Au premier lancement, `pnpm demo` compile les paquets internes (`@hygia/*`) : une à deux minutes. `Ctrl+C` arrête tout
 (sous Windows aussi : l'arbre de processus est arrêté, les ports sont libérés).
 
@@ -113,5 +115,8 @@ curl -s -H "authorization: Bearer $T" $B/dossiers/patients/$F/acces | jq
 
 - Modèle de langage : implémentation `mock` derrière `ClinicalLanguageModel` (Bedrock ensuite) ; il ne répond qu'à partir des passages retrouvés.
 - Bus d'événements, files et flux : en mémoire ou HTTP local (pas encore de SQS, EventBridge ni Kinesis).
+- AWS simulé par LocalStack, avec `DEMO_INFRA=1` : journal d'audit **WORM sur S3 Object Lock** (mode conformité,
+  suppression refusée, relu au redémarrage), versions des dossiers sur **S3 versionné**, baux du coordinateur des
+  agents sur **DynamoDB**. Activé automatiquement quand le conteneur `hygia-localstack` est prêt ; sinon, en mémoire.
 - Données : en mémoire, rien n'est conservé après l'arrêt.
 - Transcription du scribe et canaux WhatsApp/SMS : simulés (affichés dans la console du service Notification).

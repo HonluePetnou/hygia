@@ -11,6 +11,7 @@ from urllib.parse import parse_qsl, urlsplit
 
 from .agent import AgentRegistry
 from .analytics_api import AnalyticsApi
+from .auth import TokenVerifier, role_from
 from .bus import InMemoryEventBus
 from .metrics import Metrics
 from .models import Event
@@ -28,8 +29,11 @@ class HttpEventBus(InMemoryEventBus):
         analytics: AnalyticsApi | None = None,
         readmission: ReadmissionApi | None = None,
         request_log: Callable[[dict[str, object]], None] | None = None,
+        verifier: TokenVerifier | None = None,
     ) -> None:
         super().__init__()
+        # Rôle de l'appelant = rôle du jeton signé par l'Identité ; sans vérificateur, aucun accès.
+        self.verifier = verifier
         self.metrics = Metrics("agents")
         # Journal d'une ligne par requête (jamais le corps : données de santé) ; muet par défaut.
         self.request_log = request_log or (lambda line: None)
@@ -79,7 +83,7 @@ class HttpEventBus(InMemoryEventBus):
             def _analytics(self) -> None:
                 url = urlsplit(self.path)
                 route = url.path.removeprefix("/analyse").strip("/")
-                role = self.headers.get("x-user-role")
+                role = role_from(self.headers.get("authorization"), bus.verifier)
                 if route == "flux" and role == "analyste":
                     self._stream()
                     return
@@ -93,7 +97,8 @@ class HttpEventBus(InMemoryEventBus):
                 except ValueError:
                     self._send(400, {"error": "corps JSON invalide"})
                     return
-                status, result = bus.readmission.handle(body, self.headers.get("x-user-role"))  # type: ignore[union-attr]
+                role = role_from(self.headers.get("authorization"), bus.verifier)
+                status, result = bus.readmission.handle(body, role)  # type: ignore[union-attr]
                 self._send(status, result)
 
             def _stream(self) -> None:

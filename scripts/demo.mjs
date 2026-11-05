@@ -54,11 +54,18 @@ if (demoMode === 'offline') {
 } else if (process.env.DEMO_INFRA !== '1') {
   console.log('Mode services (infrastructure Docker non lancée ; DEMO_INFRA=1 pour docker compose).');
 } else if (dockerAvailable()) {
-  console.log('DEMO_INFRA=1 : docker compose up -d');
-  const up = spawnSync('docker', ['compose', 'up', '-d'], { stdio: 'inherit' });
-  if (up.status !== 0) {
-    console.warn('docker compose a échoué : la démo continue en mode services, sans infrastructure Docker.');
+  // PostgreSQL d'abord (base durable de Dossiers), puis LocalStack : l'un peut marcher sans l'autre.
+  console.log('DEMO_INFRA=1 : docker compose up -d --wait postgres');
+  const postgres = spawnSync('docker', ['compose', 'up', '-d', '--wait', 'postgres'], {
+    stdio: 'inherit',
+  });
+  if (postgres.status === 0) {
+    env.DOSSIERS_DATABASE_URL ??= `postgresql://hygia:hygia@localhost:${process.env.HYGIA_POSTGRES_PORT ?? '54320'}/dossiers`;
+  } else {
+    console.warn('PostgreSQL indisponible : Dossiers garde ses données en mémoire.');
   }
+  const localstack = spawnSync('docker', ['compose', 'up', '-d', 'localstack'], { stdio: 'inherit' });
+  if (localstack.status !== 0) console.warn('LocalStack indisponible : la démo continue sans.');
 } else {
   console.warn('DEMO_INFRA=1 mais Docker indisponible : la démo continue en mode services.');
 }
@@ -73,6 +80,22 @@ if (twoInstances && process.env.BROKER_SERVICE_IA_CLINIQUE_URL === undefined) {
 
 // Sous Windows, `pnpm` est un script `.cmd` : Node ne peut le lancer qu'à travers un shell.
 const shell = process.platform === 'win32';
+
+// AWS simulé (DEMO_INFRA=1, LocalStack prêt) : journal d'audit WORM sur S3 Object Lock, versions
+// des dossiers sur S3 versionné, baux du coordinateur des agents sur DynamoDB.
+const localstack = spawnSync(
+  'docker',
+  ['inspect', '--format', '{{.State.Health.Status}}', 'hygia-localstack'],
+  { encoding: 'utf8' },
+);
+if (env.NEXT_PUBLIC_DEMO_OFFLINE !== '1' && localstack.stdout?.trim() === 'healthy') {
+  env.AWS_ENDPOINT_URL ??= 'http://localhost:4566';
+  env.AWS_REGION ??= 'eu-west-3';
+  env.AUDIT_S3_BUCKET ??= 'hygia-audit';
+  env.DOSSIERS_S3_BUCKET ??= 'hygia-documents';
+  env.AGENTS_DYNAMODB_URL ??= env.AWS_ENDPOINT_URL;
+  console.log('LocalStack prêt : audit sur S3 Object Lock, versions sur S3, baux sur DynamoDB.');
+}
 
 const filters = [
   'identite',
@@ -97,6 +120,22 @@ const build = spawnSync(
 if (build.status !== 0) {
   console.error('La compilation des dépendances internes a échoué : démo arrêtée.');
   process.exit(build.status ?? 1);
+}
+
+// Base de Dossiers : schéma à jour avant le démarrage (migrations Prisma). Échec : mémoire.
+if (env.DOSSIERS_DATABASE_URL) {
+  console.log('Migrations de la base de Dossiers (prisma migrate deploy)…');
+  const migrate = spawnSync('pnpm', ['--filter', 'dossiers', 'db:migrate'], {
+    stdio: 'inherit',
+    shell,
+    env,
+  });
+  if (migrate.status === 0) {
+    console.log('Dossiers : données durables dans PostgreSQL.');
+  } else {
+    console.warn('Migration impossible : Dossiers garde ses données en mémoire.');
+    delete env.DOSSIERS_DATABASE_URL;
+  }
 }
 const children = filters.map((name) =>
   spawn('pnpm', ['--filter', name, 'dev'], { stdio: 'inherit', env, shell }),

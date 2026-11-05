@@ -20,6 +20,16 @@ export interface Env {
    * journal reste local à Dossiers (tests, mode isolé).
    */
   audit?: { url: string; key: string };
+  /**
+   * Versions des ressources sur S3 versionné (`DOSSIERS_S3_BUCKET`, `AWS_REGION`,
+   * `AWS_ENDPOINT_URL` pour LocalStack) ; absent : en mémoire.
+   */
+  documentsS3?: { bucket: string; region: string; endpoint?: string };
+  /**
+   * Base PostgreSQL du service (`DOSSIERS_DATABASE_URL`) ; absente, les données restent en mémoire
+   * (tests, mode hors ligne) et disparaissent à l'arrêt.
+   */
+  databaseUrl?: string;
 }
 
 const DEFAULT_AGENTS_URL = 'http://localhost:3007';
@@ -61,13 +71,27 @@ export function loadEnv(source: Record<string, string | undefined> = process.env
   if (auditUrl !== undefined && auditKey === undefined) {
     throw new Error('AUDIT_URL fournie sans AUDIT_INTERNAL_KEY (clé des écritures internes)');
   }
+  const databaseUrl = source['DOSSIERS_DATABASE_URL'] || undefined;
+  if (databaseUrl !== undefined && !/^postgres(ql)?:\/\//.test(databaseUrl)) {
+    throw new Error('DOSSIERS_DATABASE_URL invalide (URL postgresql:// attendue)');
+  }
   const base = {
+    ...(databaseUrl ? { databaseUrl } : {}),
     jwksUrl,
     duplicateThreshold,
     agentsUrl,
     internalKey,
     ...(dashboardDate ? { dashboardDate } : {}),
     ...(auditUrl && auditKey ? { audit: { url: auditUrl.replace(/\/$/, ''), key: auditKey } } : {}),
+    ...(source['DOSSIERS_S3_BUCKET']
+      ? {
+          documentsS3: {
+            bucket: source['DOSSIERS_S3_BUCKET'],
+            region: source['AWS_REGION'] || 'eu-west-3',
+            ...(source['AWS_ENDPOINT_URL'] ? { endpoint: source['AWS_ENDPOINT_URL'] } : {}),
+          },
+        }
+      : {}),
   };
   const raw = source['DOSSIERS_PORT'];
   if (raw === undefined || raw === '') return { port: 3001, ...base };

@@ -13,6 +13,7 @@ from hygia_agents import (
 from hygia_agents.http_bus import HttpEventBus
 from hygia_agents.outbreak_data import CITIES, demo_events
 from hygia_agents.surveillance import compute_threshold, parse_week
+from _tokens import bearer, verifier
 
 
 class Clock:
@@ -123,7 +124,7 @@ class ApiTest(unittest.TestCase):
     def setUp(self):
         self.agent = instance(InMemoryLeaseStore(), "a", Clock(), demo_events())
         self.server = HttpEventBus(lambda bus: __import__("hygia_agents").default_registry(bus), port=0,
-                                   analytics=AnalyticsApi(self.agent.store))
+                                   analytics=AnalyticsApi(self.agent.store), verifier=verifier())
         self.server.registry.register(self.agent)
         threading.Thread(target=self.server.serve_forever, daemon=True).start()
         self.base = f"http://127.0.0.1:{self.server.port}"
@@ -132,7 +133,7 @@ class ApiTest(unittest.TestCase):
         self.server.shutdown()
 
     def get(self, path, role="analyste"):
-        headers = {"x-user-role": role} if role else {}
+        headers = bearer(role) if role else {}
         try:
             with urllib.request.urlopen(urllib.request.Request(self.base + quote(path, safe="/?&="), headers=headers)) as res:
                 return res.status, json.load(res)
@@ -177,7 +178,7 @@ class ApiTest(unittest.TestCase):
             self.assertNotIn(forbidden, found)
 
     def test_flux_sse_des_nouveaux_cas(self):
-        req = urllib.request.Request(self.base + "/analyse/flux", headers={"x-user-role": "analyste"})
+        req = urllib.request.Request(self.base + "/analyse/flux", headers=bearer("analyste"))
         with urllib.request.urlopen(req) as res:
             self.assertEqual(res.headers["content-type"], "text/event-stream")
             self.server.publish(Event("diagnostic.recorded", {

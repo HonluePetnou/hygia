@@ -14,6 +14,8 @@ import { JwtAuthGuard, TOKEN_VERIFIER } from './auth/jwt-auth.guard.js';
 import { loadEnv, type Env } from './config/env.js';
 import { ENV } from './config/env-token.js';
 import { ForwardingAuditStore } from './audit/forwarding-audit-store.js';
+import { PersistentPatientRepository } from './persistence/persistent-patient-repository.js';
+import { PrismaResourceStore } from './persistence/prisma-resource-store.js';
 import { ConsentsController, InternalConsentsController } from './consents/consents.controller.js';
 import { CONSENT_REPOSITORY, InMemoryConsentRepository } from './consents/consent-repository.js';
 import { ConsentsService } from './consents/consents.service.js';
@@ -36,6 +38,8 @@ import { RechercheController } from './recherche/recherche.controller.js';
 import { QUERY_INTERPRETER, SearchService } from './recherche/search.service.js';
 import { DOCUMENT_STORE } from './versions/document-store.js';
 import { InMemoryDocumentStore } from './versions/in-memory-document-store.js';
+import { S3ClientOperations } from './versions/s3-client-operations.js';
+import { S3DocumentStore } from './versions/s3-document-store.js';
 import { VersionsController } from './versions/versions.controller.js';
 import { VersionsService } from './versions/versions.service.js';
 import { SyntheseController } from './synthese/synthese.controller.js';
@@ -83,12 +87,31 @@ import { TableauDeBordController } from './tableau-de-bord/tableau-de-bord.contr
     MergeService,
     { provide: DUPLICATE_THRESHOLD, useFactory: () => loadEnv().duplicateThreshold },
     VersionsService,
-    { provide: DOCUMENT_STORE, useFactory: () => new InMemoryDocumentStore() },
+    {
+      provide: DOCUMENT_STORE,
+      // DOSSIERS_S3_BUCKET : versions immuables sur S3 versionné (LocalStack ou AWS).
+      useFactory: (env: Env) =>
+        env.documentsS3
+          ? new S3DocumentStore(new S3ClientOperations(env.documentsS3))
+          : new InMemoryDocumentStore(),
+      inject: [ENV],
+    },
     AccessPolicy,
     JwtAuthGuard,
     { provide: TOKEN_VERIFIER, useFactory: () => remoteVerifier(loadEnv().jwksUrl) },
     { provide: CLOCK, useClass: SystemClock },
-    { provide: PATIENT_REPOSITORY, useFactory: () => new InMemoryPatientRepository(demoDataset) },
+    {
+      provide: PATIENT_REPOSITORY,
+      // Avec DOSSIERS_DATABASE_URL : données durables (PostgreSQL), relues au démarrage.
+      useFactory: async (env: Env) =>
+        env.databaseUrl === undefined
+          ? new InMemoryPatientRepository(demoDataset)
+          : PersistentPatientRepository.open(
+              new PrismaResourceStore(env.databaseUrl),
+              demoDataset,
+            ),
+      inject: [ENV],
+    },
     {
       provide: AUDIT_LOG,
       useFactory: (env: Env) => {
