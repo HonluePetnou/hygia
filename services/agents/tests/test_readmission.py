@@ -8,6 +8,7 @@ import _setup  # noqa: F401
 from hygia_agents import ReadmissionApi, ReadmissionModel, default_registry
 from hygia_agents.http_bus import HttpEventBus
 from hygia_agents.readmission_model import FACTORS, synthetic_dataset
+from _tokens import bearer, verifier
 
 FRAGILE = {"age": 82, "hospitalisations": 3, "traitements": 9, "insuffisanceCardiaque": 1, "diabete": 1}
 ROBUSTE = {"age": 30, "hospitalisations": 0, "traitements": 1, "insuffisanceCardiaque": 0, "diabete": 0}
@@ -78,13 +79,13 @@ class ApiTest(unittest.TestCase):
 class HttpTest(unittest.TestCase):
     def test_post_readmission(self):
         api = ReadmissionApi(ReadmissionModel.trained(), Consents())
-        server = HttpEventBus(default_registry, port=0, readmission=api)
+        server = HttpEventBus(default_registry, port=0, readmission=api, verifier=verifier())
         threading.Thread(target=server.serve_forever, daemon=True).start()
         try:
             def call(role):
                 headers = {"content-type": "application/json"}
                 if role:
-                    headers["x-user-role"] = role
+                    headers.update(bearer(role))
                 payload = json.dumps({"patientId": "p", "facteurs": FRAGILE}).encode()
                 request = urllib.request.Request(
                     f"http://127.0.0.1:{server.port}/readmission", method="POST", data=payload, headers=headers)
